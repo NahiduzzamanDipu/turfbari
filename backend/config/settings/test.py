@@ -9,3 +9,4 @@ CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 AXES_ENABLED = False  # enabled explicitly in lockout tests
 LOGGING = {"version": 1, "disable_existing_loggers": False}
+ADMIN_EMAIL_CODE = False  # enabled explicitly in the email-code tests

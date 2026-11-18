@@ -20,6 +20,9 @@ export function LoginPage() {
   const [remember, setRemember] = useState(true);
   const [needsCode, setNeedsCode] = useState(false);
   const [code, setCode] = useState("");
+  const [challenge, setChallenge] = useState<Pick<Me, "two_factor_method" | "email_hint" | "can_use_authenticator">>(
+    {},
+  );
 
   const finish = (data: Me) => {
     qc.setQueryData(meKey, data);
@@ -31,6 +34,11 @@ export function LoginPage() {
     mutationFn: () => api<Me>("/auth/login/", { method: "POST", json: { identifier, password, remember } }),
     onSuccess: (data) => {
       if (data.two_factor_required) {
+        setChallenge({
+          two_factor_method: data.two_factor_method,
+          email_hint: data.email_hint,
+          can_use_authenticator: data.can_use_authenticator,
+        });
         setNeedsCode(true);
         setPassword("");
         return;
@@ -48,6 +56,17 @@ export function LoginPage() {
       }
     },
   });
+
+  const resend = useMutation({
+    mutationFn: () => api<{ sent: boolean; email_hint: string }>("/auth/2fa/resend/", { method: "POST" }),
+    onError: (e) => {
+      if (e instanceof ApiError && e.code === "two_factor_expired") {
+        setNeedsCode(false);
+        setCode("");
+      }
+    },
+  });
+  const byEmail = challenge.two_factor_method === "email";
 
   if (me.data?.authenticated && !login.isPending && !login.isSuccess && !verify.isSuccess) {
     return <Navigate to={me.data.home} replace />;
@@ -70,10 +89,18 @@ export function LoginPage() {
             <CardContent className="flex flex-col gap-5">
               <div>
                 <h1 className="flex items-center gap-2 text-xl font-semibold">
-                  <ShieldCheck className="size-5 text-primary" /> Two-factor check
+                  <ShieldCheck className="size-5 text-primary" /> {byEmail ? "Check your email" : "Two-factor check"}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Enter the 6-digit code from your authenticator app, or one of your recovery codes.
+                  {byEmail ? (
+                    <>
+                      We emailed a 6-digit sign-in code to <span className="font-medium">{challenge.email_hint}</span>.
+                      It expires in 10 minutes.
+                      {challenge.can_use_authenticator && " You can also use your authenticator app or a recovery code."}
+                    </>
+                  ) : (
+                    "Enter the 6-digit code from your authenticator app, or one of your recovery codes."
+                  )}
                 </p>
               </div>
               <form
@@ -107,6 +134,23 @@ export function LoginPage() {
                   {verify.isPending ? <Loader2 className="animate-spin" /> : <ShieldCheck />}
                   Verify and sign in
                 </Button>
+                {byEmail && (
+                  <div className="text-center text-xs">
+                    {resend.isSuccess ? (
+                      <p className="text-primary">A new code is on its way.</p>
+                    ) : (
+                      <button
+                        type="button"
+                        className="font-medium text-primary hover:underline disabled:opacity-50"
+                        disabled={resend.isPending}
+                        onClick={() => resend.mutate()}
+                      >
+                        Didn't get it? Send a new code
+                      </button>
+                    )}
+                    {resend.error && <p className="mt-1 text-destructive">{resend.error.message}</p>}
+                  </div>
+                )}
                 <button
                   type="button"
                   className="text-xs text-muted-foreground hover:text-foreground"

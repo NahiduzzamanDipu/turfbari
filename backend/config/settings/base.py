@@ -19,6 +19,12 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
 
 PLATFORM_NAME = "TurfBari"
+# Super Admin sign-in: a 6-digit code is emailed at every login, and the session ends this many
+# hours after signing in. ADMIN_EMAIL_CODE=false is the break-glass switch if email is down.
+ADMIN_EMAIL_CODE = env.bool("ADMIN_EMAIL_CODE", default=True)
+ADMIN_SESSION_HOURS = env.int("ADMIN_SESSION_HOURS", default=24)
+# Resend (https://resend.com) HTTP API key; used by apps.common.email_backends.ResendEmailBackend.
+RESEND_API_KEY = env("RESEND_API_KEY", default="")
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:5173")
 # Public base URL of this API for payment-gateway callbacks; blank = derive from the request.
 PUBLIC_API_URL = env("PUBLIC_API_URL", default="")
@@ -77,6 +83,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.accounts.middleware.AdminSessionLimitMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Must be last: lockout after repeated failed logins.
@@ -215,6 +222,7 @@ REST_FRAMEWORK = {
         "user": "600/min",
         "login": "10/min",
         "two_factor": "10/min",
+        "two_factor_resend": "3/min",
         "public_booking": "5/min",
         "public_application": "3/hour",
     },

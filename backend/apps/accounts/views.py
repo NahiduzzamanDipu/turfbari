@@ -11,7 +11,15 @@ from rest_framework.views import APIView
 from apps.audit.services import Category, record
 from apps.common.tenancy import ACTIVE_TURF_SESSION_KEY, memberships_for, resolve_membership
 
-from .two_factor import enabled_device, start_pending
+from .two_factor import (
+    PENDING_KEY,
+    enabled_device,
+    finish_login_session,
+    mask_email,
+    needs_email_code,
+    send_email_code,
+    start_pending,
+)
 
 
 def me_payload(request) -> dict:
@@ -79,12 +87,34 @@ class LoginView(APIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if enabled_device(user):
+        has_device = enabled_device(user) is not None
+        if needs_email_code(user) or has_device:
             start_pending(request, user, data.validated_data["remember"])
+            method, hint = "totp", None
+            if needs_email_code(user):
+                pending = request.session[PENDING_KEY]
+                if send_email_code(user, pending):
+                    request.session[PENDING_KEY] = pending
+                    method, hint = "email", mask_email(user.email)
+                elif not has_device:
+                    request.session.pop(PENDING_KEY, None)
+                    return Response(
+                        {
+                            "error": {
+                                "code": "email_failed",
+                                "message": "Couldn't email your sign-in code. Try again in a minute.",
+                                "fields": None,
+                            }
+                        },
+                        status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    )
             return Response(
                 {
                     "authenticated": False,
                     "two_factor_required": True,
+                    "two_factor_method": method,
+                    "email_hint": hint,
+                    "can_use_authenticator": has_device,
                     "user": None,
                     "memberships": [],
                     "active_turf_id": None,
@@ -101,8 +131,7 @@ class LoginView(APIView):
             actor=user,
             turf=membership.turf if membership else None,
         )
-        if not data.validated_data["remember"]:
-            request.session.set_expiry(0)
+        finish_login_session(request, user, data.validated_data["remember"])
         return Response(me_payload(request))
 
 

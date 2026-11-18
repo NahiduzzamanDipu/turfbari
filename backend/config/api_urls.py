@@ -53,6 +53,7 @@ auth_urls = [
     path("2fa/disable/", two_factor.TwoFactorDisableView.as_view()),
     path("2fa/recovery-codes/", two_factor.RecoveryCodesView.as_view()),
     path("2fa/verify/", two_factor.TwoFactorVerifyView.as_view()),
+    path("2fa/resend/", two_factor.ResendEmailCodeView.as_view()),
 ]
 
 admin_urls = [

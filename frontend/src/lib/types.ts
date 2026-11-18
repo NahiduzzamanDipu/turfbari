@@ -27,6 +27,11 @@ export interface Me {
   home: string;
   /** Set by /auth/login/ when the password was right but an authenticator code is still needed. */
   two_factor_required?: boolean;
+  /** "email": a code was emailed (Super Admins, every sign-in); "totp": authenticator app. */
+  two_factor_method?: "email" | "totp";
+  /** Masked address the code went to, e.g. "md*****@gmail.com". */
+  email_hint?: string | null;
+  can_use_authenticator?: boolean;
 }
 
 export interface Division extends Place {
