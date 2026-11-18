@@ -34,7 +34,7 @@ def build_statements(env: dict[str, str]) -> list[str]:
         sys.exit("Set MYSQL_PASSWORD in .env first.")
     pw = password.replace("\\", "\\\\").replace("'", "\\'")
 
-    statements = [f"CREATE DATABASE IF NOT EXISTS `{db}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"]
+    statements = [f"CREATE DATABASE IF NOT EXISTS `{db}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"]
     for host in ("localhost", "127.0.0.1"):
         statements += [
             f"CREATE USER IF NOT EXISTS '{user}'@'{host}' IDENTIFIED BY '{pw}';",

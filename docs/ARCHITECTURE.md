@@ -1,6 +1,6 @@
 # TURFOS — Architecture, Data Model, Security & Roadmap (Phase 1)
 
-Status: **Phase 1 deliverable — proposal for review.** No application code exists yet.
+Status: Phases 1–13 and 17–24 core features are implemented (see README "What works today"). Database runs on XAMPP MariaDB 10.11 or MySQL 8.
 Date: 2026-11-18
 
 ---

@@ -10,6 +10,7 @@ urlpatterns = [
     # Django's built-in admin is kept for emergency data repair only, at a non-obvious path.
     path("django-admin/", admin.site.urls),
     path("api/", include("apps.common.urls")),
+    path("api/", include("config.api_urls")),
     path(
         "api/schema/",
         SpectacularAPIView.as_view(permission_classes=[IsPlatformAdmin] if not settings.DEBUG else []),

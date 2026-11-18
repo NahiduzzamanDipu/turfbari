@@ -1,74 +1,53 @@
 # TURFOS — Smart Turf Management System
 
 Multi-tenant turf management SaaS + public turf discovery for Bangladesh.
-Django / DRF / MySQL 8 / Celery / Redis backend, React / TypeScript / Tailwind frontend.
+Django / DRF / MySQL-compatible database (XAMPP MariaDB or MySQL 8) backend, React / TypeScript / Tailwind frontend.
 
 - Architecture, data model, security plan and roadmap: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-## Status
+## What works today
 
-| Phase | State |
+| Area | Features |
 |---|---|
-| 1. Repository inspection & architecture | ✅ done |
-| 2. Project setup (Django, MySQL, React shell) | ✅ done — 17 backend + 9 frontend tests pass |
-| 3+ | not started |
+| Public site | Home, Explore (search, district/area/type/amenity/price filters, sort, pagination), turf page with live slot availability and prices, booking request without an account, booking status lookup, QR code per turf, "List your turf" application |
+| Login | One login for Super Admin, owners and managers; server decides where you land; lockout after 5 failed attempts |
+| Super Admin (`/admin`) | Platform overview, application pipeline (contact / reject / approve → creates turf + owner login), turf list with suspend/archive, list and feature toggles, add turf manually |
+| Workspace (`/workspace`) | Dashboard with collections chart, bookings day board + searchable list, create / reschedule / confirm / cancel / no-show, payments and refunds with dues, customers, maintenance blocks, fields, opening hours (overnight supported), peak/weekend/special-date pricing, expenses, reports + Excel export, managers, public profile settings, change password |
+| Safety | No double bookings (row lock per field, proven by a concurrent test), tenant isolation (other turfs' IDs → 404), owner-only actions enforced in the API, suspended turfs are read-only, public serializers are whitelists |
+
+Not built yet (roadmap phases 14–16, 25–26): subscriptions/plans/invoices, email + Celery reminders, theme customization studio, gallery image uploads, MFA, audit log, Docker production images.
+
+Tests: 34 backend (`pytest`) + 9 frontend (`vitest`).
 
 ## Repository layout
 
 ```
 backend/    Django project (config/, apps/, tests/)
-frontend/   React + Vite app
+  apps/locations     divisions, 64 districts, city areas (seeded by migration)
+  apps/turfs         turf (tenant), memberships, fields, hours, pricing engine, public + setup APIs
+  apps/bookings      customers, bookings, payments, maintenance, dashboard, reports
+  apps/applications  "list your turf" applications + Super Admin API
+  apps/expenses      expenses
+frontend/   React + Vite app (features/public, auth, admin, workspace)
 docs/       architecture and guides
-docker-compose.yml   optional: MySQL 8.4, Redis 7, Mailpit
-.env.example         every setting, no real secrets
 ```
 
-## Local development (Windows)
+## Local development with XAMPP (Windows)
 
-### 1. One-time: install MySQL 8
+### 1. Database (XAMPP MariaDB)
 
-Install MySQL Community Server 8.4 (LTS). With winget, in an **Administrator** PowerShell:
+Start **MySQL** in the XAMPP Control Panel. Then create the database and app user once
+(XAMPP's `root` has no password by default; pick your own password for `turfos`):
 
 ```powershell
-winget install -e --id Oracle.MySQL
+C:\xampp\mysql\bin\mysql.exe -h localhost -u root -e "CREATE DATABASE IF NOT EXISTS turfos CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER IF NOT EXISTS 'turfos'@'localhost' IDENTIFIED BY 'your-password'; CREATE USER IF NOT EXISTS 'turfos'@'::1' IDENTIFIED BY 'your-password'; CREATE USER IF NOT EXISTS 'turfos'@'127.0.0.1' IDENTIFIED BY 'your-password'; GRANT ALL ON turfos.* TO 'turfos'@'localhost'; GRANT ALL ON turfos.* TO 'turfos'@'::1'; GRANT ALL ON turfos.* TO 'turfos'@'127.0.0.1'; GRANT ALL ON test_turfos.* TO 'turfos'@'localhost'; GRANT ALL ON test_turfos.* TO 'turfos'@'::1'; GRANT ALL ON test_turfos.* TO 'turfos'@'127.0.0.1'; FLUSH PRIVILEGES;"
 ```
 
-Then pick **one** of the two ways to run it.
+`test_turfos` is pytest's temporary database. You can browse the data in phpMyAdmin at http://localhost/phpmyadmin.
 
-#### Option A — project-local server (default for this repo, no admin rights)
+> If another MySQL server is also listening on `127.0.0.1:3306`, connect to XAMPP through `[::1]` as in `.env.example`.
 
-Data lives in `.mysql/` (git-ignored); the server listens on 127.0.0.1:3306 only. After creating `.env` (step 2):
-
-```powershell
-backend\.venv\Scripts\python scripts\local_mysql.py init
-```
-
-This creates the data folder, sets a random root password (saved to `.env` as `MYSQL_ROOT_PASSWORD`)
-and creates the `turfos` database and user. Each time you work on TURFOS, start the server in its own terminal:
-
-```powershell
-backend\.venv\Scripts\python scripts\local_mysql.py start
-```
-
-Stop it with Ctrl+C, or from another terminal with `local_mysql.py stop`; `local_mysql.py status` shows whether it's running.
-If MySQL is installed somewhere else, set `MYSQL_BASEDIR` to that folder.
-
-#### Option B — Windows service
-
-The winget/MSI install only copies files. Configure the server once with **MySQL Configurator**
-(Start menu → "MySQL Configurator", or `C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql_configurator.exe`):
-choose *Development Computer*, keep port 3306, set a root password, and leave "Configure MySQL Server as a Windows Service" ticked.
-
-Then, after creating `.env` (step 2), create the TURFOS database and app user from the repository root.
-It reads `MYSQL_DATABASE`, `MYSQL_USER` and `MYSQL_PASSWORD` from `.env` and prompts for the root password:
-
-```powershell
-backend\.venv\Scripts\python scripts\mysql_setup_sql.py | & "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -u root -p
-```
-
-It grants the user access to `turfos` and `test_turfos` (pytest's temporary database) for both `localhost` and `127.0.0.1`, and is safe to re-run.
-
-Alternative: with Docker installed, `docker compose up -d` starts MySQL, Redis and Mailpit with matching settings.
+MySQL 8 also works (`scripts/local_mysql.py` and `scripts/mysql_setup_sql.py` set up a project-local MySQL 8 server).
 
 ### 2. Configure environment
 
@@ -85,7 +64,8 @@ cd backend
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements\dev.txt
 .venv\Scripts\python manage.py migrate
-.venv\Scripts\python manage.py createsuperuser
+.venv\Scripts\python manage.py seed_demo        # optional demo data
+.venv\Scripts\python manage.py createsuperuser  # your own Super Admin
 .venv\Scripts\python manage.py runserver 127.0.0.1:8010
 ```
 
@@ -95,6 +75,18 @@ The API runs on **port 8010** (8000 is often taken by other local projects).
 - API docs (DEBUG only): http://127.0.0.1:8010/api/docs/
 
 `createsuperuser` creates the TURFOS **Super Admin**.
+
+#### Demo logins (`seed_demo`, development only)
+
+| Role | Email | Password |
+|---|---|---|
+| Super Admin | admin@turfos.local | TurfosAdmin#2026 |
+| Owner (Green Arena Gulshan) | owner@turfos.local | TurfosOwner#2026 |
+| Owner (Mirpur Kickoff Zone) | mirpur.owner@turfos.local | TurfosOwner#2026 |
+| Manager (Green Arena Gulshan) | manager@turfos.local | TurfosManager#2026 |
+
+The other demo owners (uttara.owner@, ctg.owner@) use the owner password too. `seed_demo --reset` rebuilds the demo data.
+The command refuses to run when `DJANGO_DEBUG` is false.
 
 ### 4. Frontend
 
@@ -134,7 +126,7 @@ npm test
 npm run build
 ```
 
-Backend tests need MySQL running. They check that the database is MySQL 8 with InnoDB,
+Backend tests need the database running (XAMPP MySQL). They check that it is MySQL 8+ or MariaDB 10.6+ with InnoDB,
 utf8mb4 and strict SQL mode, because booking safety relies on InnoDB row locks.
 
 ## Settings modules

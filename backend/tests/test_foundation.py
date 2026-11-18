@@ -13,10 +13,11 @@ from apps.common.money import to_money
 pytestmark = pytest.mark.django_db
 
 
-def test_database_is_mysql8_innodb_utf8mb4_strict():
+def test_database_is_mysql_or_mariadb_innodb_utf8mb4_strict():
     assert connection.vendor == "mysql"
-    assert not connection.mysql_is_mariadb
-    assert connection.mysql_version >= (8, 0, 0)
+    # MySQL 8+ or MariaDB 10.6+ (XAMPP) both give InnoDB row locks for booking safety.
+    minimum = (10, 6, 0) if connection.mysql_is_mariadb else (8, 0, 0)
+    assert connection.mysql_version >= minimum
     with connection.cursor() as cursor:
         cursor.execute("SELECT @@default_storage_engine, @@character_set_database, @@SESSION.sql_mode")
         engine, charset, sql_mode = cursor.fetchone()

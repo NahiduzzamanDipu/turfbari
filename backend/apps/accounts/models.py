@@ -55,8 +55,8 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ["full_name"]
 
     class Meta:
-        # Uniqueness is case-insensitive twice over: save() lowercases, and the MySQL
-        # utf8mb4_0900_ai_ci collation compares case-insensitively at the index level.
+        # Uniqueness is case-insensitive twice over: save() lowercases, and the utf8mb4 *_ci
+        # collation (MySQL 0900_ai_ci / MariaDB unicode_ci) compares case-insensitively.
         ordering = ["email"]
 
     def save(self, *args, **kwargs):

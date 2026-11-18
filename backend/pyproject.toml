@@ -26,3 +26,5 @@ known-first-party = ["apps", "config"]
 "config/settings/*" = ["F405"]
 # Local dev tooling: runs the fixed mysqld binary; long usage lines in docstrings.
 "**/scripts/*" = ["S603", "S105", "E501"]
+# Development-only demo logins, documented in README.md.
+"**/management/commands/seed_demo.py" = ["S105"]

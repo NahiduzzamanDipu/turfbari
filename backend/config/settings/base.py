@@ -39,6 +39,11 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "apps.common",
     "apps.accounts",
+    "apps.locations",
+    "apps.turfs",
+    "apps.bookings",
+    "apps.applications",
+    "apps.expenses",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -77,7 +82,7 @@ TEMPLATES = [
 ]
 
 # ----------------------------------------------------------------------- database
-# MySQL 8 (InnoDB). DATABASE_URL format: mysql://user:password@host:3306/dbname
+# MySQL 8 or MariaDB 10.6+ (XAMPP), InnoDB. DATABASE_URL format: mysql://user:password@host:3306/dbname
 DATABASES = {"default": env.db("DATABASE_URL")}
 DATABASES["default"].update(
     {
@@ -92,7 +97,7 @@ DATABASES["default"].update(
             # READ COMMITTED + SELECT ... FOR UPDATE row locks guard booking overlaps.
             "isolation_level": "read committed",
         },
-        "TEST": {"CHARSET": "utf8mb4", "COLLATION": "utf8mb4_0900_ai_ci"},
+        "TEST": {"CHARSET": "utf8mb4", "COLLATION": "utf8mb4_unicode_ci"},
     }
 )
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

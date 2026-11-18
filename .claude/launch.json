@@ -2,22 +2,17 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "mysql",
+      "name": "backend",
       "runtimeExecutable": "backend/.venv/Scripts/python.exe",
-      "runtimeArgs": ["scripts/local_mysql.py", "start"],
-      "port": 3306
+      "runtimeArgs": ["backend/manage.py", "runserver", "127.0.0.1:8011"],
+      "port": 8011
     },
     {
       "name": "frontend",
       "runtimeExecutable": "C:/Program Files/nodejs/node.exe",
-      "runtimeArgs": ["frontend/node_modules/vite/bin/vite.js", "frontend", "--config", "frontend/vite.config.ts", "--port", "5174"],
-      "port": 5174
-    },
-    {
-      "name": "backend",
-      "runtimeExecutable": "backend/.venv/Scripts/python.exe",
-      "runtimeArgs": ["backend/manage.py", "runserver", "127.0.0.1:8010"],
-      "port": 8010
+      "runtimeArgs": ["frontend/node_modules/vite/bin/vite.js", "frontend", "--config", "frontend/vite.config.ts", "--port", "5175"],
+      "port": 5175,
+      "env": { "VITE_BACKEND_URL": "http://127.0.0.1:8011" }
     }
   ]
 }
