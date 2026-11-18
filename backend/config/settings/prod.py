@@ -32,6 +32,10 @@ if AWS_STORAGE_BUCKET_NAME:
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = None
     AWS_QUERYSTRING_AUTH = False
+    # Supabase Storage / MinIO need path-style URLs; public files are served from a different
+    # base than the S3 API, e.g. <ref>.supabase.co/storage/v1/object/public/<bucket>.
+    AWS_S3_ADDRESSING_STYLE = env("AWS_S3_ADDRESSING_STYLE", default="auto")
+    AWS_S3_CUSTOM_DOMAIN = env("AWS_S3_CUSTOM_DOMAIN", default="") or None
 
 SENTRY_DSN = env("SENTRY_DSN", default="")
 if SENTRY_DSN:
