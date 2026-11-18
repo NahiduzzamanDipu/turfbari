@@ -36,5 +36,6 @@ USER turfbari
 CMD python manage.py migrate --noinput \
  && python manage.py createcachetable \
  && python manage.py ensure_admin \
+ && python manage.py check_media_storage \
  && python manage.py collectstatic --noinput --verbosity 0 \
  && exec gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --max-requests 500 --timeout 60 --access-logfile -
