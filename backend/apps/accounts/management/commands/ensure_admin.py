@@ -34,7 +34,8 @@ class Command(BaseCommand):
                 )
             )
             return
-        if os.environ.get("TURFBARI_ADMIN_RESET_PASSWORD", "").lower() in {"1", "true", "yes"} and len(admins) == 1:
+        reset_requested = os.environ.get("TURFBARI_ADMIN_RESET_PASSWORD", "").lower() in {"1", "true", "yes"}
+        if reset_requested and len(admins) == 1:
             # Break-glass: new temporary password + clear login lockouts. Remove the env var afterwards,
             # or every restart resets the password again.
             from axes.utils import reset as reset_lockouts
