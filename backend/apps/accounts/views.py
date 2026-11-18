@@ -8,7 +8,10 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from apps.audit.services import Category, record
 from apps.common.tenancy import ACTIVE_TURF_SESSION_KEY, memberships_for, resolve_membership
+
+from .two_factor import enabled_device, start_pending
 
 
 def me_payload(request) -> dict:
@@ -60,6 +63,12 @@ class LoginView(APIView):
             request, username=data.validated_data["identifier"], password=data.validated_data["password"]
         )
         if user is None:
+            record(
+                "account.login_failed",
+                f"Failed sign-in for “{data.validated_data['identifier'][:120]}”",
+                category=Category.ACCOUNT,
+                request=request,
+            )
             return Response(
                 {
                     "error": {
@@ -70,7 +79,28 @@ class LoginView(APIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if enabled_device(user):
+            start_pending(request, user, data.validated_data["remember"])
+            return Response(
+                {
+                    "authenticated": False,
+                    "two_factor_required": True,
+                    "user": None,
+                    "memberships": [],
+                    "active_turf_id": None,
+                    "home": "/login",
+                }
+            )
         login(request, user)  # rotates the session key
+        membership = resolve_membership(request)
+        record(
+            "account.login",
+            "Signed in",
+            category=Category.ACCOUNT,
+            request=request,
+            actor=user,
+            turf=membership.turf if membership else None,
+        )
         if not data.validated_data["remember"]:
             request.session.set_expiry(0)
         return Response(me_payload(request))
@@ -136,4 +166,12 @@ class ChangePasswordView(APIView):
         request.user.set_password(data.validated_data["new_password"])
         request.user.save(update_fields=["password"])
         update_session_auth_hash(request, request.user)
+        membership = resolve_membership(request)
+        record(
+            "account.password_changed",
+            "Changed password",
+            category=Category.ACCOUNT,
+            request=request,
+            turf=membership.turf if membership else None,
+        )
         return Response(status=status.HTTP_204_NO_CONTENT)

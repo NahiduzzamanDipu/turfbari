@@ -1,4 +1,4 @@
-// Shapes returned by the TURFOS API. Money is always a decimal string.
+// Shapes returned by the TurfBari API. Money is always a decimal string.
 
 export interface Paginated<T> {
   count: number;
@@ -25,6 +25,8 @@ export interface Me {
   memberships: Membership[];
   active_turf_id: string | null;
   home: string;
+  /** Set by /auth/login/ when the password was right but an authenticator code is still needed. */
+  two_factor_required?: boolean;
 }
 
 export interface Division extends Place {
@@ -42,6 +44,8 @@ export interface TurfCard {
   longitude: string | null;
   map_link: string | null;
   distance_km: number | null;
+  profile_image_url: string | null;
+  cover_url: string | null;
   turf_type: "outdoor" | "indoor" | "rooftop";
   surface: string;
   amenities: string[];
@@ -58,7 +62,17 @@ export interface Hours {
   is_closed: boolean;
 }
 
+export interface PublicPhoto {
+  url: string;
+  thumbnail_url: string;
+  width: number;
+  height: number;
+  caption: string;
+}
+
 export interface TurfDetail extends TurfCard {
+  photos: PublicPhoto[];
+  theme: { preset: string; color: string | null };
   description: string;
   maps_url: string;
   public_phone: string;
@@ -224,6 +238,9 @@ export interface TurfSettings {
   maps_url: string;
   latitude: string | null;
   longitude: string | null;
+  profile_image_url: string | null;
+  theme_preset: string;
+  theme_color: string;
   turf_type: string;
   surface: string;
   amenities: string[];
@@ -292,5 +309,123 @@ export interface AdminTurf {
   min_public_price: string | null;
   fields_count: number;
   bookings_count: number;
+  subscription: SubscriptionStanding & {
+    open_order: { plan: string; status: string; amount: string } | null;
+  };
+  created_at: string;
+}
+
+// ------------------------------------------------------------------ slot board
+export type SlotState = "free" | "booked" | "pending" | "maintenance" | "past";
+
+export interface BoardSlot extends Slot {
+  state: SlotState;
+  reason?: string;
+  booking?: {
+    id: string;
+    reference: string;
+    status: string;
+    customer_name: string;
+    customer_phone: string;
+    team_name: string;
+    start: string;
+    end: string;
+    total: string;
+    amount_paid: string;
+  };
+}
+
+export interface SlotBoard {
+  date: string;
+  fields: { id: string; name: string; size: string; slots: BoardSlot[] }[];
+}
+
+// ------------------------------------------------------------------ subscriptions
+export type PlanPeriod = "monthly" | "half_yearly" | "yearly";
+
+export interface Plan {
+  id: string;
+  period: PlanPeriod;
+  name: string;
+  months: number;
+  price: string;
+  description: string;
+  is_active: boolean;
+}
+
+export interface SubscriptionPeriod {
+  id: string;
+  plan: Plan;
+  status: "pending_payment" | "active" | "cancelled";
+  state: "pending_payment" | "cancelled" | "scheduled" | "current" | "ended";
+  starts_on: string | null;
+  ends_on: string | null;
+  price: string;
+  note: string;
+  created_at: string;
+}
+
+export interface PaymentTx {
+  id: string;
+  tran_id: string;
+  method: string;
+  method_label: string;
+  channel: "manual" | "gateway" | "admin";
+  amount: string;
+  status: "initiated" | "pending_verification" | "verified" | "rejected" | "failed" | "cancelled";
+  status_label: string;
+  reference: string;
+  sender_number: string;
+  note: string;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+export interface Invoice {
+  id: string;
+  number: string;
+  amount: string;
+  status: "unpaid" | "pending_verification" | "paid" | "cancelled";
+  status_label: string;
+  paid_at: string | null;
+  created_at: string;
+  subscription: SubscriptionPeriod;
+  transactions: PaymentTx[];
+}
+
+export interface SubscriptionStanding {
+  state: "active" | "expiring" | "grace" | "expired" | "none";
+  can_operate: boolean;
+  plan: Plan | null;
+  current: SubscriptionPeriod | null;
+  paid_until: string | null;
+  days_left: number | null;
+  grace_until: string | null;
+  auto_renew: false;
+}
+
+export interface SubscriptionOverview {
+  standing: SubscriptionStanding;
+  periods: SubscriptionPeriod[];
+  open_invoice: Invoice | null;
+  invoices: Invoice[];
+  plans: Plan[];
+  payment_options: {
+    online: boolean;
+    online_sandbox: boolean;
+    manual: { method: string; label: string; account: string }[];
+  };
+}
+
+export interface AdminPayment extends PaymentTx {
+  invoice_number: string;
+  turf_name: string;
+  plan_name: string;
+  submitted_by_email: string | null;
+}
+
+export interface WorkspacePhoto extends PublicPhoto {
+  id: string;
+  sort_order: number;
   created_at: string;
 }

@@ -29,25 +29,27 @@ from apps.bookings.services import (
 )
 from apps.expenses.models import Expense
 from apps.locations.models import Area, District
+from apps.subscriptions.models import Plan
 from apps.turfs.geo import google_maps_link
 from apps.turfs.models import Amenity, PricingRule, TenantMembership, Turf, TurfField
 from apps.turfs.pricing import local_dt, recompute_min_price
 
-ADMIN_EMAIL = "admin@turfos.local"
-ADMIN_PASSWORD = "TurfosAdmin#2026"
-OWNER_PASSWORD = "TurfosOwner#2026"
-MANAGER_EMAIL = "manager@turfos.local"
-MANAGER_PASSWORD = "TurfosManager#2026"
+ADMIN_EMAIL = "admin@turfbari.local"
+ADMIN_PASSWORD = "TurfBariAdmin#2026"
+OWNER_PASSWORD = "TurfBariOwner#2026"
+MANAGER_EMAIL = "manager@turfbari.local"
+MANAGER_PASSWORD = "TurfBariManager#2026"
 
 TURFS = [
     {
         "name": "Green Arena Gulshan",
+        "plan": "yearly",
         "coords": ("23.794600", "90.414300"),
         "district": "dhaka",
         "area": "gulshan-dhaka",
         "address": "Road 90, Gulshan 2, Dhaka 1212",
         "turf_type": "rooftop",
-        "owner": ("owner@turfos.local", "Rahim Uddin", "01711000001"),
+        "owner": ("owner@turfbari.local", "Rahim Uddin", "01711000001"),
         "fields": 2,
         "rate": "2000.00",
         "peak": "2800.00",
@@ -57,12 +59,13 @@ TURFS = [
     },
     {
         "name": "Mirpur Kickoff Zone",
+        "plan": "half_yearly",
         "coords": ("23.806900", "90.368700"),
         "district": "dhaka",
         "area": "mirpur-dhaka",
         "address": "Section 10, Mirpur, Dhaka 1216",
         "turf_type": "outdoor",
-        "owner": ("mirpur.owner@turfos.local", "Karim Hasan", "01811000002"),
+        "owner": ("mirpur.owner@turfbari.local", "Karim Hasan", "01811000002"),
         "fields": 3,
         "rate": "1400.00",
         "peak": "1900.00",
@@ -72,12 +75,13 @@ TURFS = [
     },
     {
         "name": "Uttara Indoor Sports Hub",
+        "plan": "monthly",
         "coords": ("23.865400", "90.398500"),
         "district": "dhaka",
         "area": "uttara-dhaka",
         "address": "Sector 7, Uttara, Dhaka 1230",
         "turf_type": "indoor",
-        "owner": ("uttara.owner@turfos.local", "Nusrat Jahan", "01911000003"),
+        "owner": ("uttara.owner@turfbari.local", "Nusrat Jahan", "01911000003"),
         "fields": 1,
         "rate": "1800.00",
         "peak": "2400.00",
@@ -87,12 +91,13 @@ TURFS = [
     },
     {
         "name": "Port City Turf",
+        "plan": "monthly",
         "coords": ("22.325700", "91.811300"),
         "district": "chattogram",
         "area": "agrabad-chattogram",
         "address": "Agrabad C/A, Chattogram 4100",
         "turf_type": "outdoor",
-        "owner": ("ctg.owner@turfos.local", "Tanvir Ahmed", "01611000004"),
+        "owner": ("ctg.owner@turfbari.local", "Tanvir Ahmed", "01611000004"),
         "fields": 2,
         "rate": "1200.00",
         "peak": "1600.00",
@@ -147,7 +152,7 @@ class Command(BaseCommand):
     def _seed(self):
         User = get_user_model()
         rng = random.Random(42)  # noqa: S311 - demo data, not security
-        User.objects.create_superuser(ADMIN_EMAIL, ADMIN_PASSWORD, full_name="TURFOS Admin")
+        User.objects.create_superuser(ADMIN_EMAIL, ADMIN_PASSWORD, full_name="TurfBari Admin")
 
         created = []
         for spec in TURFS:
@@ -163,6 +168,7 @@ class Command(BaseCommand):
                 owner_phone="+88" + phone,
                 number_of_fields=spec["fields"],
                 hourly_rate=Decimal(spec["rate"]),
+                plan=Plan.objects.get(period=spec["plan"]),
             )
             owner.set_password(OWNER_PASSWORD)
             owner.save(update_fields=["password"])

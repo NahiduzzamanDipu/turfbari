@@ -17,6 +17,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.audit.services import Category, booking_label, record
 from apps.common.tenancy import IsTenantMember, TenantViewSet
 from apps.expenses.models import Expense
 from apps.turfs.models import TurfField
@@ -29,7 +30,9 @@ from .services import (
     availability,
     change_status,
     get_or_create_customer,
+    opening_window,
     overlapping_bookings,
+    overlapping_maintenance,
     record_payment,
     reserve_slot,
 )
@@ -149,6 +152,7 @@ class StatusSerializer(serializers.Serializer):
 # ---------------------------------------------------------------- bookings
 class BookingViewSet(TenantViewSet):
     queryset = Booking.objects.select_related("customer", "field")
+    audit_auto = False  # bookings write their own, richer events
     http_method_names = ["get", "post", "put", "head", "options"]
     filter_backends = []
 
@@ -216,6 +220,16 @@ class BookingViewSet(TenantViewSet):
                 kind=Payment.Kind.PAYMENT,
                 user=request.user,
             )
+        extra = f", advance ৳{v['advance_amount']}" if v["advance_amount"] else ""
+        discount = f", discount ৳{booking.discount}" if booking.discount else ""
+        record(
+            "booking.created",
+            f"Booked {booking_label(booking)} — ৳{booking.total}{discount}{extra}",
+            category=Category.BOOKING,
+            request=request,
+            target=booking,
+            data={"status": booking.status, "total": str(booking.total), "discount": str(booking.discount)},
+        )
         return Response(BookingDetailSerializer(self.get_queryset().get(pk=booking.pk)).data, status=201)
 
     @extend_schema(request=BookingWriteSerializer, responses=BookingDetailSerializer)
@@ -243,6 +257,14 @@ class BookingViewSet(TenantViewSet):
             discount=v["discount"],
             booking=booking,
         )
+        booking.refresh_from_db()
+        record(
+            "booking.updated",
+            f"Changed booking {booking_label(booking)}",
+            category=Category.BOOKING,
+            request=request,
+            target=booking,
+        )
         return Response(BookingDetailSerializer(self.get_queryset().get(pk=booking.pk)).data)
 
     @extend_schema(request=StatusSerializer, responses=BookingDetailSerializer)
@@ -250,7 +272,17 @@ class BookingViewSet(TenantViewSet):
     def status(self, request, pk=None):
         data = StatusSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        booking = change_status(self.get_object(), data.validated_data["status"])
+        before = self.get_object()
+        old_status = before.get_status_display()
+        booking = change_status(before, data.validated_data["status"])
+        record(
+            "booking.status",
+            f"{old_status} → {booking.get_status_display()}: {booking_label(booking)}",
+            category=Category.BOOKING,
+            request=request,
+            target=booking,
+            data={"from": old_status, "to": booking.status},
+        )
         return Response(BookingDetailSerializer(self.get_queryset().get(pk=booking.pk)).data)
 
     @extend_schema(request=PaymentSerializer, responses=BookingDetailSerializer)
@@ -270,6 +302,16 @@ class BookingViewSet(TenantViewSet):
             reference=v.get("reference", ""),
             user=request.user,
         )
+        kind = v.get("kind", Payment.Kind.PAYMENT)
+        verb = "Refunded" if kind == Payment.Kind.REFUND else "Received"
+        record(
+            "payment.recorded",
+            f"{verb} ৳{v['amount']} ({v.get('method', Payment.Method.CASH)}) for {booking_label(booking)}",
+            category=Category.PAYMENT,
+            request=request,
+            target=booking,
+            data={"amount": str(v["amount"]), "kind": kind, "method": v.get("method", "cash")},
+        )
         return Response(BookingDetailSerializer(self.get_queryset().get(pk=booking.pk)).data, status=201)
 
 
@@ -282,12 +324,61 @@ class AvailabilityView(APIView):
         fields = TurfField.objects.filter(turf=request.tenant, is_active=True).select_related("turf")
         if field_id := request.query_params.get("field"):
             fields = fields.filter(pk=field_id)
+        detail = request.query_params.get("detail") == "1"
         return Response(
             {
                 "date": day.isoformat(),
-                "fields": [{"id": str(f.id), "name": f.name, "slots": availability(f, day)} for f in fields],
+                "fields": [
+                    {
+                        "id": str(f.id),
+                        "name": f.name,
+                        "size": f.size,
+                        "slots": slot_board(f, day) if detail else availability(f, day),
+                    }
+                    for f in fields
+                ],
             }
         )
+
+
+def slot_board(field, day):
+    """Availability plus what occupies each taken slot, for the owner's booking board."""
+    slots = availability(field, day)
+    window = opening_window(field.turf, day)
+    if not slots or window is None:
+        return slots
+    opens, closes = window
+    bookings = list(
+        overlapping_bookings(field.id, opens, closes).select_related("customer").order_by("start")
+    )
+    blocks = list(overlapping_maintenance(field.id, opens, closes))
+    now = timezone.now()
+    for slot in slots:
+        start, end = datetime.fromisoformat(slot["start"]), datetime.fromisoformat(slot["end"])
+        booking = next((b for b in bookings if b.start < end and b.end > start), None)
+        block = None if booking else next((m for m in blocks if m.start < end and m.end > start), None)
+        if booking:
+            slot["state"] = "pending" if booking.status == Booking.Status.PENDING else "booked"
+            slot["booking"] = {
+                "id": str(booking.id),
+                "reference": booking.reference,
+                "status": booking.status,
+                "customer_name": booking.customer.name,
+                "customer_phone": booking.customer.phone,
+                "team_name": booking.team_name,
+                "start": timezone.localtime(booking.start).isoformat(),
+                "end": timezone.localtime(booking.end).isoformat(),
+                "total": str(booking.total),
+                "amount_paid": str(booking.amount_paid),
+            }
+        elif block:
+            slot["state"] = "maintenance"
+            slot["reason"] = block.reason
+        elif start <= now:
+            slot["state"] = "past"
+        else:
+            slot["state"] = "free"
+    return slots
 
 
 class QuoteSerializer(serializers.Serializer):
@@ -346,6 +437,8 @@ class CustomerSerializer(serializers.ModelSerializer):
 
 
 class CustomerViewSet(TenantViewSet):
+    audit_noun = "customer"
+    audit_category = Category.CUSTOMER
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
     http_method_names = ["get", "post", "patch", "head", "options"]
@@ -389,6 +482,7 @@ class MaintenanceSerializer(serializers.ModelSerializer):
 
 
 class MaintenanceViewSet(TenantViewSet):
+    audit_noun = "maintenance block"
     queryset = MaintenanceBlock.objects.select_related("field")
     serializer_class = MaintenanceSerializer
     http_method_names = ["get", "post", "delete", "head", "options"]

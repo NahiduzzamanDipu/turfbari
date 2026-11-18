@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, ClipboardList, Copy, Inbox, Plus, Wallet } from "lucide-react";
+import { BadgeCheck, Building2, ClipboardList, Copy, Inbox, Plus, Wallet } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { PageHeader, StatCard } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { ApiError, api } from "@/lib/api";
 import { TURF_TYPE_LABEL, fmtDate } from "@/lib/format";
 import type { AdminTurf, Application, Paginated } from "@/lib/types";
 import { formatBDT } from "@/lib/utils";
+import { AssignPlanDialog, PERIOD_TONE, PlanPicker, TurfPlanCell } from "./BillingPages";
 
 interface AdminDashboard {
   turfs: { total: number; active: number; suspended: number; listed: number };
@@ -34,13 +35,15 @@ interface AdminDashboard {
   users: number;
   recent_applications: Application[];
   new_turfs_30d: number;
+  plans: { period: string; name: string; turfs: number }[];
+  payments_to_verify: number;
 }
 
 export function AdminDashboardPage() {
   const data = useQuery({ queryKey: ["admin", "dashboard"], queryFn: () => api<AdminDashboard>("/admin/dashboard/") });
   return (
     <>
-      <PageHeader title="Platform overview" description="Every turf on TURFOS at a glance." />
+      <PageHeader title="Platform overview" description="Every turf on TurfBari at a glance." />
       {data.isError && <ErrorState error={data.error} onRetry={() => data.refetch()} />}
       {data.isPending && <Skeleton className="h-28" />}
       {data.data && (
@@ -64,6 +67,23 @@ export function AdminDashboardPage() {
               icon={<Wallet />}
               value={formatBDT(data.data.payments_this_month)}
               hint={`${data.data.users} active users`}
+            />
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {data.data.plans.map((p) => (
+              <Link key={p.period} to={`/admin/turfs?plan=${p.period}`} className="glass rounded-xl p-4 transition hover:shadow-md">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Turfs on</span>
+                  <Badge tone={PERIOD_TONE[p.period] ?? "neutral"}>{p.name}</Badge>
+                </div>
+                <p className="tabular mt-2 text-2xl font-bold">{p.turfs}</p>
+              </Link>
+            ))}
+            <StatCard
+              label="Payments to verify"
+              icon={<BadgeCheck />}
+              value={data.data.payments_to_verify}
+              hint={<Link to="/admin/billing" className="text-primary hover:underline">Plans & payments</Link>}
             />
           </div>
           <Card className="mt-6">
@@ -137,6 +157,7 @@ export function AdminApplicationsPage() {
   const [open, setOpen] = useState<Application | null>(null);
   const [note, setNote] = useState("");
   const [rate, setRate] = useState("1500");
+  const [plan, setPlan] = useState({ plan: "monthly", payment_received: true });
   const [credentials, setCredentials] = useState<{ email: string; password: string | null; slug: string } | null>(null);
 
   const list = useQuery({
@@ -160,7 +181,7 @@ export function AdminApplicationsPage() {
     mutationFn: () =>
       api<{ owner_email: string; temporary_password: string | null; turf: { slug: string } }>(
         `/admin/applications/${open?.id}/approve/`,
-        { method: "POST", json: { hourly_rate: rate } },
+        { method: "POST", json: { hourly_rate: rate, ...plan } },
       ),
     onSuccess: (r) => {
       setOpen(null);
@@ -172,7 +193,7 @@ export function AdminApplicationsPage() {
 
   return (
     <>
-      <PageHeader title="Applications" description="Turf owners who asked to join TURFOS." />
+      <PageHeader title="Applications" description="Turf owners who asked to join TurfBari." />
       <div className="mb-4 flex flex-wrap gap-2">
         {["pending", "contacted", "approved", "rejected", ""].map((s) => (
           <Button key={s || "all"} size="sm" variant={status === s ? "default" : "outline"} onClick={() => setStatus(s)} className="capitalize">
@@ -234,6 +255,7 @@ export function AdminApplicationsPage() {
                 <FormField label="Starting hourly rate (৳)" hint="Applied to every field; the owner can change it later.">
                   {(id) => <Input id={id} type="number" min={0} step={50} value={rate} onChange={(e) => setRate(e.target.value)} />}
                 </FormField>
+                <PlanPicker value={plan} onChange={setPlan} />
                 <div className="flex flex-wrap justify-end gap-2">
                   <Button variant="outline" onClick={() => update.mutate({ status: "contacted", admin_note: note })} disabled={update.isPending}>
                     Mark contacted
@@ -308,11 +330,17 @@ const NEW_TURF = {
   owner_phone: "",
   number_of_fields: "1",
   hourly_rate: "1500",
+  plan: "monthly",
+  payment_received: true,
 };
 
 export function AdminTurfsPage() {
   const qc = useQueryClient();
   const locations = useLocations();
+  const [params, setParams] = useSearchParams();
+  const plan = params.get("plan") ?? "";
+  const setPlan = (value: string) => setParams(value ? { plan: value } : {}, { replace: true });
+  const [planFor, setPlanFor] = useState<AdminTurf | null>(null);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [creating, setCreating] = useState(false);
@@ -320,8 +348,8 @@ export function AdminTurfsPage() {
   const [credentials, setCredentials] = useState<{ email: string; password: string | null; slug: string } | null>(null);
 
   const list = useQuery({
-    queryKey: ["admin", "turfs", q, status],
-    queryFn: () => api<Paginated<AdminTurf>>(`/admin/turfs/?${new URLSearchParams({ q, status })}`),
+    queryKey: ["admin", "turfs", q, status, plan],
+    queryFn: () => api<Paginated<AdminTurf>>(`/admin/turfs/?${new URLSearchParams({ q, status, plan })}`),
     placeholderData: keepPreviousData,
   });
   const patch = useMutation({
@@ -349,7 +377,7 @@ export function AdminTurfsPage() {
   const errors = create.error instanceof ApiError ? create.error.fields : null;
   const districts = (locations.data ?? []).flatMap((d) => d.districts).sort((a, b) => a.name.localeCompare(b.name));
   const areas = districts.find((d) => d.slug === form.district)?.areas ?? [];
-  const set = (key: keyof typeof NEW_TURF) => (e: { target: { value: string } }) =>
+  const set = (key: Exclude<keyof typeof NEW_TURF, "payment_received">) => (e: { target: { value: string } }) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
   return (
@@ -371,6 +399,13 @@ export function AdminTurfsPage() {
           <option value="suspended">Suspended</option>
           <option value="archived">Archived</option>
         </Select>
+        <Select aria-label="Plan" value={plan} onChange={(e) => setPlan(e.target.value)} className="sm:max-w-48">
+          <option value="">All plans</option>
+          <option value="monthly">Monthly</option>
+          <option value="half_yearly">Half-yearly</option>
+          <option value="yearly">Yearly</option>
+          <option value="none">No active plan</option>
+        </Select>
       </div>
       <Card>
         <CardContent className="p-2 sm:p-4">
@@ -383,6 +418,7 @@ export function AdminTurfsPage() {
                 <tr>
                   <th>Turf</th>
                   <th>Owner</th>
+                  <th>Plan</th>
                   <th>Fields</th>
                   <th>Bookings</th>
                   <th>Status</th>
@@ -404,6 +440,9 @@ export function AdminTurfsPage() {
                     <td>
                       {t.owner_name}
                       <span className="block text-xs text-muted-foreground">{t.owner_email}</span>
+                    </td>
+                    <td>
+                      <TurfPlanCell turf={t} onChange={() => setPlanFor(t)} />
                     </td>
                     <td className="tabular">{t.fields_count}</td>
                     <td className="tabular">{t.bookings_count}</td>
@@ -495,6 +534,10 @@ export function AdminTurfsPage() {
           <FormField label="Hourly rate (৳)" error={errors?.hourly_rate}>
             {(id) => <Input id={id} type="number" min={0} step={50} value={form.hourly_rate} onChange={set("hourly_rate")} />}
           </FormField>
+          <PlanPicker
+            value={{ plan: form.plan, payment_received: form.payment_received }}
+            onChange={(v) => setForm({ ...form, ...v })}
+          />
           {create.error && !errors && <p className="text-sm text-destructive sm:col-span-2">{create.error.message}</p>}
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button type="button" variant="outline" onClick={() => setCreating(false)}>
@@ -507,6 +550,7 @@ export function AdminTurfsPage() {
         </form>
       </Dialog>
       <CredentialsDialog value={credentials} onClose={() => setCredentials(null)} />
+      <AssignPlanDialog key={planFor?.id ?? "none"} turf={planFor} onClose={() => setPlanFor(null)} />
     </>
   );
 }

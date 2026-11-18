@@ -26,6 +26,8 @@ import { SURFACE_LABEL, WEEKDAYS, WEEKDAYS_SHORT, fmtClock, weekdayLabel } from 
 import type { Field, Hours, Manager, PricingRule, TurfSettings } from "@/lib/types";
 import { formatBDT } from "@/lib/utils";
 import { errorText, useFields, useIsOwner } from "./hooks";
+import { PicturesCard } from "./PicturesCard";
+import { ThemeCard } from "./ThemeCard";
 
 // ------------------------------------------------------------------ fields
 const NEW_FIELD: Omit<Field, "id"> = {
@@ -495,8 +497,9 @@ export function SettingsPage() {
   const amenities = useAmenities();
   const settings = useQuery({ queryKey: ["ws", "settings"], queryFn: () => api<TurfSettings>("/workspace/settings/") });
   const [form, setForm] = useState<TurfSettings | null>(null);
+  // Load once: later refreshes (e.g. after a picture upload) must not wipe unsaved edits.
   useEffect(() => {
-    if (settings.data) setForm(settings.data);
+    if (settings.data) setForm((current) => current ?? settings.data);
   }, [settings.data]);
 
   const save = useMutation({
@@ -504,6 +507,7 @@ export function SettingsPage() {
     onSuccess: (data) => {
       toast.success("Settings saved");
       qc.setQueryData(["ws", "settings"], data);
+      setForm(data);
       qc.invalidateQueries({ queryKey: ["ws", "dashboard"] });
       qc.invalidateQueries({ queryKey: ["auth"] });
     },
@@ -534,7 +538,7 @@ export function SettingsPage() {
                 <CardTitle>Public listing</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
-                <Checkbox label="Show my turf on TURFOS Explore" checked={form.is_listed} onChange={(e) => set("is_listed", e.target.checked)} />
+                <Checkbox label="Show my turf on TurfBari Explore" checked={form.is_listed} onChange={(e) => set("is_listed", e.target.checked)} />
                 <Checkbox label="Accept online booking requests" checked={form.public_booking_enabled} onChange={(e) => set("public_booking_enabled", e.target.checked)} />
                 <Checkbox label="Show prices publicly" checked={form.show_pricing} onChange={(e) => set("show_pricing", e.target.checked)} />
                 <p className="text-sm text-muted-foreground">
@@ -656,6 +660,7 @@ export function SettingsPage() {
                 </fieldset>
               </CardContent>
             </Card>
+            <ThemeCard form={form} update={(patch) => setForm((f) => (f ? { ...f, ...patch } : f))} />
           </fieldset>
           {isOwner && (
             <div className="sticky bottom-4 flex justify-end xl:col-span-2">
@@ -665,6 +670,11 @@ export function SettingsPage() {
             </div>
           )}
         </form>
+      )}
+      {settings.data && (
+        <div className="mt-6 grid xl:grid-cols-2">
+          <PicturesCard settings={settings.data} canEdit={isOwner} />
+        </div>
       )}
       <p className="mt-6 text-sm text-muted-foreground">
         To change your password, open{" "}
@@ -788,7 +798,7 @@ export function ManagersPage() {
                 </Button>
               </div>
             ) : (
-              <p className="text-muted-foreground">They already have a TURFOS account and can sign in with their existing password.</p>
+              <p className="text-muted-foreground">They already have a TurfBari account and can sign in with their existing password.</p>
             )}
             <Button onClick={() => setCreated(null)}>Done</Button>
           </div>

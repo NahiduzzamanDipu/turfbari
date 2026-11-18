@@ -6,7 +6,7 @@ from django.apps import apps
 
 @pytest.fixture(scope="session")
 def django_db_setup(django_db_setup, django_db_blocker):
-    """Re-create migration-seeded reference data (districts, amenities).
+    """Re-create migration-seeded reference data (districts, amenities, plans).
 
     Transactional tests flush every table, so with --reuse-db the next run would
     otherwise start without the rows the data migrations inserted.
@@ -15,5 +15,16 @@ def django_db_setup(django_db_setup, django_db_blocker):
         for module in (
             "apps.locations.migrations.0002_seed_bangladesh",
             "apps.turfs.migrations.0002_seed_amenities",
+            "apps.subscriptions.migrations.0002_seed_plans",
         ):
             importlib.import_module(module).seed(apps, None)
+
+
+@pytest.fixture(autouse=True)
+def _fresh_throttles():
+    """Rate-limit counters live in the cache; start every test with a clean slate."""
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()

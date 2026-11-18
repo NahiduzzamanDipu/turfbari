@@ -1,5 +1,6 @@
 """Public (no login) API: discovery, turf pages, availability, booking requests, applications."""
 
+import io
 import math
 import uuid
 from datetime import date, datetime, timedelta
@@ -21,6 +22,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.applications.models import TurfApplication
+from apps.audit.services import Category, booking_label, record
 from apps.bookings.models import Booking
 from apps.bookings.phone import normalize_bd_phone
 from apps.bookings.services import availability, get_or_create_customer, opening_window, reserve_slot
@@ -118,7 +120,7 @@ class PublicTurfListView(generics.ListAPIView):
         qs = (
             Turf.objects.publicly_listed()
             .select_related("district", "area")
-            .prefetch_related("amenities")
+            .prefetch_related("amenities", "photos")
             .annotate(fields_count=Count("fields", filter=Q(fields__is_active=True)))
         )
         if q := params.get("q", "").strip()[:80]:
@@ -189,6 +191,7 @@ class PublicTurfDetailView(PublicAPIView):
             .select_related("district", "area")
             .prefetch_related(
                 "amenities",
+                "photos",
                 "hours",
                 "fields",
                 Prefetch("pricing_rules", queryset=PricingRule.objects.select_related("field")),
@@ -271,6 +274,14 @@ class PublicBookingRequestView(PublicAPIView):
             team_name=v.get("team_name", ""),
             notes=v.get("notes", ""),
         )
+        record(
+            "booking.requested",
+            f"Online request {booking_label(booking)} — waiting for confirmation",
+            category=Category.BOOKING,
+            request=request,
+            turf=turf,
+            target=booking,
+        )
         return Response(_public_booking(booking), status=201)
 
 
@@ -320,8 +331,19 @@ class TurfQRCodeView(PublicAPIView):
         turf = listed_turf(slug)
         url = f"{settings.FRONTEND_URL.rstrip('/')}/turfs/{turf.slug}"
         qr = segno.make(url, error="m")
-        svg = qr.svg_inline(scale=8, dark="#064e3b", light="#ffffff", border=2)
-        response = HttpResponse(svg, content_type="image/svg+xml")
+        # A standalone SVG document (with xmlns) so it renders in <img> tags and as a downloaded file.
+        buffer = io.BytesIO()
+        qr.save(
+            buffer,
+            kind="svg",
+            scale=8,
+            dark="#064e3b",
+            light="#ffffff",
+            border=2,
+            xmldecl=False,
+            title=f"{turf.name} booking page",
+        )
+        response = HttpResponse(buffer.getvalue(), content_type="image/svg+xml")
         response["Cache-Control"] = "public, max-age=3600"
         return response
 

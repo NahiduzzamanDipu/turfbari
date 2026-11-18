@@ -1,4 +1,4 @@
-# TURFOS — Architecture, Data Model, Security & Roadmap (Phase 1)
+# TurfBari — Architecture, Data Model, Security & Roadmap (Phase 1)
 
 Status: Phases 1–13 and 17–24 core features are implemented (see README "What works today"). Database runs on XAMPP MariaDB 10.11 or MySQL 8.
 Date: 2026-11-18
@@ -217,7 +217,7 @@ No system is unhackable; the goal is layered controls with tests proving each co
 
 ## 6. UI/UX system
 
-- **Tokens:** CSS variables (`--color-primary`, `--surface-glass`, `--radius`, `--blur`, …) defined for light (default), dark and glass modes. Tenant workspaces wrap the app in `<div data-tenant-theme>` with variables injected from `TurfCustomization`; the public site and admin use the TURFOS brand tokens only.
+- **Tokens:** CSS variables (`--color-primary`, `--surface-glass`, `--radius`, `--blur`, …) defined for light (default), dark and glass modes. Tenant workspaces wrap the app in `<div data-tenant-theme>` with variables injected from `TurfCustomization`; the public site and admin use the TurfBari brand tokens only.
 - **Brand:** emerald/deep-green base with a lime accent, off-white glass surfaces, Inter for UI + a condensed display face (e.g. "Barlow Condensed") for sports headlines; tabular numerals for money.
 - **Components:** shadcn/ui primitives restyled with the tokens; Recharts with tokenised series colours; React Hook Form + Zod schemas shared per feature.
 - **Layouts:** public marketing/discovery (top nav, mobile sheet menu, filter drawer on < 768 px), admin & workspace shell (collapsible sidebar, top bar with search / notifications / profile, breadcrumbs, mobile bottom nav for workspace).

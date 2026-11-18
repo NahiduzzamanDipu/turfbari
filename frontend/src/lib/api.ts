@@ -5,7 +5,7 @@
  * - Normalises the backend error envelope into ApiError.
  */
 
-const CSRF_COOKIE = "turfos_csrftoken";
+const CSRF_COOKIE = "turfbari_csrftoken";
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 export interface ApiErrorBody {

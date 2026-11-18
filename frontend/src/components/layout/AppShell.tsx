@@ -5,6 +5,7 @@ import { Link, NavLink, Outlet } from "react-router";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { useLogout, useMe, useSwitchTurf } from "@/features/auth/auth";
+import { SubscriptionBanner } from "@/features/workspace/SubscriptionBanner";
 import { cn } from "@/lib/utils";
 
 export interface NavItem {
@@ -147,6 +148,7 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
         </div>
       )}
       <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-8">
+        {area === "workspace" && <SubscriptionBanner />}
         <Outlet />
       </main>
     </div>

@@ -1,0 +1,14 @@
+.git
+.env
+.env.*
+.mysql
+.venv
+**/.venv
+**/node_modules
+**/__pycache__
+frontend/dist
+backend/media
+backend/staticfiles
+backend/tests
+promotional-video
+docs

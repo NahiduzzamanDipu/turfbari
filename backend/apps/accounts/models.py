@@ -31,7 +31,7 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra)
 
     def create_superuser(self, email, password=None, **extra):
-        """Creates the TURFOS Super Admin (platform admin + Django superuser)."""
+        """Creates the TurfBari Super Admin (platform admin + Django superuser)."""
         extra.update(is_staff=True, is_superuser=True, is_platform_admin=True)
         return self._create_user(email, password, **extra)
 
@@ -44,7 +44,7 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False, help_text="Can open the emergency Django admin.")
-    is_platform_admin = models.BooleanField(default=False, help_text="TURFOS Super Admin.")
+    is_platform_admin = models.BooleanField(default=False, help_text="TurfBari Super Admin.")
 
     date_joined = models.DateTimeField(default=timezone.now)
 
@@ -69,3 +69,18 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
 
     def __str__(self) -> str:
         return self.email
+
+
+class TwoFactorDevice(models.Model):
+    """Authenticator-app secret for one user. `confirmed` only after the first correct code."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="two_factor")
+    secret = models.CharField(max_length=64)
+    confirmed = models.BooleanField(default=False)
+    last_counter = models.BigIntegerField(default=-1)  # last accepted TOTP step: blocks code replay
+    recovery_hashes = models.JSONField(default=list, blank=True)  # sha256 of unused recovery codes
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"2FA for {self.user}"

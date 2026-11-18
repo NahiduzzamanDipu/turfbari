@@ -1,4 +1,4 @@
-"""Print the SQL that creates the TURFOS database and app user, using values from .env.
+"""Print the SQL that creates the TurfBari database and app user, using values from .env.
 
 Pipe it into the MySQL client as root (you'll be prompted for the root password):
 
@@ -25,8 +25,8 @@ def read_env() -> dict[str, str]:
 
 
 def build_statements(env: dict[str, str]) -> list[str]:
-    db = env.get("MYSQL_DATABASE", "turfos")
-    user = env.get("MYSQL_USER", "turfos")
+    db = env.get("MYSQL_DATABASE", "turfbari")
+    user = env.get("MYSQL_USER", "turfbari")
     password = env.get("MYSQL_PASSWORD", "")
     if not IDENT.match(db) or not IDENT.match(user):
         sys.exit("MYSQL_DATABASE and MYSQL_USER may only contain letters, digits and underscores.")

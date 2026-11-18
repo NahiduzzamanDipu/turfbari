@@ -30,6 +30,8 @@ import {
 } from "@/lib/format";
 import type { PublicBooking, Slot, TurfDetail } from "@/lib/types";
 import { cn, formatBDT } from "@/lib/utils";
+import { themeStyle } from "@/lib/themes";
+import { PhotoGallery } from "./PhotoGallery";
 import { GoogleMapsPin, TurfArt } from "./shared";
 
 export function TurfDetailPage() {
@@ -70,12 +72,16 @@ export function TurfDetailPage() {
   const location = [t.area?.name, t.district.name].filter(Boolean).join(", ");
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
+    <div className="mx-auto max-w-6xl px-4 py-6" style={themeStyle(t.theme)}>
       <Link to="/explore" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4" /> All turfs
       </Link>
       <div className="relative mt-3 overflow-hidden rounded-2xl">
-        <TurfArt seed={t.slug} className="h-48 sm:h-64" />
+        {t.photos[0] ? (
+          <img src={t.photos[0].url} alt="" className="h-56 w-full object-cover sm:h-80" />
+        ) : (
+          <TurfArt seed={t.slug} className="h-48 sm:h-64" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
         {t.map_link && (
           <a
@@ -93,14 +99,29 @@ export function TurfDetailPage() {
             <Badge className="bg-white/20 text-white">{TURF_TYPE_LABEL[t.turf_type]}</Badge>
             <Badge className="bg-white/20 text-white">{SURFACE_LABEL[t.surface]}</Badge>
           </div>
-          <h1 className="font-display text-4xl font-extrabold uppercase leading-none sm:text-5xl">{t.name}</h1>
+          <div className="flex items-end gap-4">
+            {t.profile_image_url && (
+              <img
+                src={t.profile_image_url}
+                alt={`${t.name} logo`}
+                className="size-16 shrink-0 rounded-full border-4 border-white/90 object-cover shadow-lg sm:size-24"
+              />
+            )}
+            <h1 className="font-display text-4xl font-extrabold uppercase leading-none sm:text-5xl">{t.name}</h1>
+          </div>
           <p className="mt-2 flex items-center gap-1 text-sm opacity-90">
             <MapPin className="size-4" /> {t.address} · {location}
           </p>
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_22rem]">
+      {t.photos.length > 1 && (
+        <div className="mt-4">
+          <PhotoGallery photos={t.photos} turfName={t.name} />
+        </div>
+      )}
+
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="flex flex-col gap-6">
           {t.public_booking_enabled ? (
             <BookingPanel turf={t} />

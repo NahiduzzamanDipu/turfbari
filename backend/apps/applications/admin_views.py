@@ -12,10 +12,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.audit.services import Category, record
 from apps.bookings.models import Booking, Payment
 from apps.bookings.phone import normalize_bd_phone
 from apps.common.permissions import IsPlatformAdmin
 from apps.locations.models import Area, District
+from apps.subscriptions.models import Invoice, PaymentTransaction, Plan, Subscription
+from apps.subscriptions.serializers import standing_payload
 from apps.turfs.models import Turf
 
 from .models import TurfApplication
@@ -53,8 +56,27 @@ class AdminDashboardView(APIView):
                 "users": get_user_model().objects.filter(is_active=True).count(),
                 "recent_applications": ApplicationAdminSerializer(recent, many=True).data,
                 "new_turfs_30d": Turf.objects.filter(created_at__gte=now - timedelta(days=30)).count(),
+                "plans": plan_breakdown(),
+                "payments_to_verify": PaymentTransaction.objects.filter(
+                    status=PaymentTransaction.Status.PENDING_VERIFICATION
+                ).count(),
             }
         )
+
+
+def plan_breakdown() -> list[dict]:
+    """How many turfs are on each plan today (current paid period)."""
+    today = timezone.localdate()
+    counts = dict(
+        Subscription.objects.filter(
+            status=Subscription.Status.ACTIVE, starts_on__lte=today, ends_on__gte=today
+        )
+        .values_list("plan__period")
+        .annotate(n=Count("turf", distinct=True))
+    )
+    return [
+        {"period": p.period, "name": p.name, "turfs": counts.get(p.period, 0)} for p in Plan.objects.all()
+    ]
 
 
 class ApplicationAdminSerializer(serializers.ModelSerializer):
@@ -98,6 +120,10 @@ class ApproveSerializer(serializers.Serializer):
     hourly_rate = serializers.DecimalField(
         max_digits=12, decimal_places=2, min_value=Decimal("0"), default=Decimal("1500.00")
     )
+    plan = serializers.SlugRelatedField(
+        slug_field="period", queryset=Plan.objects.all(), required=False, allow_null=True
+    )
+    payment_received = serializers.BooleanField(default=True)
 
 
 class ApplicationAdminViewSet(
@@ -123,6 +149,14 @@ class ApplicationAdminViewSet(
 
     def perform_update(self, serializer):
         serializer.save(reviewed_by=self.request.user, reviewed_at=timezone.now())
+        app = serializer.instance
+        record(
+            "platform.application_updated",
+            f"Marked application “{app.turf_name}” as {app.get_status_display().lower()}",
+            category=Category.PLATFORM,
+            request=self.request,
+            target=app,
+        )
 
     @extend_schema(request=ApproveSerializer)
     @action(detail=True, methods=["post"])
@@ -130,6 +164,14 @@ class ApplicationAdminViewSet(
         data = ApproveSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         result = approve_application(self.get_object(), reviewer=request.user, **data.validated_data)
+        record(
+            "platform.application_approved",
+            f"Approved application and created turf “{result['turf'].name}” for {result['owner'].email}",
+            category=Category.PLATFORM,
+            request=request,
+            turf=result["turf"],
+            target=result["turf"],
+        )
         return Response(
             {
                 "application": ApplicationAdminSerializer(TurfApplication.objects.get(pk=pk)).data,
@@ -154,6 +196,7 @@ class TurfAdminSerializer(serializers.ModelSerializer):
     owner_email = serializers.SerializerMethodField()
     fields_count = serializers.IntegerField(read_only=True)
     bookings_count = serializers.IntegerField(read_only=True)
+    subscription = serializers.SerializerMethodField()
 
     class Meta:
         model = Turf
@@ -179,9 +222,26 @@ class TurfAdminSerializer(serializers.ModelSerializer):
             "min_public_price",
             "fields_count",
             "bookings_count",
+            "subscription",
             "created_at",
         ]
         read_only_fields = ["id", "slug", "min_public_price", "created_at"]
+
+    def get_subscription(self, obj):
+        payload = standing_payload(obj)
+        open_invoice = (
+            obj.invoices.filter(status__in=Invoice.OPEN).select_related("subscription__plan").first()
+        )
+        payload["open_order"] = (
+            {
+                "plan": open_invoice.subscription.plan.name,
+                "status": open_invoice.status,
+                "amount": str(open_invoice.amount),
+            }
+            if open_invoice
+            else None
+        )
+        return payload
 
     def get_owner_email(self, obj):
         m = next((m for m in obj.memberships.all() if m.role == "owner" and m.is_active), None)
@@ -192,7 +252,7 @@ class TurfCreateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=120)
     district = serializers.SlugRelatedField(slug_field="slug", queryset=District.objects.all())
     area = serializers.SlugRelatedField(
-        slug_field="slug", queryset=Area.objects.all(), allow_null=True, required=False
+        slug_field="slug", queryset=Area.objects.all(), allow_null=True, required=False, default=None
     )
     address = serializers.CharField(max_length=255)
     turf_type = serializers.ChoiceField(choices=Turf.TurfType.choices, default=Turf.TurfType.OUTDOOR)
@@ -203,6 +263,10 @@ class TurfCreateSerializer(serializers.Serializer):
     hourly_rate = serializers.DecimalField(
         max_digits=12, decimal_places=2, min_value=Decimal("0"), default=Decimal("1500.00")
     )
+    plan = serializers.SlugRelatedField(
+        slug_field="period", queryset=Plan.objects.all(), required=False, allow_null=True
+    )
+    payment_received = serializers.BooleanField(default=True)
 
     def validate_owner_phone(self, value):
         return normalize_bd_phone(value)
@@ -233,13 +297,50 @@ class TurfAdminViewSet(
             qs = qs.filter(status=status)
         if q := params.get("q", "").strip():
             qs = qs.filter(Q(name__icontains=q) | Q(address__icontains=q) | Q(owner_name__icontains=q))
+        if plan := params.get("plan"):
+            today = timezone.localdate()
+            current = Subscription.objects.filter(
+                status=Subscription.Status.ACTIVE, starts_on__lte=today, ends_on__gte=today
+            )
+            if plan == "none":
+                qs = qs.exclude(id__in=current.values("turf_id"))
+            else:
+                qs = qs.filter(id__in=current.filter(plan__period=plan).values("turf_id"))
         return qs
+
+    def perform_update(self, serializer):
+        turf = serializer.instance
+        changes = {
+            k: (str(getattr(turf, k)), str(v))
+            for k, v in serializer.validated_data.items()
+            if getattr(turf, k) != v
+        }
+        serializer.save()
+        if changes:
+            readable = ", ".join(f"{k.replace('_', ' ')}: {old} → {new}" for k, (old, new) in changes.items())
+            record(
+                "platform.turf_updated",
+                f"Changed {readable}"[:255],
+                category=Category.PLATFORM,
+                request=self.request,
+                turf=turf,
+                target=turf,
+                data={"changes": changes},
+            )
 
     @extend_schema(request=TurfCreateSerializer)
     def create(self, request, *args, **kwargs):
         data = TurfCreateSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        turf, owner, password = create_turf_with_owner(**data.validated_data)
+        turf, owner, password = create_turf_with_owner(**data.validated_data, assigned_by=request.user)
+        record(
+            "platform.turf_created",
+            f"Created turf “{turf.name}” for {owner.email}",
+            category=Category.PLATFORM,
+            request=request,
+            turf=turf,
+            target=turf,
+        )
         return Response(
             {
                 "turf": TurfAdminSerializer(self.get_queryset().get(pk=turf.pk)).data,

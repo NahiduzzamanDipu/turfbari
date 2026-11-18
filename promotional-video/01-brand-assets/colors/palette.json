@@ -1,0 +1,82 @@
+[
+  {
+    "name": "Primary · Emerald",
+    "token": "primary",
+    "oklch": "oklch(0.43 0.1 163)",
+    "use": "Buttons, active nav, prices, logo tile",
+    "hex": "#006040",
+    "rgb": "0, 96, 64"
+  },
+  {
+    "name": "Accent · Lime",
+    "token": "accent",
+    "oklch": "oklch(0.89 0.19 128)",
+    "use": "Highlights, Featured badge, logo roof",
+    "hex": "#B6F259",
+    "rgb": "182, 242, 89"
+  },
+  {
+    "name": "Foreground · Ink",
+    "token": "foreground",
+    "oklch": "oklch(0.21 0.03 160)",
+    "use": "Headings and body text",
+    "hex": "#0B1D13",
+    "rgb": "11, 29, 19"
+  },
+  {
+    "name": "Background · Mist",
+    "token": "background",
+    "oklch": "oklch(0.985 0.006 155)",
+    "use": "Page background (light)",
+    "hex": "#F7FBF8",
+    "rgb": "247, 251, 248"
+  },
+  {
+    "name": "Secondary · Mint",
+    "token": "secondary",
+    "oklch": "oklch(0.95 0.02 160)",
+    "use": "Chips, hover, sidebar active",
+    "hex": "#E4F3EA",
+    "rgb": "228, 243, 234"
+  },
+  {
+    "name": "Accent ink",
+    "token": "accent-foreground",
+    "oklch": "oklch(0.25 0.06 140)",
+    "use": "Text on lime",
+    "hex": "#10280B",
+    "rgb": "16, 40, 11"
+  },
+  {
+    "name": "Muted text",
+    "token": "muted-foreground",
+    "oklch": "oklch(0.48 0.025 160)",
+    "use": "Captions, hints",
+    "hex": "#526259",
+    "rgb": "82, 98, 89"
+  },
+  {
+    "name": "Ring · Focus",
+    "token": "ring",
+    "oklch": "oklch(0.55 0.12 163)",
+    "use": "Focus rings, chart line",
+    "hex": "#00875D",
+    "rgb": "0, 135, 93"
+  },
+  {
+    "name": "Destructive",
+    "token": "destructive",
+    "oklch": "oklch(0.58 0.22 27)",
+    "use": "Reject, dues, errors",
+    "hex": "#DF2225",
+    "rgb": "223, 34, 37"
+  },
+  {
+    "name": "Dark background",
+    "token": "background (.dark)",
+    "oklch": "oklch(0.17 0.02 165)",
+    "use": "Dark mode / video night scenes",
+    "hex": "#07120D",
+    "rgb": "7, 18, 13"
+  }
+]

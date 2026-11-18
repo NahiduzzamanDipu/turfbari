@@ -7,6 +7,12 @@ from apps.common.models import BaseModel
 from apps.common.money import MoneyField
 
 
+def turf_upload_path(instance, filename: str) -> str:
+    """turfs/<turf id>/<file>; names are random (set by the image processor)."""
+    turf_id = getattr(instance, "turf_id", None) or instance.pk
+    return f"turfs/{turf_id}/{filename}"
+
+
 class Amenity(BaseModel):
     name = models.CharField(max_length=60, unique=True)
     slug = models.SlugField(max_length=60, unique=True)
@@ -22,7 +28,18 @@ class Amenity(BaseModel):
 class TurfQuerySet(models.QuerySet):
     def publicly_listed(self):
         """The only queryset public endpoints may read from."""
-        return self.filter(status=Turf.Status.ACTIVE, is_listed=True)
+        from apps.subscriptions.services import operating_turf_ids
+
+        return self.filter(status=Turf.Status.ACTIVE, is_listed=True, id__in=operating_turf_ids())
+
+
+class ThemePreset(models.TextChoices):
+    TURFBARI = "turfbari", "TurfBari green"
+    OCEAN = "ocean", "Ocean blue"
+    SUNSET = "sunset", "Sunset orange"
+    CRIMSON = "crimson", "Crimson red"
+    ROYAL = "royal", "Royal purple"
+    MIDNIGHT = "midnight", "Midnight navy"
 
 
 class Turf(BaseModel):
@@ -52,6 +69,10 @@ class Turf(BaseModel):
     )
     address = models.CharField(max_length=255)
     maps_url = models.URLField(max_length=500, blank=True)
+    profile_image = models.ImageField(upload_to=turf_upload_path, blank=True)
+    # Public turf page look. Only the turf's own page uses it; the rest of TurfBari keeps its brand.
+    theme_preset = models.CharField(max_length=16, choices=ThemePreset.choices, default=ThemePreset.TURFBARI)
+    theme_color = models.CharField(max_length=7, blank=True)  # optional "#rrggbb" override of the preset
     # WGS84 coordinates, used for "near me" search and the map pin. Optional.
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
@@ -117,6 +138,27 @@ class TenantMembership(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.user} @ {self.turf} ({self.role})"
+
+
+class TurfPhoto(BaseModel):
+    """Gallery picture shown on the public turf page. The first one is the cover."""
+
+    MAX_PER_TURF = 12
+
+    turf = models.ForeignKey(Turf, on_delete=models.CASCADE, related_name="photos")
+    image = models.ImageField(upload_to=turf_upload_path)  # size stored at upload; never read back
+    thumbnail = models.ImageField(upload_to=turf_upload_path)
+    width = models.PositiveIntegerField(default=0)
+    height = models.PositiveIntegerField(default=0)
+    caption = models.CharField(max_length=140, blank=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort_order", "created_at"]
+        indexes = [models.Index(fields=["turf", "sort_order"])]
+
+    def __str__(self) -> str:
+        return f"{self.turf} photo {self.sort_order}"
 
 
 class TurfField(BaseModel):

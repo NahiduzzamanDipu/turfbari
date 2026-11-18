@@ -1,0 +1,197 @@
+<template>
+<style>
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-Medium.ttf"); font-weight: 500; }
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-SemiBold.ttf"); font-weight: 600; }
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "Barlow Condensed"; src: url("assets/fonts/BarlowCondensed-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "Barlow Condensed"; src: url("assets/fonts/BarlowCondensed-ExtraBold.ttf"); font-weight: 800; }
+#root { position: absolute; inset: 0; overflow: hidden; background: #07120D; font-family: "Hind Siliguri", sans-serif; }
+#root .ground { position: absolute; inset: 0; background: url("assets/illus/brand.png") center/cover; }
+#root .shot { position: absolute; inset: 0; }
+#root .enter { position: absolute; inset: 0; transform-origin: 50% 50%; }
+#root .cam { position: absolute; left: 0; top: 0; width: 1920px; transform-origin: 0 0; }
+#root .win { position: relative; width: 1920px; border-radius: 22px; overflow: hidden; background: #F7FBF8;
+  box-shadow: 0 50px 120px rgba(0,0,0,.5); }
+#root .chrome { height: 44px; background: #E3ECE6; display: flex; align-items: center; gap: 10px; padding-left: 22px; }
+#root .chrome i { width: 13px; height: 13px; border-radius: 50%; background: #B9C7BE; }
+#root .chrome span { margin-left: 22px; background: #fff; border-radius: 9px; padding: 3px 18px; font: 500 19px Inter, sans-serif; color: #33473C; }
+#root .shotimg { display: block; width: 1920px; }
+#root .scan { position: absolute; height: 6px; background: #B6F259; border-radius: 3px; }
+#root .tag { position: absolute; left: 200px; top: 122px; background: #B6F259; color: #10280B; font-weight: 700; font-size: 54px;
+  line-height: 1.3; padding: 8px 30px 12px; border-radius: 16px; box-shadow: 0 18px 40px rgba(0,0,0,.28); white-space: nowrap; }
+#root .tag .hl { color: #006040; }
+#root .w { display: inline-block; }
+#root .big { position: absolute; color: #fff; font-weight: 700; font-size: 96px; line-height: 1.28; text-shadow: 0 6px 30px rgba(0,0,0,.45); }
+#root .big .hl { color: #B6F259; }
+#root .big.hero { left: 200px; top: 300px; width: 1300px; }
+#root .big.hero.high { top: 118px; }
+#root .big.top { left: 200px; top: 150px; width: 1520px; font-size: 72px; }
+#root .big.center { left: 0; right: 0; top: 360px; text-align: center; font-size: 110px; }
+#root .big.side-right { left: 200px; top: 330px; width: 900px; font-size: 84px; }
+#root .big.side-left { right: 200px; top: 330px; width: 900px; font-size: 84px; }
+#root .big.under { left: 0; right: 0; top: 640px; text-align: center; font-size: 72px; }
+#root .chips { position: absolute; left: 1180px; top: 300px; display: flex; flex-direction: column; gap: 26px; align-items: flex-start; }
+#root .chip { background: rgba(7,18,13,.82); color: #fff; font-weight: 600; font-size: 50px; padding: 10px 30px 14px; border-radius: 14px;
+  border-left: 8px solid #B6F259; }
+#root .illus { position: absolute; inset: 0; transform-origin: 50% 55%; }
+#root .illus img { width: 1920px; height: 1080px; display: block; }
+#root .shade { position: absolute; inset: 0; background: #020806; opacity: 0; }
+#root .flood { position: absolute; inset: 0; background: #B6F259; opacity: 0; }
+#root .dip { position: absolute; inset: 0; background: #000; opacity: 0; }
+#root .paperground { position: absolute; inset: 0; background: #0A1611 url("assets/illus/brand.png") center/cover; opacity: 1; }
+#root .card { position: absolute; height: 300px; background: #FAF6EA; border-radius: 10px; box-shadow: 0 30px 70px rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; color: #1B1B1B; font-weight: 700; font-size: 104px; }
+#root .strike { position: absolute; left: 40px; right: 40px; top: 50%; height: 16px; margin-top: -2px; background: #DF2225; border-radius: 8px;
+  transform-origin: 0 50%; }
+#root .phone { position: absolute; top: 40px; width: 457px; height: 956px; border-radius: 64px; background: #0B0F0D; padding: 14px;
+  box-shadow: 0 50px 120px rgba(0,0,0,.55); }
+#root .phone.right { left: 1330px; }
+#root .phone.left { left: 210px; }
+#root .phone .screen { position: relative; width: 429px; height: 928px; border-radius: 50px; overflow: hidden; background: #F7FBF8; }
+#root .pscreen { position: absolute; left: 0; top: 0; width: 429px; height: 928px; opacity: 0; }
+#root .phone.small { top: 175px; width: 340px; height: 708px; padding: 12px; border-radius: 50px; }
+#root .phone.small .screen { width: 316px; height: 684px; border-radius: 40px; }
+#root .phone.small .pscreen { width: 316px; height: 684px; }
+#root .miniwin { position: absolute; left: 700px; top: 200px; width: 1060px; border-radius: 16px; overflow: hidden; background: #F7FBF8;
+  box-shadow: 0 50px 120px rgba(0,0,0,.5); }
+#root .miniwin img { display: block; width: 1060px; }
+#root .miniwin .chrome { height: 36px; }
+#root .label { position: absolute; color: #fff; font-weight: 700; font-size: 52px; text-shadow: 0 4px 20px rgba(0,0,0,.4); }
+#root .label .hl { color: #B6F259; }
+#root .label.l1 { left: 200px; top: 70px; }
+#root .label.l2 { left: 700px; top: 110px; }
+#root .lockup { position: absolute; left: 0; right: 0; top: 330px; display: flex; align-items: center; justify-content: center; gap: 34px; }
+#root .lockup .mark { width: 200px; height: 200px; border-radius: 44px; }
+#root .wordmark { font-family: "Barlow Condensed", sans-serif; font-weight: 800; font-size: 210px; color: #fff; line-height: 1; letter-spacing: 1px; }
+#root .wordmark b { color: #B6F259; font-weight: 800; }
+#root .lockup.end { top: 210px; }
+#root .big.under2 { left: 0; right: 0; top: 470px; text-align: center; font-size: 84px; }
+#root .sub { position: absolute; left: 0; right: 0; top: 600px; text-align: center; color: rgba(255,255,255,.85); font-size: 52px; font-weight: 600; }
+#root .ctas { position: absolute; left: 0; right: 0; top: 712px; display: flex; justify-content: center; gap: 28px; }
+#root .btn { font-size: 46px; font-weight: 700; padding: 12px 40px 16px; border-radius: 16px; }
+#root .btn.solid { background: #B6F259; color: #10280B; }
+#root .btn.ghost { color: #fff; border: 3px solid rgba(255,255,255,.85); }
+#root .url { position: absolute; left: 0; right: 0; top: 830px; text-align: center; color: #fff; font: 700 58px "Barlow Condensed", sans-serif; letter-spacing: 3px; }
+#root .cursor { position: absolute; left: 0; top: 0; width: 62px; height: 62px; fill: #fff; stroke: #0B1D13; stroke-width: 1.5px; z-index: 50;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+#root .sb { position: absolute; top: 262px; width: 560px; background: #F7FBF8; border-radius: 22px; overflow: hidden;
+  box-shadow: 0 40px 100px rgba(0,0,0,.45); padding-bottom: 10px; }
+#root .sb.owner { left: 330px; }
+#root .sb.manager { left: 1030px; }
+#root .sbhead { height: 74px; background: #006040; color: #fff; font-size: 42px; font-weight: 700; text-align: center; line-height: 74px; margin-bottom: 8px; }
+#root .navrow { position: relative; height: 36px; line-height: 36px; padding: 0 28px; font: 500 28px Inter, sans-serif; color: #24362C; }
+#root .navrow.own { color: #0B1D13; font-weight: 700; }
+#root .lock { position: absolute; right: 26px; top: 5px; width: 26px; height: 26px; fill: #006040; stroke: #006040; stroke-width: 2.2; }
+#root .viewonly { margin-left: 14px; font: 600 28px "Hind Siliguri", sans-serif; background: #FFF1C9; color: #7A4B00; padding: 0 10px 2px; border-radius: 8px; }
+
+#root .viewport { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #F7FBF8; }
+#root .page { position: absolute; left: 0; top: 0; width: 1920px; opacity: 0; }
+#root .page.first { opacity: 1; }
+#root .urlbox { position: relative; display: inline-block; margin-left: 22px; width: 760px; height: 30px; background: #fff;
+  border-radius: 9px; }
+#root .urlt { position: absolute; left: 18px; top: 3px; font: 500 19px Inter, sans-serif; color: #33473C; opacity: 0; white-space: nowrap; }
+#root .urlt.on { opacity: 1; }
+#root .chrome span.urlbox { padding: 0; }
+#root .tag2 { position: absolute; left: 200px; top: 118px; display: flex; align-items: stretch; filter: drop-shadow(0 16px 34px rgba(0,0,0,.35)); }
+#root .tag2 .bar { width: 10px; background: #B6F259; border-radius: 6px 0 0 6px; transform-origin: 50% 0; }
+#root .tag2 .tx { background: rgba(7,18,13,.94); color: #fff; font-weight: 700; font-size: 52px; line-height: 1.3;
+  padding: 8px 30px 12px 24px; border-radius: 0 14px 14px 0; white-space: nowrap; }
+#root .tag2 .hl { color: #B6F259; }
+#root .chpanel { position: absolute; inset: 0; background: #B6F259; display: flex; flex-direction: column; justify-content: center;
+  padding-left: 200px; }
+#root .kicker { font: 700 40px "Barlow Condensed", sans-serif; letter-spacing: 6px; color: #006040; margin-bottom: 6px; }
+#root .chtitle { font-weight: 700; font-size: 128px; line-height: 1.2; color: #10280B; }
+#root .chtitle .hl { color: #006040; }
+#root .cursor { width: 54px; height: 54px; fill: #fff; stroke: #0B1D13; stroke-width: 1.6px; stroke-linejoin: round;
+  filter: drop-shadow(0 5px 8px rgba(0,0,0,.35)); transform-origin: 18% 12%; }
+</style>
+<div id="root" data-composition-id="money" data-width="1920" data-height="1080" data-layout-allow-overlap>
+<div class="ground"></div>
+<div id="rw" class="clip shot" data-start="0" data-duration="19.28" data-track-index="1" style="z-index:2"><div id="rw-in" class="enter">
+<div id="rw-cam" class="cam" data-motion-blur="off"><div class="win" style="height:1124px">
+<div class="chrome" data-layout-ignore><i></i><i></i><i></i><span class="urlbox">
+<b id="rw-url0" class="urlt on">turfbari.com/workspace/bookings</b>
+<b id="rw-url1" class="urlt">turfbari.com/workspace/reports</b>
+</span></div><div class="viewport">
+<img id="rw-pg0" class="page first" src="assets/shots/bookings.png" alt="">
+<img id="rw-pg1" class="page" src="assets/shots/payments.png" alt="">
+<img id="rw-pg2" class="page" src="assets/shots/reports.png" alt="">
+</div></div></div>
+</div>
+<svg id="rw-cur" class="cursor" viewBox="0 0 28 28"><path d="M5 3l15.5 10.6-6.6 1.3 3.9 8.3-3.3 1.5-3.9-8.4L5 21.6z"/></svg>
+<div id="rw-tag0" class="tag2"><i class="bar"></i><span class="tx"><span class="w">মোট</span> <span class="w hl">ভাড়া</span></span></div>
+<div id="rw-tag1" class="tag2"><i class="bar"></i><span class="tx"><span class="w">পরিশোধ</span> <span class="w">আর</span> <span class="w hl">বাকি</span></span></div>
+<div id="rw-tag2" class="tag2"><i class="bar"></i><span class="tx"><span class="w">ক্যাশ</span> <span class="w">•</span> <span class="w hl">বিকাশ</span> <span class="w">•</span> <span class="w">নগদ</span></span></div>
+<div id="rw-tag3" class="tag2"><i class="bar"></i><span class="tx"><span class="w">বুকিংয়ের</span> <span class="w">সঙ্গেই</span> <span class="w hl">রেকর্ড</span></span></div>
+<div id="rw-tag4" class="tag2"><i class="bar"></i><span class="tx"><span class="w">আদায়</span> <span class="w">•</span> <span class="w">খরচ</span> <span class="w">•</span> <span class="w hl">নিট</span> <span class="w hl">আয়</span></span></div>
+<div id="rw-tag5" class="tag2"><i class="bar"></i><span class="tx"><span class="w">দিনভিত্তিক</span> <span class="w">আদায়ের</span> <span class="w hl">চার্ট</span></span></div>
+<div id="rw-tag6" class="tag2"><i class="bar"></i><span class="tx"><span class="w">কোন</span> <span class="w">মাঠে</span> <span class="w">কত</span> <span class="w hl">বুকিং</span></span></div>
+<div id="rw-tag7" class="tag2"><i class="bar"></i><span class="tx"><span class="w">এক</span> <span class="w">ক্লিকে</span> <span class="w hl">এক্সেল</span></span></div>
+</div>
+<div id="ch3" class="clip shot" data-start="0" data-duration="1.55" data-track-index="2" style="z-index:22"><div id="ch3-panel" class="chpanel"><div class="kicker" id="ch3-k">PAYMENTS &amp; REPORTS</div><div class="chtitle" id="ch3-t"><span class="w">পেমেন্ট</span> <span class="w">আর</span> <span class="w hl">রিপোর্ট</span></div></div></div>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+tl.fromTo("#rw-pg1", {opacity: 0}, {opacity: 1, duration: 0.22, ease: "power2.out"}, 0.69);
+tl.set("#rw-url0", {opacity: 1}, 0.69);
+tl.set("#rw-url1", {opacity: 0}, 0.69);
+tl.set("#rw-pg0", {opacity: 0}, 1.02);
+tl.fromTo("#rw-pg2", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 9.84);
+tl.set("#rw-url1", {opacity: 1}, 9.84);
+tl.set("#rw-url0", {opacity: 0}, 9.84);
+tl.set("#rw-pg0", {opacity: 0}, 10.17);
+tl.set("#rw-pg1", {opacity: 0}, 10.17);
+tl.set("#rw-cam", {x: 0.0, y: -44.0, scale: 1.0}, 0);
+tl.to("#rw-cam", {x: -940.0, y: -436.6, scale: 1.9, duration: 0.8, ease: "power2.inOut"}, 0.84);
+tl.to("#rw-cam", {x: -768.0, y: -799.2, scale: 1.8, duration: 0.8, ease: "power2.inOut"}, 4.74);
+tl.to("#rw-cam", {x: 0.0, y: -44.0, scale: 1.0, duration: 0.6, ease: "power2.inOut"}, 8.99);
+tl.to("#rw-cam", {x: -331.2, y: 0.0, scale: 1.55, duration: 0.8, ease: "power2.inOut"}, 10.19);
+tl.to("#rw-cam", {x: -554.8, y: -193.6, scale: 1.4, duration: 0.8, ease: "power2.inOut"}, 12.94);
+tl.to("#rw-cam", {x: 0.0, y: -718.4, scale: 1.6, duration: 0.8, ease: "power2.inOut"}, 14.69);
+tl.to("#rw-cam", {x: -1440.0, y: 0.0, scale: 1.75, duration: 0.8, ease: "power2.inOut"}, 16.54);
+tl.fromTo("#rw-cur", {x: 1980, y: 778, opacity: 1}, {x: 1082.0, y: 222.0, duration: 0.45, ease: "power3.out"}, 0.09);
+tl.to("#rw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 0.56);
+tl.to("#rw-cur", {x: 754.8, y: 577.8, opacity: 1, duration: 0.6, ease: "power3.inOut"}, 5.54);
+tl.to("#rw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 6.24);
+tl.to("#rw-cur", {x: 1446.0, y: 577.8, opacity: 1, duration: 0.5, ease: "power3.inOut"}, 7.84);
+tl.to("#rw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 8.54);
+tl.to("#rw-cur", {x: 84.0, y: 523.0, opacity: 1, duration: 0.6, ease: "power3.inOut"}, 8.99);
+tl.to("#rw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 9.72);
+tl.to("#rw-cur", {opacity: 0, duration: 0.2}, 9.99);
+tl.to("#rw-cur", {x: 1675.0, y: 196.0, opacity: 1, duration: 0.7, ease: "power3.inOut"}, 17.34);
+tl.to("#rw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 18.14);
+tl.to("#rw-cur", {x: 1115.8, y: 68.8, duration: 0.8, ease: "power2.inOut"}, 0.84);
+tl.to("#rw-cur", {x: 1179.6, y: -320.4, duration: 0.8, ease: "power2.inOut"}, 4.74);
+tl.fromTo("#rw-tag0 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 0.94);
+tl.fromTo("#rw-tag0 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 1.02);
+tl.to("#rw-tag0", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 2.18);
+tl.fromTo("#rw-tag1 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 2.34);
+tl.fromTo("#rw-tag1 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 2.42);
+tl.to("#rw-tag1", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 4.78);
+tl.fromTo("#rw-tag2 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 4.94);
+tl.fromTo("#rw-tag2 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 5.02);
+tl.to("#rw-tag2", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 7.88);
+tl.fromTo("#rw-tag3 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 8.04);
+tl.fromTo("#rw-tag3 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 8.12);
+tl.to("#rw-tag3", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 9.83);
+tl.fromTo("#rw-tag4 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 9.99);
+tl.fromTo("#rw-tag4 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 10.07);
+tl.to("#rw-tag4", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 12.93);
+tl.fromTo("#rw-tag5 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 13.09);
+tl.fromTo("#rw-tag5 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 13.17);
+tl.to("#rw-tag5", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 14.58);
+tl.fromTo("#rw-tag6 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 14.74);
+tl.fromTo("#rw-tag6 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 14.82);
+tl.to("#rw-tag6", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 16.58);
+tl.fromTo("#rw-tag7 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 16.74);
+tl.fromTo("#rw-tag7 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 16.82);
+tl.to("#rw-tag7", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 19.12);
+tl.fromTo("#rw-in", {x: 260, opacity: 0, filter: "blur(20px)"}, {x: 0, opacity: 1, filter: "blur(0px)", duration: 0.3, ease: "expo.out"}, 0);
+tl.to("#rw-in", {scale: 1.6, opacity: 0, filter: "blur(12px)", duration: 0.3, ease: "power3.in"}, 18.98);
+tl.fromTo("#ch3-panel", {xPercent: -101}, {xPercent: 0, duration: 0.38, ease: "expo.out"}, 0);
+tl.fromTo("#ch3-k", {opacity: 0, y: 12}, {opacity: 1, y: 0, duration: 0.3, ease: "power3.out"}, 0.18);
+tl.fromTo("#ch3-t .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 0.22);
+tl.to("#ch3-panel", {xPercent: 101, duration: 0.36, ease: "power3.in"}, 1.17);
+window.__timelines["money"] = tl;
+</script>
+</template>

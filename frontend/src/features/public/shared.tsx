@@ -28,7 +28,7 @@ export type GeoState =
   | { status: "idle" | "locating" | "denied" | "unsupported" }
   | { status: "ready"; lat: number; lng: number };
 
-const GEO_KEY = "turfos:player-location";
+const GEO_KEY = "turfbari:player-location";
 
 function readCachedLocation(): GeoState | null {
   try {
@@ -162,7 +162,16 @@ export function TurfCardView({ turf }: { turf: TurfCard }) {
       className="glass group flex flex-col overflow-hidden rounded-xl transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
       <div className="relative h-36 overflow-hidden">
-        <TurfArt seed={turf.slug} className="size-full transition duration-500 group-hover:scale-105" />
+        {turf.cover_url ? (
+          <img
+            src={turf.cover_url}
+            alt=""
+            loading="lazy"
+            className="size-full object-cover transition duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <TurfArt seed={turf.slug} className="size-full transition duration-500 group-hover:scale-105" />
+        )}
         <div className="absolute left-3 top-3 flex gap-1.5">
           {turf.is_featured && <Badge tone="lime">Featured</Badge>}
           <Badge className="bg-black/50 text-white">
@@ -183,7 +192,17 @@ export function TurfCardView({ turf }: { turf: TurfCard }) {
         )}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="font-semibold leading-tight">{turf.name}</h3>
+        <div className="flex items-center gap-2.5">
+          {turf.profile_image_url && (
+            <img
+              src={turf.profile_image_url}
+              alt=""
+              loading="lazy"
+              className="relative z-10 -mt-9 size-12 shrink-0 rounded-full border-[3px] border-card object-cover shadow"
+            />
+          )}
+          <h3 className="font-semibold leading-tight">{turf.name}</h3>
+        </div>
         <p className="flex items-center gap-1 text-sm text-muted-foreground">
           <MapPin className="size-3.5 shrink-0" />
           {[turf.area?.name, turf.district.name].filter(Boolean).join(", ")}

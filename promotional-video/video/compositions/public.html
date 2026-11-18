@@ -1,0 +1,352 @@
+<template>
+<style>
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-Medium.ttf"); font-weight: 500; }
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-SemiBold.ttf"); font-weight: 600; }
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "Barlow Condensed"; src: url("assets/fonts/BarlowCondensed-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "Barlow Condensed"; src: url("assets/fonts/BarlowCondensed-ExtraBold.ttf"); font-weight: 800; }
+#root { position: absolute; inset: 0; overflow: hidden; background: #07120D; font-family: "Hind Siliguri", sans-serif; }
+#root .ground { position: absolute; inset: 0; background: url("assets/illus/brand.png") center/cover; }
+#root .shot { position: absolute; inset: 0; }
+#root .enter { position: absolute; inset: 0; transform-origin: 50% 50%; }
+#root .cam { position: absolute; left: 0; top: 0; width: 1920px; transform-origin: 0 0; }
+#root .win { position: relative; width: 1920px; border-radius: 22px; overflow: hidden; background: #F7FBF8;
+  box-shadow: 0 50px 120px rgba(0,0,0,.5); }
+#root .chrome { height: 44px; background: #E3ECE6; display: flex; align-items: center; gap: 10px; padding-left: 22px; }
+#root .chrome i { width: 13px; height: 13px; border-radius: 50%; background: #B9C7BE; }
+#root .chrome span { margin-left: 22px; background: #fff; border-radius: 9px; padding: 3px 18px; font: 500 19px Inter, sans-serif; color: #33473C; }
+#root .shotimg { display: block; width: 1920px; }
+#root .scan { position: absolute; height: 6px; background: #B6F259; border-radius: 3px; }
+#root .tag { position: absolute; left: 200px; top: 122px; background: #B6F259; color: #10280B; font-weight: 700; font-size: 54px;
+  line-height: 1.3; padding: 8px 30px 12px; border-radius: 16px; box-shadow: 0 18px 40px rgba(0,0,0,.28); white-space: nowrap; }
+#root .tag .hl { color: #006040; }
+#root .w { display: inline-block; }
+#root .big { position: absolute; color: #fff; font-weight: 700; font-size: 96px; line-height: 1.28; text-shadow: 0 6px 30px rgba(0,0,0,.45); }
+#root .big .hl { color: #B6F259; }
+#root .big.hero { left: 200px; top: 300px; width: 1300px; }
+#root .big.hero.high { top: 118px; }
+#root .big.top { left: 200px; top: 150px; width: 1520px; font-size: 72px; }
+#root .big.center { left: 0; right: 0; top: 360px; text-align: center; font-size: 110px; }
+#root .big.side-right { left: 200px; top: 330px; width: 900px; font-size: 84px; }
+#root .big.side-left { right: 200px; top: 330px; width: 900px; font-size: 84px; }
+#root .big.under { left: 0; right: 0; top: 640px; text-align: center; font-size: 72px; }
+#root .chips { position: absolute; left: 1180px; top: 300px; display: flex; flex-direction: column; gap: 26px; align-items: flex-start; }
+#root .chip { background: rgba(7,18,13,.82); color: #fff; font-weight: 600; font-size: 50px; padding: 10px 30px 14px; border-radius: 14px;
+  border-left: 8px solid #B6F259; }
+#root .illus { position: absolute; inset: 0; transform-origin: 50% 55%; }
+#root .illus img { width: 1920px; height: 1080px; display: block; }
+#root .shade { position: absolute; inset: 0; background: #020806; opacity: 0; }
+#root .flood { position: absolute; inset: 0; background: #B6F259; opacity: 0; }
+#root .dip { position: absolute; inset: 0; background: #000; opacity: 0; }
+#root .paperground { position: absolute; inset: 0; background: #0A1611 url("assets/illus/brand.png") center/cover; opacity: 1; }
+#root .card { position: absolute; height: 300px; background: #FAF6EA; border-radius: 10px; box-shadow: 0 30px 70px rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; color: #1B1B1B; font-weight: 700; font-size: 104px; }
+#root .strike { position: absolute; left: 40px; right: 40px; top: 50%; height: 16px; margin-top: -2px; background: #DF2225; border-radius: 8px;
+  transform-origin: 0 50%; }
+#root .phone { position: absolute; top: 40px; width: 457px; height: 956px; border-radius: 64px; background: #0B0F0D; padding: 14px;
+  box-shadow: 0 50px 120px rgba(0,0,0,.55); }
+#root .phone.right { left: 1330px; }
+#root .phone.left { left: 210px; }
+#root .phone .screen { position: relative; width: 429px; height: 928px; border-radius: 50px; overflow: hidden; background: #F7FBF8; }
+#root .pscreen { position: absolute; left: 0; top: 0; width: 429px; height: 928px; opacity: 0; }
+#root .phone.small { top: 175px; width: 340px; height: 708px; padding: 12px; border-radius: 50px; }
+#root .phone.small .screen { width: 316px; height: 684px; border-radius: 40px; }
+#root .phone.small .pscreen { width: 316px; height: 684px; }
+#root .miniwin { position: absolute; left: 700px; top: 200px; width: 1060px; border-radius: 16px; overflow: hidden; background: #F7FBF8;
+  box-shadow: 0 50px 120px rgba(0,0,0,.5); }
+#root .miniwin img { display: block; width: 1060px; }
+#root .miniwin .chrome { height: 36px; }
+#root .label { position: absolute; color: #fff; font-weight: 700; font-size: 52px; text-shadow: 0 4px 20px rgba(0,0,0,.4); }
+#root .label .hl { color: #B6F259; }
+#root .label.l1 { left: 200px; top: 70px; }
+#root .label.l2 { left: 700px; top: 110px; }
+#root .lockup { position: absolute; left: 0; right: 0; top: 330px; display: flex; align-items: center; justify-content: center; gap: 34px; }
+#root .lockup .mark { width: 200px; height: 200px; border-radius: 44px; }
+#root .wordmark { font-family: "Barlow Condensed", sans-serif; font-weight: 800; font-size: 210px; color: #fff; line-height: 1; letter-spacing: 1px; }
+#root .wordmark b { color: #B6F259; font-weight: 800; }
+#root .lockup.end { top: 210px; }
+#root .big.under2 { left: 0; right: 0; top: 470px; text-align: center; font-size: 84px; }
+#root .sub { position: absolute; left: 0; right: 0; top: 600px; text-align: center; color: rgba(255,255,255,.85); font-size: 52px; font-weight: 600; }
+#root .ctas { position: absolute; left: 0; right: 0; top: 712px; display: flex; justify-content: center; gap: 28px; }
+#root .btn { font-size: 46px; font-weight: 700; padding: 12px 40px 16px; border-radius: 16px; }
+#root .btn.solid { background: #B6F259; color: #10280B; }
+#root .btn.ghost { color: #fff; border: 3px solid rgba(255,255,255,.85); }
+#root .url { position: absolute; left: 0; right: 0; top: 830px; text-align: center; color: #fff; font: 700 58px "Barlow Condensed", sans-serif; letter-spacing: 3px; }
+#root .cursor { position: absolute; left: 0; top: 0; width: 62px; height: 62px; fill: #fff; stroke: #0B1D13; stroke-width: 1.5px; z-index: 50;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+#root .sb { position: absolute; top: 262px; width: 560px; background: #F7FBF8; border-radius: 22px; overflow: hidden;
+  box-shadow: 0 40px 100px rgba(0,0,0,.45); padding-bottom: 10px; }
+#root .sb.owner { left: 330px; }
+#root .sb.manager { left: 1030px; }
+#root .sbhead { height: 74px; background: #006040; color: #fff; font-size: 42px; font-weight: 700; text-align: center; line-height: 74px; margin-bottom: 8px; }
+#root .navrow { position: relative; height: 36px; line-height: 36px; padding: 0 28px; font: 500 28px Inter, sans-serif; color: #24362C; }
+#root .navrow.own { color: #0B1D13; font-weight: 700; }
+#root .lock { position: absolute; right: 26px; top: 5px; width: 26px; height: 26px; fill: #006040; stroke: #006040; stroke-width: 2.2; }
+#root .viewonly { margin-left: 14px; font: 600 28px "Hind Siliguri", sans-serif; background: #FFF1C9; color: #7A4B00; padding: 0 10px 2px; border-radius: 8px; }
+
+#root .viewport { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #F7FBF8; }
+#root .page { position: absolute; left: 0; top: 0; width: 1920px; opacity: 0; }
+#root .page.first { opacity: 1; }
+#root .urlbox { position: relative; display: inline-block; margin-left: 22px; width: 760px; height: 30px; background: #fff;
+  border-radius: 9px; }
+#root .urlt { position: absolute; left: 18px; top: 3px; font: 500 19px Inter, sans-serif; color: #33473C; opacity: 0; white-space: nowrap; }
+#root .urlt.on { opacity: 1; }
+#root .chrome span.urlbox { padding: 0; }
+#root .tag2 { position: absolute; left: 200px; top: 118px; display: flex; align-items: stretch; filter: drop-shadow(0 16px 34px rgba(0,0,0,.35)); }
+#root .tag2 .bar { width: 10px; background: #B6F259; border-radius: 6px 0 0 6px; transform-origin: 50% 0; }
+#root .tag2 .tx { background: rgba(7,18,13,.94); color: #fff; font-weight: 700; font-size: 52px; line-height: 1.3;
+  padding: 8px 30px 12px 24px; border-radius: 0 14px 14px 0; white-space: nowrap; }
+#root .tag2 .hl { color: #B6F259; }
+#root .chpanel { position: absolute; inset: 0; background: #B6F259; display: flex; flex-direction: column; justify-content: center;
+  padding-left: 200px; }
+#root .kicker { font: 700 40px "Barlow Condensed", sans-serif; letter-spacing: 6px; color: #006040; margin-bottom: 6px; }
+#root .chtitle { font-weight: 700; font-size: 128px; line-height: 1.2; color: #10280B; }
+#root .chtitle .hl { color: #006040; }
+#root .cursor { width: 54px; height: 54px; fill: #fff; stroke: #0B1D13; stroke-width: 1.6px; stroke-linejoin: round;
+  filter: drop-shadow(0 5px 8px rgba(0,0,0,.35)); transform-origin: 18% 12%; }
+</style>
+<div id="root" data-composition-id="public" data-width="1920" data-height="1080" data-layout-allow-overlap>
+<div class="ground"></div>
+<div id="pw" class="clip shot" data-start="0" data-duration="34.88" data-track-index="1" style="z-index:2"><div id="pw-in" class="enter">
+<div id="pw-cam" class="cam" data-motion-blur="off"><div class="win" style="height:1124px">
+<div class="chrome" data-layout-ignore><i></i><i></i><i></i><span class="urlbox">
+<b id="pw-url0" class="urlt on">turfbari.com</b>
+<b id="pw-url1" class="urlt">turfbari.com/explore</b>
+<b id="pw-url2" class="urlt">turfbari.com/explore?district=dhaka</b>
+<b id="pw-url3" class="urlt">turfbari.com/explore?district=dhaka&amp;area=mirpur</b>
+<b id="pw-url4" class="urlt">turfbari.com/explore?q=uttara</b>
+<b id="pw-url5" class="urlt">turfbari.com/turfs/green-arena-gulshan</b>
+</span></div><div class="viewport">
+<img id="pw-pg0" class="page first" src="assets/shots/home.png" alt="">
+<img id="pw-pg1" class="page" src="assets/shots/explore.png" alt="">
+<img id="pw-pg2" class="page" src="assets/shots/district_dhaka.png" alt="">
+<img id="pw-pg3" class="page" src="assets/shots/district.png" alt="">
+<img id="pw-pg4" class="page" src="assets/shots/search.png" alt="">
+<img id="pw-pg5" class="page" src="assets/shots/explore.png" alt="">
+<img id="pw-pg6" class="page" src="assets/shots/turf_full.png" alt="">
+<img id="pw-pg7" class="page" src="assets/shots/turf_qr.png" alt="">
+<div id="pw-scan" class="scan" style="left:838px;top:420px;width:250px;opacity:0"></div>
+</div></div></div>
+</div>
+<svg id="pw-cur" class="cursor" viewBox="0 0 28 28"><path d="M5 3l15.5 10.6-6.6 1.3 3.9 8.3-3.3 1.5-3.9-8.4L5 21.6z"/></svg>
+<div id="pw-tag0" class="tag2"><i class="bar"></i><span class="tx"><span class="w hl">অ্যাকাউন্ট</span> <span class="w">লাগে</span> <span class="w">না</span></span></div>
+<div id="pw-tag1" class="tag2"><i class="bar"></i><span class="tx"><span class="w hl">কাছের</span> <span class="w">টার্ফ</span> <span class="w">আগে</span></span></div>
+<div id="pw-tag2" class="tag2"><i class="bar"></i><span class="tx"><span class="w">পাশে</span> <span class="w">লেখা</span> <span class="w">—</span> <span class="w">কত</span> <span class="w hl">দূরে</span></span></div>
+<div id="pw-tag3" class="tag2"><i class="bar"></i><span class="tx"><span class="w hl">জেলা</span> <span class="w">আর</span> <span class="w">এলাকা</span></span></div>
+<div id="pw-tag4" class="tag2"><i class="bar"></i><span class="tx"><span class="w">টার্ফের</span> <span class="w hl">নাম</span> <span class="w">দিয়ে</span> <span class="w">সার্চ</span></span></div>
+<div id="pw-tag5" class="tag2"><i class="bar"></i><span class="tx"><span class="w hl">ছবি</span></span></div>
+<div id="pw-tag6" class="tag2"><i class="bar"></i><span class="tx"><span class="w">ইনডোর</span> <span class="w">না</span> <span class="w hl">আউটডোর</span></span></div>
+<div id="pw-tag7" class="tag2"><i class="bar"></i><span class="tx"><span class="w">কয়টি</span> <span class="w">মাঠ</span> <span class="w">•</span> <span class="w">শুরুর</span> <span class="w hl">ভাড়া</span></span></div>
+<div id="pw-tag8" class="tag2"><i class="bar"></i><span class="tx"><span class="w">দশ</span> <span class="w">জায়গায়</span> <span class="w">ফোন</span> <span class="w">—</span> <span class="w hl">শেষ</span></span></div>
+<div id="pw-tag9" class="tag2"><i class="bar"></i><span class="tx"><span class="w">ছবির</span> <span class="w hl">গ্যালারি</span></span></div>
+<div id="pw-tag10" class="tag2"><i class="bar"></i><span class="tx"><span class="w">সুবিধা</span> <span class="w">•</span> <span class="w">মাঠ</span> <span class="w">•</span> <span class="w hl">খোলার</span> <span class="w hl">সময়</span></span></div>
+<div id="pw-tag11" class="tag2"><i class="bar"></i><span class="tx"><span class="w">প্রতিটি</span> <span class="w">স্লটের</span> <span class="w hl">ভাড়া</span></span></div>
+<div id="pw-tag12" class="tag2"><i class="bar"></i><span class="tx"><span class="w">ম্যাপে</span> <span class="w">এক</span> <span class="w">ট্যাপে</span> <span class="w hl">রাস্তা</span></span></div>
+<div id="pw-tag13" class="tag2"><i class="bar"></i><span class="tx"><span class="w">নিজস্ব</span> <span class="w hl">QR</span> <span class="w">কোড</span></span></div>
+</div>
+<div id="qr" class="clip shot" data-start="34.88" data-duration="15.11" data-track-index="1" style="z-index:3"><div id="qr-in" class="enter">
+<div class="phone right"><div class="screen">
+<img id="qr-sc0" class="pscreen" src="assets/shots/q1.png" alt="">
+<img id="qr-sc1" class="pscreen" src="assets/shots/q2.png" alt="">
+<img id="qr-sc2" class="pscreen" src="assets/shots/q3.png" alt="">
+<img id="qr-sc3" class="pscreen" src="assets/shots/q4.png" alt="">
+<img id="qr-sc4" class="pscreen" src="assets/shots/q5.png" alt="">
+<img id="qr-sc5" class="pscreen" src="assets/shots/q6.png" alt="">
+</div></div>
+</div>
+<div id="qr-ti0" class="big side-right"><span class="w">স্ক্যান</span> <span class="w">করলেই</span> <span class="w hl">বুকিং</span> <span class="w hl">পেজ</span></div>
+<div id="qr-ti1" class="big side-right"><span class="w">তারিখ</span> <span class="w">•</span> <span class="w">মাঠ</span> <span class="w">•</span> <span class="w hl">খালি</span> <span class="w hl">সময়</span></div>
+<div id="qr-ti2" class="big side-right"><span class="w">নাম</span> <span class="w">আর</span> <span class="w hl">মোবাইল</span> <span class="w hl">নম্বর</span></div>
+<div id="qr-ti3" class="big side-right"><span class="w hl">কনফার্ম</span> <span class="w">হলেই</span> <span class="w">খেলা</span> <span class="w">পাকা</span></div>
+<div id="qr-ti4" class="big side-right"><span class="w">রেফারেন্স</span> <span class="w">দিয়ে</span> <span class="w hl">স্ট্যাটাস</span></div>
+<div id="qr-dip" class="dip"></div>
+</div>
+<div id="ch1" class="clip shot" data-start="0" data-duration="1.55" data-track-index="2" style="z-index:23"><div id="ch1-panel" class="chpanel"><div class="kicker" id="ch1-k">PLAYERS</div><div class="chtitle" id="ch1-t"><span class="w">খেলোয়াড়দের</span> <span class="w hl">জন্য</span></div></div></div>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+tl.fromTo("#pw-pg1", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 3.28);
+tl.set("#pw-url1", {opacity: 1}, 3.28);
+tl.set("#pw-url0", {opacity: 0}, 3.28);
+tl.set("#pw-url2", {opacity: 0}, 3.28);
+tl.set("#pw-url3", {opacity: 0}, 3.28);
+tl.set("#pw-url4", {opacity: 0}, 3.28);
+tl.set("#pw-url5", {opacity: 0}, 3.28);
+tl.set("#pw-pg0", {opacity: 0}, 3.61);
+tl.fromTo("#pw-pg2", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 9.53);
+tl.set("#pw-url2", {opacity: 1}, 9.53);
+tl.set("#pw-url0", {opacity: 0}, 9.53);
+tl.set("#pw-url1", {opacity: 0}, 9.53);
+tl.set("#pw-url3", {opacity: 0}, 9.53);
+tl.set("#pw-url4", {opacity: 0}, 9.53);
+tl.set("#pw-url5", {opacity: 0}, 9.53);
+tl.set("#pw-pg0", {opacity: 0}, 9.86);
+tl.set("#pw-pg1", {opacity: 0}, 9.86);
+tl.fromTo("#pw-pg3", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 10.68);
+tl.set("#pw-url3", {opacity: 1}, 10.68);
+tl.set("#pw-url0", {opacity: 0}, 10.68);
+tl.set("#pw-url1", {opacity: 0}, 10.68);
+tl.set("#pw-url2", {opacity: 0}, 10.68);
+tl.set("#pw-url4", {opacity: 0}, 10.68);
+tl.set("#pw-url5", {opacity: 0}, 10.68);
+tl.set("#pw-pg0", {opacity: 0}, 11.01);
+tl.set("#pw-pg1", {opacity: 0}, 11.01);
+tl.set("#pw-pg2", {opacity: 0}, 11.01);
+tl.fromTo("#pw-pg4", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 11.73);
+tl.set("#pw-url4", {opacity: 1}, 11.73);
+tl.set("#pw-url0", {opacity: 0}, 11.73);
+tl.set("#pw-url1", {opacity: 0}, 11.73);
+tl.set("#pw-url2", {opacity: 0}, 11.73);
+tl.set("#pw-url3", {opacity: 0}, 11.73);
+tl.set("#pw-url5", {opacity: 0}, 11.73);
+tl.set("#pw-pg0", {opacity: 0}, 12.06);
+tl.set("#pw-pg1", {opacity: 0}, 12.06);
+tl.set("#pw-pg2", {opacity: 0}, 12.06);
+tl.set("#pw-pg3", {opacity: 0}, 12.06);
+tl.fromTo("#pw-pg5", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 13.68);
+tl.set("#pw-url1", {opacity: 1}, 13.68);
+tl.set("#pw-url0", {opacity: 0}, 13.68);
+tl.set("#pw-url2", {opacity: 0}, 13.68);
+tl.set("#pw-url3", {opacity: 0}, 13.68);
+tl.set("#pw-url4", {opacity: 0}, 13.68);
+tl.set("#pw-url5", {opacity: 0}, 13.68);
+tl.set("#pw-pg0", {opacity: 0}, 14.01);
+tl.set("#pw-pg1", {opacity: 0}, 14.01);
+tl.set("#pw-pg2", {opacity: 0}, 14.01);
+tl.set("#pw-pg3", {opacity: 0}, 14.01);
+tl.set("#pw-pg4", {opacity: 0}, 14.01);
+tl.fromTo("#pw-pg6", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 22.23);
+tl.set("#pw-url5", {opacity: 1}, 22.23);
+tl.set("#pw-url0", {opacity: 0}, 22.23);
+tl.set("#pw-url1", {opacity: 0}, 22.23);
+tl.set("#pw-url2", {opacity: 0}, 22.23);
+tl.set("#pw-url3", {opacity: 0}, 22.23);
+tl.set("#pw-url4", {opacity: 0}, 22.23);
+tl.set("#pw-pg0", {opacity: 0}, 22.56);
+tl.set("#pw-pg1", {opacity: 0}, 22.56);
+tl.set("#pw-pg2", {opacity: 0}, 22.56);
+tl.set("#pw-pg3", {opacity: 0}, 22.56);
+tl.set("#pw-pg4", {opacity: 0}, 22.56);
+tl.set("#pw-pg5", {opacity: 0}, 22.56);
+tl.fromTo("#pw-pg7", {opacity: 0}, {opacity: 1, duration: 0.22, ease: "power2.out"}, 32.38);
+tl.set("#pw-url5", {opacity: 1}, 32.38);
+tl.set("#pw-url0", {opacity: 0}, 32.38);
+tl.set("#pw-url1", {opacity: 0}, 32.38);
+tl.set("#pw-url2", {opacity: 0}, 32.38);
+tl.set("#pw-url3", {opacity: 0}, 32.38);
+tl.set("#pw-url4", {opacity: 0}, 32.38);
+tl.set("#pw-pg0", {opacity: 0}, 32.71);
+tl.set("#pw-pg1", {opacity: 0}, 32.71);
+tl.set("#pw-pg2", {opacity: 0}, 32.71);
+tl.set("#pw-pg3", {opacity: 0}, 32.71);
+tl.set("#pw-pg4", {opacity: 0}, 32.71);
+tl.set("#pw-pg5", {opacity: 0}, 32.71);
+tl.set("#pw-pg6", {opacity: 0}, 32.71);
+tl.to("#pw-pg6", {y: -633, duration: 4.3, ease: "power2.inOut"}, 23.13);
+tl.to("#pw-pg6", {y: 0, duration: 0.9, ease: "power2.inOut"}, 28.23);
+tl.set("#pw-cam", {x: 192.0, y: 90.4, scale: 0.8}, 0);
+tl.to("#pw-cam", {x: 0.0, y: 0.0, scale: 1.35, duration: 0.9, ease: "power2.inOut"}, 0.43);
+tl.to("#pw-cam", {x: 0.0, y: -44.0, scale: 1.0, duration: 0.8, ease: "power2.inOut"}, 2.03);
+tl.to("#pw-cam", {x: -440.0, y: -272.0, scale: 1.75, duration: 0.9, ease: "power2.inOut"}, 3.58);
+tl.to("#pw-cam", {x: 0.0, y: -66.0, scale: 1.5, duration: 0.7, ease: "power2.inOut"}, 8.58);
+tl.to("#pw-cam", {x: -256.0, y: 0.0, scale: 1.6, duration: 0.6, ease: "power2.inOut"}, 11.03);
+tl.to("#pw-cam", {x: 0.0, y: -44.0, scale: 1.0, duration: 0.6, ease: "power2.inOut"}, 12.83);
+tl.to("#pw-cam", {x: -610.0, y: -428.0, scale: 2.0, duration: 0.9, ease: "power2.inOut"}, 13.78);
+tl.to("#pw-cam", {x: 172.8, y: 79.2, scale: 0.82, duration: 0.9, ease: "power2.inOut"}, 19.58);
+tl.to("#pw-cam", {x: 0.0, y: -44.0, scale: 1.0, duration: 0.6, ease: "power2.inOut"}, 22.43);
+tl.to("#pw-cam", {x: -1624.0, y: 0.0, scale: 1.9, duration: 0.8, ease: "power2.inOut"}, 29.28);
+tl.to("#pw-cam", {x: -592.5, y: -437.4, scale: 1.35, duration: 0.7, ease: "power2.inOut"}, 31.08);
+tl.to("#pw-cam", {x: -864.0, y: -571.5, scale: 1.9, duration: 0.7, ease: "power2.inOut"}, 32.53);
+tl.fromTo("#pw-cur", {x: 1980, y: 778, opacity: 1}, {x: 862.0, y: 31.0, duration: 0.8, ease: "power3.out"}, 2.13);
+tl.to("#pw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 3.13);
+tl.to("#pw-cur", {x: 766.5, y: 474.0, opacity: 1, duration: 0.6, ease: "power3.inOut"}, 8.73);
+tl.to("#pw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 9.41);
+tl.to("#pw-cur", {x: 766.5, y: 597.0, opacity: 1, duration: 0.55, ease: "power3.inOut"}, 9.93);
+tl.to("#pw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 10.58);
+tl.to("#pw-cur", {x: 960.0, y: 259.5, opacity: 1, duration: 0.45, ease: "power3.inOut"}, 11.08);
+tl.to("#pw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 11.63);
+tl.to("#pw-cur", {x: 1123.2, y: 120.0, opacity: 1, duration: 0.6, ease: "power3.inOut"}, 12.78);
+tl.to("#pw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 13.53);
+tl.to("#pw-cur", {x: 960.0, y: 380.0, opacity: 1, duration: 0.6, ease: "power3.inOut"}, 14.73);
+tl.to("#pw-cur", {x: 816.5, y: 490.0, opacity: 1, duration: 0.8, ease: "power3.inOut"}, 20.73);
+tl.to("#pw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 22.08);
+tl.to("#pw-cur", {opacity: 0, duration: 0.2}, 22.28);
+tl.to("#pw-cur", {x: 1121.5, y: 385.7, opacity: 1, duration: 0.9, ease: "power3.inOut"}, 29.43);
+tl.to("#pw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 30.78);
+tl.to("#pw-cur", {x: 1219.2, y: 726.3, opacity: 1, duration: 0.75, ease: "power3.inOut"}, 31.13);
+tl.to("#pw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 32.23);
+tl.to("#pw-cur", {opacity: 0, duration: 0.2}, 32.73);
+tl.to("#pw-cur", {x: 1068.5, y: -140.8, duration: 0.9, ease: "power2.inOut"}, 3.58);
+tl.to("#pw-cur", {x: 1114.0, y: -278.0, duration: 0.9, ease: "power2.inOut"}, 13.78);
+tl.to("#pw-cur", {x: 816.5, y: 410.4, duration: 0.9, ease: "power2.inOut"}, 19.58);
+tl.to("#pw-cur", {x: 1685.8, y: 1066.3, duration: 0.7, ease: "power2.inOut"}, 32.53);
+tl.set("#pw-scan", {opacity: 1}, 33.73);
+tl.fromTo("#pw-scan", {y: 0}, {y: 250, duration: 1.05, ease: "none", immediateRender: false}, 33.73);
+tl.set("#pw-scan", {opacity: 0}, 34.78);
+tl.fromTo("#pw-tag0 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 0.83);
+tl.fromTo("#pw-tag0 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 0.91);
+tl.to("#pw-tag0", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 3.57);
+tl.fromTo("#pw-tag1 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 3.73);
+tl.fromTo("#pw-tag1 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 3.81);
+tl.to("#pw-tag1", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 7.47);
+tl.fromTo("#pw-tag2 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 7.63);
+tl.fromTo("#pw-tag2 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 7.71);
+tl.to("#pw-tag2", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 9.42);
+tl.fromTo("#pw-tag3 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 9.58);
+tl.fromTo("#pw-tag3 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 9.66);
+tl.to("#pw-tag3", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 11.62);
+tl.fromTo("#pw-tag4 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 11.78);
+tl.fromTo("#pw-tag4 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 11.86);
+tl.to("#pw-tag4", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 13.72);
+tl.fromTo("#pw-tag5 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 13.88);
+tl.fromTo("#pw-tag5 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 13.96);
+tl.to("#pw-tag5", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 15.07);
+tl.fromTo("#pw-tag6 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 15.23);
+tl.fromTo("#pw-tag6 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 15.31);
+tl.to("#pw-tag6", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 16.52);
+tl.fromTo("#pw-tag7 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 16.68);
+tl.fromTo("#pw-tag7 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 16.76);
+tl.to("#pw-tag7", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 19.77);
+tl.fromTo("#pw-tag8 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 19.93);
+tl.fromTo("#pw-tag8 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 20.01);
+tl.to("#pw-tag8", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 22.97);
+tl.fromTo("#pw-tag9 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 23.13);
+tl.fromTo("#pw-tag9 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 23.21);
+tl.to("#pw-tag9", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 25.07);
+tl.fromTo("#pw-tag10 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 25.23);
+tl.fromTo("#pw-tag10 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 25.31);
+tl.to("#pw-tag10", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 27.57);
+tl.fromTo("#pw-tag11 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 27.73);
+tl.fromTo("#pw-tag11 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 27.81);
+tl.to("#pw-tag11", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 29.57);
+tl.fromTo("#pw-tag12 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 29.73);
+tl.fromTo("#pw-tag12 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 29.81);
+tl.to("#pw-tag12", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 32.42);
+tl.fromTo("#pw-tag13 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 32.58);
+tl.fromTo("#pw-tag13 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 32.66);
+tl.to("#pw-tag13", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 34.72);
+tl.fromTo("#pw-in", {scale: 1.06, opacity: 0, filter: "blur(10px)"}, {scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.5, ease: "expo.out"}, 0);
+tl.set("#qr-sc0", {opacity: 1}, 0);
+tl.fromTo("#qr-sc1", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out"}, 37.93);
+tl.fromTo("#qr-sc2", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out"}, 39.28);
+tl.fromTo("#qr-sc3", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out"}, 40.58);
+tl.fromTo("#qr-sc4", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out"}, 43.68);
+tl.fromTo("#qr-sc5", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out"}, 46.53);
+tl.fromTo("#qr-ti0 .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 35.03);
+tl.to("#qr-ti0", {opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power3.in"}, 37.6);
+tl.fromTo("#qr-ti1 .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 37.98);
+tl.to("#qr-ti1", {opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power3.in"}, 40.25);
+tl.fromTo("#qr-ti2 .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 40.63);
+tl.to("#qr-ti2", {opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power3.in"}, 43.35);
+tl.fromTo("#qr-ti3 .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 43.73);
+tl.to("#qr-ti3", {opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power3.in"}, 46.2);
+tl.fromTo("#qr-ti4 .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 46.58);
+tl.fromTo("#qr-in", {scale: 0.6, opacity: 0, filter: "blur(10px)"}, {scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.55, ease: "expo.out"}, 34.88);
+tl.to("#qr-dip", {opacity: 0.45, duration: 0.2, ease: "power2.in"}, 49.79);
+tl.fromTo("#ch1-panel", {xPercent: -101}, {xPercent: 0, duration: 0.38, ease: "expo.out"}, 0);
+tl.fromTo("#ch1-k", {opacity: 0, y: 12}, {opacity: 1, y: 0, duration: 0.3, ease: "power3.out"}, 0.18);
+tl.fromTo("#ch1-t .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 0.22);
+tl.to("#ch1-panel", {xPercent: 101, duration: 0.36, ease: "power3.in"}, 1.17);
+window.__timelines["public"] = tl;
+</script>
+</template>

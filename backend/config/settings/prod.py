@@ -16,8 +16,15 @@ SECURE_HSTS_SECONDS = env.int("DJANGO_HSTS_SECONDS", default=60 * 60 * 24 * 30)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = False  # opt in once the domain is stable
 
+if TRUST_X_REAL_IP:  # noqa: F405
+    # Login lockouts (django-axes) key on the client IP too.
+    AXES_IPWARE_META_PRECEDENCE_ORDER = ("HTTP_X_REAL_IP", "REMOTE_ADDR")
+
 # Object storage for uploaded media (S3-compatible: Cloudflare R2, DigitalOcean Spaces, AWS S3).
-if env("AWS_STORAGE_BUCKET_NAME", default=""):
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="")
+AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL", default="") or None
+AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="") or None
+if AWS_STORAGE_BUCKET_NAME:
     STORAGES = {
         "default": {"BACKEND": "storages.backends.s3.S3Storage"},
         "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"},

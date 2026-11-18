@@ -1,0 +1,99 @@
+# TurfBari production stack: MySQL 8.4, Redis, Django API (gunicorn), Celery worker + beat, and
+# Nginx serving the React app (port 80, put TLS in front of it).
+#
+#   cp .env.production.example .env.production   # fill in every value
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#   docker compose -f docker-compose.prod.yml --env-file .env.production exec api python manage.py createsuperuser
+name: turfbari-prod
+
+x-backend: &backend
+  build: ./backend
+  image: turfbari-api:latest
+  env_file: .env.production
+  restart: unless-stopped
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  mysql:
+    image: mysql:8.4
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-turfbari}
+      MYSQL_USER: ${MYSQL_USER:-turfbari}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysqldata:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    <<: *backend
+    environment:
+      RUN_MIGRATIONS: "1"
+    volumes:
+      - media:/app/media
+      - static:/app/staticfiles
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import os,urllib.request as u;h=os.environ['DJANGO_ALLOWED_HOSTS'].split(',')[0];u.urlopen(u.Request('http://127.0.0.1:8000/api/health/',headers={'Host':h,'X-Forwarded-Proto':'https'}),timeout=5)"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  worker:
+    <<: *backend
+    command: ["celery", "-A", "config", "worker", "--loglevel", "info", "--concurrency", "2"]
+    environment:
+      RUN_MIGRATIONS: "0"
+    volumes:
+      - media:/app/media
+
+  beat:
+    <<: *backend
+    # django-celery-beat keeps the schedule in MySQL, so only one beat may run.
+    command: ["celery", "-A", "config", "beat", "--loglevel", "info"]
+    environment:
+      RUN_MIGRATIONS: "0"
+
+  web:
+    build: ./frontend
+    image: turfbari-web:latest
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      - media:/srv/media:ro
+      - static:/srv/static:ro
+    restart: unless-stopped
+    depends_on:
+      - api
+
+volumes:
+  mysqldata:
+  redisdata:
+  media:
+  static:

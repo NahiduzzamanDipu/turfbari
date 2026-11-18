@@ -1,0 +1,308 @@
+<template>
+<style>
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-Medium.ttf"); font-weight: 500; }
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-SemiBold.ttf"); font-weight: 600; }
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "Barlow Condensed"; src: url("assets/fonts/BarlowCondensed-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "Barlow Condensed"; src: url("assets/fonts/BarlowCondensed-ExtraBold.ttf"); font-weight: 800; }
+#root { position: absolute; inset: 0; overflow: hidden; background: #07120D; font-family: "Hind Siliguri", sans-serif; }
+#root .ground { position: absolute; inset: 0; background: url("assets/illus/brand.png") center/cover; }
+#root .shot { position: absolute; inset: 0; }
+#root .enter { position: absolute; inset: 0; transform-origin: 50% 50%; }
+#root .cam { position: absolute; left: 0; top: 0; width: 1920px; transform-origin: 0 0; }
+#root .win { position: relative; width: 1920px; border-radius: 22px; overflow: hidden; background: #F7FBF8;
+  box-shadow: 0 50px 120px rgba(0,0,0,.5); }
+#root .chrome { height: 44px; background: #E3ECE6; display: flex; align-items: center; gap: 10px; padding-left: 22px; }
+#root .chrome i { width: 13px; height: 13px; border-radius: 50%; background: #B9C7BE; }
+#root .chrome span { margin-left: 22px; background: #fff; border-radius: 9px; padding: 3px 18px; font: 500 19px Inter, sans-serif; color: #33473C; }
+#root .shotimg { display: block; width: 1920px; }
+#root .scan { position: absolute; height: 6px; background: #B6F259; border-radius: 3px; }
+#root .tag { position: absolute; left: 200px; top: 122px; background: #B6F259; color: #10280B; font-weight: 700; font-size: 54px;
+  line-height: 1.3; padding: 8px 30px 12px; border-radius: 16px; box-shadow: 0 18px 40px rgba(0,0,0,.28); white-space: nowrap; }
+#root .tag .hl { color: #006040; }
+#root .w { display: inline-block; }
+#root .big { position: absolute; color: #fff; font-weight: 700; font-size: 96px; line-height: 1.28; text-shadow: 0 6px 30px rgba(0,0,0,.45); }
+#root .big .hl { color: #B6F259; }
+#root .big.hero { left: 200px; top: 300px; width: 1300px; }
+#root .big.hero.high { top: 118px; }
+#root .big.top { left: 200px; top: 150px; width: 1520px; font-size: 72px; }
+#root .big.center { left: 0; right: 0; top: 360px; text-align: center; font-size: 110px; }
+#root .big.side-right { left: 200px; top: 330px; width: 900px; font-size: 84px; }
+#root .big.side-left { right: 200px; top: 330px; width: 900px; font-size: 84px; }
+#root .big.under { left: 0; right: 0; top: 640px; text-align: center; font-size: 72px; }
+#root .chips { position: absolute; left: 1180px; top: 300px; display: flex; flex-direction: column; gap: 26px; align-items: flex-start; }
+#root .chip { background: rgba(7,18,13,.82); color: #fff; font-weight: 600; font-size: 50px; padding: 10px 30px 14px; border-radius: 14px;
+  border-left: 8px solid #B6F259; }
+#root .illus { position: absolute; inset: 0; transform-origin: 50% 55%; }
+#root .illus img { width: 1920px; height: 1080px; display: block; }
+#root .shade { position: absolute; inset: 0; background: #020806; opacity: 0; }
+#root .flood { position: absolute; inset: 0; background: #B6F259; opacity: 0; }
+#root .dip { position: absolute; inset: 0; background: #000; opacity: 0; }
+#root .paperground { position: absolute; inset: 0; background: #0A1611 url("assets/illus/brand.png") center/cover; opacity: 1; }
+#root .card { position: absolute; height: 300px; background: #FAF6EA; border-radius: 10px; box-shadow: 0 30px 70px rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; color: #1B1B1B; font-weight: 700; font-size: 104px; }
+#root .strike { position: absolute; left: 40px; right: 40px; top: 50%; height: 16px; margin-top: -2px; background: #DF2225; border-radius: 8px;
+  transform-origin: 0 50%; }
+#root .phone { position: absolute; top: 40px; width: 457px; height: 956px; border-radius: 64px; background: #0B0F0D; padding: 14px;
+  box-shadow: 0 50px 120px rgba(0,0,0,.55); }
+#root .phone.right { left: 1330px; }
+#root .phone.left { left: 210px; }
+#root .phone .screen { position: relative; width: 429px; height: 928px; border-radius: 50px; overflow: hidden; background: #F7FBF8; }
+#root .pscreen { position: absolute; left: 0; top: 0; width: 429px; height: 928px; opacity: 0; }
+#root .phone.small { top: 175px; width: 340px; height: 708px; padding: 12px; border-radius: 50px; }
+#root .phone.small .screen { width: 316px; height: 684px; border-radius: 40px; }
+#root .phone.small .pscreen { width: 316px; height: 684px; }
+#root .miniwin { position: absolute; left: 700px; top: 200px; width: 1060px; border-radius: 16px; overflow: hidden; background: #F7FBF8;
+  box-shadow: 0 50px 120px rgba(0,0,0,.5); }
+#root .miniwin img { display: block; width: 1060px; }
+#root .miniwin .chrome { height: 36px; }
+#root .label { position: absolute; color: #fff; font-weight: 700; font-size: 52px; text-shadow: 0 4px 20px rgba(0,0,0,.4); }
+#root .label .hl { color: #B6F259; }
+#root .label.l1 { left: 200px; top: 70px; }
+#root .label.l2 { left: 700px; top: 110px; }
+#root .lockup { position: absolute; left: 0; right: 0; top: 330px; display: flex; align-items: center; justify-content: center; gap: 34px; }
+#root .lockup .mark { width: 200px; height: 200px; border-radius: 44px; }
+#root .wordmark { font-family: "Barlow Condensed", sans-serif; font-weight: 800; font-size: 210px; color: #fff; line-height: 1; letter-spacing: 1px; }
+#root .wordmark b { color: #B6F259; font-weight: 800; }
+#root .lockup.end { top: 210px; }
+#root .big.under2 { left: 0; right: 0; top: 470px; text-align: center; font-size: 84px; }
+#root .sub { position: absolute; left: 0; right: 0; top: 600px; text-align: center; color: rgba(255,255,255,.85); font-size: 52px; font-weight: 600; }
+#root .ctas { position: absolute; left: 0; right: 0; top: 712px; display: flex; justify-content: center; gap: 28px; }
+#root .btn { font-size: 46px; font-weight: 700; padding: 12px 40px 16px; border-radius: 16px; }
+#root .btn.solid { background: #B6F259; color: #10280B; }
+#root .btn.ghost { color: #fff; border: 3px solid rgba(255,255,255,.85); }
+#root .url { position: absolute; left: 0; right: 0; top: 830px; text-align: center; color: #fff; font: 700 58px "Barlow Condensed", sans-serif; letter-spacing: 3px; }
+#root .cursor { position: absolute; left: 0; top: 0; width: 62px; height: 62px; fill: #fff; stroke: #0B1D13; stroke-width: 1.5px; z-index: 50;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+#root .sb { position: absolute; top: 262px; width: 560px; background: #F7FBF8; border-radius: 22px; overflow: hidden;
+  box-shadow: 0 40px 100px rgba(0,0,0,.45); padding-bottom: 10px; }
+#root .sb.owner { left: 330px; }
+#root .sb.manager { left: 1030px; }
+#root .sbhead { height: 74px; background: #006040; color: #fff; font-size: 42px; font-weight: 700; text-align: center; line-height: 74px; margin-bottom: 8px; }
+#root .navrow { position: relative; height: 36px; line-height: 36px; padding: 0 28px; font: 500 28px Inter, sans-serif; color: #24362C; }
+#root .navrow.own { color: #0B1D13; font-weight: 700; }
+#root .lock { position: absolute; right: 26px; top: 5px; width: 26px; height: 26px; fill: #006040; stroke: #006040; stroke-width: 2.2; }
+#root .viewonly { margin-left: 14px; font: 600 28px "Hind Siliguri", sans-serif; background: #FFF1C9; color: #7A4B00; padding: 0 10px 2px; border-radius: 8px; }
+
+#root .viewport { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #F7FBF8; }
+#root .page { position: absolute; left: 0; top: 0; width: 1920px; opacity: 0; }
+#root .page.first { opacity: 1; }
+#root .urlbox { position: relative; display: inline-block; margin-left: 22px; width: 760px; height: 30px; background: #fff;
+  border-radius: 9px; }
+#root .urlt { position: absolute; left: 18px; top: 3px; font: 500 19px Inter, sans-serif; color: #33473C; opacity: 0; white-space: nowrap; }
+#root .urlt.on { opacity: 1; }
+#root .chrome span.urlbox { padding: 0; }
+#root .tag2 { position: absolute; left: 200px; top: 118px; display: flex; align-items: stretch; filter: drop-shadow(0 16px 34px rgba(0,0,0,.35)); }
+#root .tag2 .bar { width: 10px; background: #B6F259; border-radius: 6px 0 0 6px; transform-origin: 50% 0; }
+#root .tag2 .tx { background: rgba(7,18,13,.94); color: #fff; font-weight: 700; font-size: 52px; line-height: 1.3;
+  padding: 8px 30px 12px 24px; border-radius: 0 14px 14px 0; white-space: nowrap; }
+#root .tag2 .hl { color: #B6F259; }
+#root .chpanel { position: absolute; inset: 0; background: #B6F259; display: flex; flex-direction: column; justify-content: center;
+  padding-left: 200px; }
+#root .kicker { font: 700 40px "Barlow Condensed", sans-serif; letter-spacing: 6px; color: #006040; margin-bottom: 6px; }
+#root .chtitle { font-weight: 700; font-size: 128px; line-height: 1.2; color: #10280B; }
+#root .chtitle .hl { color: #006040; }
+#root .cursor { width: 54px; height: 54px; fill: #fff; stroke: #0B1D13; stroke-width: 1.6px; stroke-linejoin: round;
+  filter: drop-shadow(0 5px 8px rgba(0,0,0,.35)); transform-origin: 18% 12%; }
+</style>
+<div id="root" data-composition-id="owner" data-width="1920" data-height="1080" data-layout-allow-overlap>
+<div class="ground"></div>
+<div id="ow" class="clip shot" data-start="0" data-duration="23.89" data-track-index="1" style="z-index:2"><div id="ow-in" class="enter">
+<div id="ow-cam" class="cam" data-motion-blur="off"><div class="win" style="height:1124px">
+<div class="chrome" data-layout-ignore><i></i><i></i><i></i><span class="urlbox">
+<b id="ow-url0" class="urlt on">turfbari.com/login</b>
+<b id="ow-url1" class="urlt">turfbari.com/workspace</b>
+<b id="ow-url2" class="urlt">turfbari.com/workspace/book</b>
+<b id="ow-url3" class="urlt">turfbari.com/workspace/fields</b>
+<b id="ow-url4" class="urlt">turfbari.com/workspace/hours</b>
+<b id="ow-url5" class="urlt">turfbari.com/workspace/pricing</b>
+<b id="ow-url6" class="urlt">turfbari.com/workspace/customers</b>
+</span></div><div class="viewport">
+<img id="ow-pg0" class="page first" src="assets/shots/login.png" alt="">
+<img id="ow-pg1" class="page" src="assets/shots/dash.png" alt="">
+<img id="ow-pg2" class="page" src="assets/shots/slots.png" alt="">
+<img id="ow-pg3" class="page" src="assets/shots/discount.png" alt="">
+<img id="ow-pg4" class="page" src="assets/shots/fields.png" alt="">
+<img id="ow-pg5" class="page" src="assets/shots/hours.png" alt="">
+<img id="ow-pg6" class="page" src="assets/shots/pricing.png" alt="">
+<img id="ow-pg7" class="page" src="assets/shots/customers.png" alt="">
+</div></div></div>
+</div>
+<svg id="ow-cur" class="cursor" viewBox="0 0 28 28"><path d="M5 3l15.5 10.6-6.6 1.3 3.9 8.3-3.3 1.5-3.9-8.4L5 21.6z"/></svg>
+<div id="ow-tag0" class="tag2"><i class="bar"></i><span class="tx"><span class="w">আজকের</span> <span class="w">বুকিং</span> <span class="w">•</span> <span class="w hl">আজকের</span> <span class="w hl">আদায়</span></span></div>
+<div id="ow-tag1" class="tag2"><i class="bar"></i><span class="tx"><span class="w">মাসের</span> <span class="w">আয়</span> <span class="w">•</span> <span class="w">মোট</span> <span class="w hl">বকেয়া</span></span></div>
+<div id="ow-tag2" class="tag2"><i class="bar"></i><span class="tx"><span class="w hl">বুক</span> <span class="w hl">আ</span> <span class="w hl">স্লট</span> <span class="w">বোর্ড</span></span></div>
+<div id="ow-tag3" class="tag2"><i class="bar"></i><span class="tx"><span class="w">খালি</span> <span class="w">•</span> <span class="w">বুকড</span> <span class="w">•</span> <span class="w hl">অপেক্ষায়</span></span></div>
+<div id="ow-tag4" class="tag2"><i class="bar"></i><span class="tx"><span class="w">ফোনের</span> <span class="w">বুকিং</span> <span class="w">—</span> <span class="w hl">কয়েক</span> <span class="w hl">সেকেন্ডে</span></span></div>
+<div id="ow-tag5" class="tag2"><i class="bar"></i><span class="tx"><span class="w hl">ডিসকাউন্ট</span> <span class="w">আর</span> <span class="w">অগ্রিমসহ</span></span></div>
+<div id="ow-tag6" class="tag2"><i class="bar"></i><span class="tx"><span class="w hl">মাঠ</span></span></div>
+<div id="ow-tag7" class="tag2"><i class="bar"></i><span class="tx"><span class="w hl">খোলার</span> <span class="w hl">সময়</span></span></div>
+<div id="ow-tag8" class="tag2"><i class="bar"></i><span class="tx"><span class="w">পিক</span> <span class="w">আওয়ার</span> <span class="w">•</span> <span class="w hl">উইকেন্ড</span> <span class="w">ভাড়া</span></span></div>
+<div id="ow-tag9" class="tag2"><i class="bar"></i><span class="tx"><span class="w">কাস্টমারের</span> <span class="w">বুকিং</span> <span class="w hl">ইতিহাস</span></span></div>
+</div>
+<div id="o8" class="clip shot" data-start="23.89" data-duration="2.57" data-track-index="1" style="z-index:3"><div id="o8-in" class="enter">
+<div class="paperground"></div>
+<div id="o8-head" class="big top"><span class="w">সবকিছু</span> <span class="w hl">গোছানো</span></div>
+<div id="o8-card0" class="card" style="left:700px;top:430px;width:520px"><span>খাতা</span><i id="o8-strike" class="strike"></i></div>
+</div>
+</div>
+<div id="ch2" class="clip shot" data-start="0" data-duration="1.55" data-track-index="2" style="z-index:23"><div id="ch2-panel" class="chpanel"><div class="kicker" id="ch2-k">OWNER DASHBOARD</div><div class="chtitle" id="ch2-t"><span class="w">টার্ফ</span> <span class="w hl">মালিকের</span> <span class="w">জন্য</span></div></div></div>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+tl.fromTo("#ow-pg1", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 1.09);
+tl.set("#ow-url1", {opacity: 1}, 1.09);
+tl.set("#ow-url0", {opacity: 0}, 1.09);
+tl.set("#ow-url2", {opacity: 0}, 1.09);
+tl.set("#ow-url3", {opacity: 0}, 1.09);
+tl.set("#ow-url4", {opacity: 0}, 1.09);
+tl.set("#ow-url5", {opacity: 0}, 1.09);
+tl.set("#ow-url6", {opacity: 0}, 1.09);
+tl.set("#ow-pg0", {opacity: 0}, 1.42);
+tl.fromTo("#ow-pg2", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 7.89);
+tl.set("#ow-url2", {opacity: 1}, 7.89);
+tl.set("#ow-url0", {opacity: 0}, 7.89);
+tl.set("#ow-url1", {opacity: 0}, 7.89);
+tl.set("#ow-url3", {opacity: 0}, 7.89);
+tl.set("#ow-url4", {opacity: 0}, 7.89);
+tl.set("#ow-url5", {opacity: 0}, 7.89);
+tl.set("#ow-url6", {opacity: 0}, 7.89);
+tl.set("#ow-pg0", {opacity: 0}, 8.22);
+tl.set("#ow-pg1", {opacity: 0}, 8.22);
+tl.fromTo("#ow-pg3", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 13.69);
+tl.set("#ow-url2", {opacity: 1}, 13.69);
+tl.set("#ow-url0", {opacity: 0}, 13.69);
+tl.set("#ow-url1", {opacity: 0}, 13.69);
+tl.set("#ow-url3", {opacity: 0}, 13.69);
+tl.set("#ow-url4", {opacity: 0}, 13.69);
+tl.set("#ow-url5", {opacity: 0}, 13.69);
+tl.set("#ow-url6", {opacity: 0}, 13.69);
+tl.set("#ow-pg0", {opacity: 0}, 14.02);
+tl.set("#ow-pg1", {opacity: 0}, 14.02);
+tl.set("#ow-pg2", {opacity: 0}, 14.02);
+tl.fromTo("#ow-pg4", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 18.64);
+tl.set("#ow-url3", {opacity: 1}, 18.64);
+tl.set("#ow-url0", {opacity: 0}, 18.64);
+tl.set("#ow-url1", {opacity: 0}, 18.64);
+tl.set("#ow-url2", {opacity: 0}, 18.64);
+tl.set("#ow-url4", {opacity: 0}, 18.64);
+tl.set("#ow-url5", {opacity: 0}, 18.64);
+tl.set("#ow-url6", {opacity: 0}, 18.64);
+tl.set("#ow-pg0", {opacity: 0}, 18.97);
+tl.set("#ow-pg1", {opacity: 0}, 18.97);
+tl.set("#ow-pg2", {opacity: 0}, 18.97);
+tl.set("#ow-pg3", {opacity: 0}, 18.97);
+tl.fromTo("#ow-pg5", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 19.49);
+tl.set("#ow-url4", {opacity: 1}, 19.49);
+tl.set("#ow-url0", {opacity: 0}, 19.49);
+tl.set("#ow-url1", {opacity: 0}, 19.49);
+tl.set("#ow-url2", {opacity: 0}, 19.49);
+tl.set("#ow-url3", {opacity: 0}, 19.49);
+tl.set("#ow-url5", {opacity: 0}, 19.49);
+tl.set("#ow-url6", {opacity: 0}, 19.49);
+tl.set("#ow-pg0", {opacity: 0}, 19.82);
+tl.set("#ow-pg1", {opacity: 0}, 19.82);
+tl.set("#ow-pg2", {opacity: 0}, 19.82);
+tl.set("#ow-pg3", {opacity: 0}, 19.82);
+tl.set("#ow-pg4", {opacity: 0}, 19.82);
+tl.fromTo("#ow-pg6", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 20.44);
+tl.set("#ow-url5", {opacity: 1}, 20.44);
+tl.set("#ow-url0", {opacity: 0}, 20.44);
+tl.set("#ow-url1", {opacity: 0}, 20.44);
+tl.set("#ow-url2", {opacity: 0}, 20.44);
+tl.set("#ow-url3", {opacity: 0}, 20.44);
+tl.set("#ow-url4", {opacity: 0}, 20.44);
+tl.set("#ow-url6", {opacity: 0}, 20.44);
+tl.set("#ow-pg0", {opacity: 0}, 20.77);
+tl.set("#ow-pg1", {opacity: 0}, 20.77);
+tl.set("#ow-pg2", {opacity: 0}, 20.77);
+tl.set("#ow-pg3", {opacity: 0}, 20.77);
+tl.set("#ow-pg4", {opacity: 0}, 20.77);
+tl.set("#ow-pg5", {opacity: 0}, 20.77);
+tl.fromTo("#ow-pg7", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 22.29);
+tl.set("#ow-url6", {opacity: 1}, 22.29);
+tl.set("#ow-url0", {opacity: 0}, 22.29);
+tl.set("#ow-url1", {opacity: 0}, 22.29);
+tl.set("#ow-url2", {opacity: 0}, 22.29);
+tl.set("#ow-url3", {opacity: 0}, 22.29);
+tl.set("#ow-url4", {opacity: 0}, 22.29);
+tl.set("#ow-url5", {opacity: 0}, 22.29);
+tl.set("#ow-pg0", {opacity: 0}, 22.62);
+tl.set("#ow-pg1", {opacity: 0}, 22.62);
+tl.set("#ow-pg2", {opacity: 0}, 22.62);
+tl.set("#ow-pg3", {opacity: 0}, 22.62);
+tl.set("#ow-pg4", {opacity: 0}, 22.62);
+tl.set("#ow-pg5", {opacity: 0}, 22.62);
+tl.set("#ow-pg6", {opacity: 0}, 22.62);
+tl.set("#ow-cam", {x: 0.0, y: -44.0, scale: 1.0}, 0);
+tl.to("#ow-cam", {x: -125.0, y: 0.0, scale: 1.55, duration: 0.8, ease: "power2.inOut"}, 1.39);
+tl.to("#ow-cam", {x: -1056.0, y: 0.0, scale: 1.55, duration: 1.2, ease: "power2.inOut"}, 4.44);
+tl.to("#ow-cam", {x: 0.0, y: -44.0, scale: 1.0, duration: 0.7, ease: "power2.inOut"}, 6.79);
+tl.to("#ow-cam", {x: -608.9, y: -205.3, scale: 1.45, duration: 0.8, ease: "power2.inOut"}, 8.19);
+tl.to("#ow-cam", {x: -384.0, y: -76.8, scale: 1.2, duration: 0.6, ease: "power2.inOut"}, 12.59);
+tl.to("#ow-cam", {x: -475.0, y: -657.0, scale: 1.75, duration: 0.8, ease: "power2.inOut"}, 13.94);
+tl.to("#ow-cam", {x: -160.0, y: -887.0, scale: 1.75, duration: 0.7, ease: "power2.inOut"}, 16.69);
+tl.to("#ow-cam", {x: 0.0, y: -44.0, scale: 1.0, duration: 0.6, ease: "power2.inOut"}, 17.89);
+tl.fromTo("#ow-cur", {x: 1980, y: 778, opacity: 1}, {x: 960.0, y: 682.0, duration: 0.7, ease: "power3.out"}, 0.14);
+tl.to("#ow-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 0.94);
+tl.to("#ow-cur", {opacity: 0, duration: 0.2}, 1.29);
+tl.to("#ow-cur", {x: 95.0, y: 220.0, opacity: 1, duration: 0.7, ease: "power3.inOut"}, 6.94);
+tl.to("#ow-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 7.79);
+tl.to("#ow-cur", {x: 1620.0, y: 630.0, opacity: 1, duration: 0.65, ease: "power3.inOut"}, 12.74);
+tl.to("#ow-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 13.54);
+tl.to("#ow-cur", {x: 177.8, y: 608.2, opacity: 1, duration: 0.55, ease: "power3.inOut"}, 14.74);
+tl.to("#ow-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 15.39);
+tl.to("#ow-cur", {x: -23.5, y: -159.0, opacity: 1, duration: 0.5, ease: "power3.inOut"}, 17.94);
+tl.to("#ow-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 18.52);
+tl.to("#ow-cur", {x: 105.0, y: 408.0, opacity: 1, duration: 0.4, ease: "power3.inOut"}, 18.94);
+tl.to("#ow-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 19.37);
+tl.to("#ow-cur", {x: 82.0, y: 447.0, opacity: 1, duration: 0.4, ease: "power3.inOut"}, 19.89);
+tl.to("#ow-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 20.32);
+tl.to("#ow-cur", {x: 92.0, y: 295.0, opacity: 1, duration: 0.45, ease: "power3.inOut"}, 21.69);
+tl.to("#ow-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 22.17);
+tl.to("#ow-cur", {x: -471.1, y: 177.5, duration: 0.8, ease: "power2.inOut"}, 8.19);
+tl.to("#ow-cur", {x: 2447.5, y: 373.8, duration: 0.8, ease: "power2.inOut"}, 13.94);
+tl.to("#ow-cur", {x: 492.8, y: 378.2, duration: 0.7, ease: "power2.inOut"}, 16.69);
+tl.fromTo("#ow-tag0 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 1.54);
+tl.fromTo("#ow-tag0 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 1.62);
+tl.to("#ow-tag0", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 4.43);
+tl.fromTo("#ow-tag1 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 4.59);
+tl.fromTo("#ow-tag1 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 4.67);
+tl.to("#ow-tag1", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 7.93);
+tl.fromTo("#ow-tag2 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 8.09);
+tl.fromTo("#ow-tag2 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 8.17);
+tl.to("#ow-tag2", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 10.38);
+tl.fromTo("#ow-tag3 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 10.54);
+tl.fromTo("#ow-tag3 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 10.62);
+tl.to("#ow-tag3", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 13.68);
+tl.fromTo("#ow-tag4 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 13.84);
+tl.fromTo("#ow-tag4 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 13.92);
+tl.to("#ow-tag4", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 16.53);
+tl.fromTo("#ow-tag5 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 16.69);
+tl.fromTo("#ow-tag5 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 16.77);
+tl.to("#ow-tag5", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 18.53);
+tl.fromTo("#ow-tag6 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 18.69);
+tl.fromTo("#ow-tag6 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 18.77);
+tl.to("#ow-tag6", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 19.38);
+tl.fromTo("#ow-tag7 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 19.54);
+tl.fromTo("#ow-tag7 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 19.62);
+tl.to("#ow-tag7", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 20.33);
+tl.fromTo("#ow-tag8 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 20.49);
+tl.fromTo("#ow-tag8 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 20.57);
+tl.to("#ow-tag8", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 22.18);
+tl.fromTo("#ow-tag9 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 22.34);
+tl.fromTo("#ow-tag9 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 22.42);
+tl.to("#ow-tag9", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 23.73);
+tl.fromTo("#ow-in", {scale: 1.06, opacity: 0, filter: "blur(10px)"}, {scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.5, ease: "expo.out"}, 0);
+tl.fromTo("#o8-head .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 23.99);
+tl.fromTo("#o8-card0", {scale: 1.35, rotation: -9, opacity: 0, filter: "blur(10px)"}, {scale: 1, rotation: -3, opacity: 1, filter: "blur(0px)", duration: 0.45, ease: "expo.out"}, 24.04);
+tl.fromTo("#o8-strike", {scaleX: 0}, {scaleX: 1, duration: 0.35, ease: "power3.out"}, 25.44);
+tl.fromTo("#o8-in", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out"}, 23.89);
+tl.to("#o8-in", {opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power3.in"}, 26.28);
+tl.fromTo("#ch2-panel", {xPercent: -101}, {xPercent: 0, duration: 0.38, ease: "expo.out"}, 0);
+tl.fromTo("#ch2-k", {opacity: 0, y: 12}, {opacity: 1, y: 0, duration: 0.3, ease: "power3.out"}, 0.18);
+tl.fromTo("#ch2-t .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 0.22);
+tl.to("#ch2-panel", {xPercent: 101, duration: 0.36, ease: "power3.in"}, 1.17);
+window.__timelines["owner"] = tl;
+</script>
+</template>

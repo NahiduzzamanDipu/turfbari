@@ -12,7 +12,7 @@ export function NotFoundPage() {
         <p className="mt-1 text-muted-foreground">The link may be wrong or the page may have moved.</p>
       </div>
       <Button asChild>
-        <Link to="/">Back to TURFOS</Link>
+        <Link to="/">Back to TurfBari</Link>
       </Button>
     </main>
   );

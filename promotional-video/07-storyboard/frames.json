@@ -1,0 +1,206 @@
+{
+  "s01-a": {
+    "layout": "cinema",
+    "bg": "night",
+    "title": "দল রেডি। মাঠ কোথায়?",
+    "sub": "কিন্তু মাঠ কোথায়?"
+  },
+  "s01-b": {
+    "layout": "icons",
+    "title": "খাতা • ফোনকল • বাকির হিসাব",
+    "sub": "আর টার্ফ মালিকের দিন কাটে খাতা, ফোনকল আর বাকির হিসাব মেলাতে।"
+  },
+  "s02-a": {
+    "layout": "logo",
+    "title": "প্রতিটি টার্ফের ঠিকানা",
+    "sub": "এই দুই দিকের ঝামেলা সহজ করতেই এসেছে টার্ফবাড়ি।"
+  },
+  "s02-b": {
+    "layout": "browser",
+    "img": "02-real-app-screenshots/public-homepage/01-home-hero.png",
+    "chip": "খেলোয়াড় • মালিক • ম্যানেজার",
+    "sub": "সব এক প্ল্যাটফর্মে।"
+  },
+  "s03-a": {
+    "layout": "browser",
+    "img": "02-real-app-screenshots/turf-discovery/01-explore-nearest-first.png",
+    "chip": "কাছের টার্ফ আগে — দূরত্বসহ",
+    "focus": [
+      400,
+      200,
+      460,
+      52
+    ],
+    "sub": "আপনার সবচেয়ে কাছের টার্ফগুলো আগে দেখাবে।"
+  },
+  "s03-b": {
+    "layout": "browser",
+    "img": "02-real-app-screenshots/turf-discovery/03-explore-district-area-filter.png",
+    "chip": "জেলা • এলাকা • নাম দিয়ে সার্চ",
+    "focus": [
+      400,
+      250,
+      230,
+      230
+    ],
+    "sub": "চাইলে জেলা আর এলাকা বেছে নিন।"
+  },
+  "s03-c": {
+    "layout": "phone",
+    "imgs": [
+      "02-real-app-screenshots/turf-discovery/05-mobile-home.png",
+      "02-real-app-screenshots/turf-discovery/06-mobile-explore.png"
+    ],
+    "chip": "অ্যাকাউন্ট ছাড়াই টার্ফ খুঁজুন",
+    "sub": "দশ জায়গায় ফোন করার দিন শেষ।"
+  },
+  "s04-a": {
+    "layout": "browser",
+    "img": "02-real-app-screenshots/turf-details/01-turf-cover-gallery.png",
+    "chip": "ছবি • সুবিধা • খোলার সময় • ভাড়া",
+    "sub": "ছবির গ্যালারি, সুবিধা, খোলার সময় আর ভাড়া।"
+  },
+  "s04-b": {
+    "layout": "qr",
+    "qr": "02-real-app-screenshots/qr-booking/00-real-turf-qr-code.svg",
+    "img": "02-real-app-screenshots/qr-booking/01-mobile-turf-page-after-scan.png",
+    "chip": "প্রতিটি টার্ফের নিজস্ব QR কোড",
+    "sub": "স্ক্যান করলেই খুলে যায় সেই টার্ফের বুকিং পেজ।"
+  },
+  "s04-c": {
+    "layout": "phone",
+    "imgs": [
+      "02-real-app-screenshots/qr-booking/03-mobile-pick-time-slots.png",
+      "02-real-app-screenshots/qr-booking/04-mobile-booking-form.png"
+    ],
+    "chip": "তারিখ • মাঠ • খালি সময়",
+    "sub": "নাম আর মোবাইল নম্বর দিয়ে পাঠিয়ে দিন বুকিং রিকোয়েস্ট।"
+  },
+  "s04-d": {
+    "layout": "phone",
+    "imgs": [
+      "02-real-app-screenshots/qr-booking/05-mobile-request-sent.png",
+      "02-real-app-screenshots/qr-booking/06-mobile-booking-status.png"
+    ],
+    "chip": "রিকোয়েস্ট পাঠান → টার্ফ কনফার্ম করবে",
+    "sub": "টার্ফ কর্তৃপক্ষ কনফার্ম করলেই খেলা পাকা।"
+  },
+  "s05-a": {
+    "layout": "browser",
+    "img": "02-real-app-screenshots/owner-dashboard/01-dashboard.png",
+    "chip": "মালিকের ড্যাশবোর্ড",
+    "focus": [
+      288,
+      182,
+      1600,
+      114
+    ],
+    "sub": "আজকের বুকিং, আদায়, মাসের আয় আর বকেয়া—একনজরে।"
+  },
+  "s05-b": {
+    "layout": "browser",
+    "img": "02-real-app-screenshots/booking-management/01-book-a-slot-board.png",
+    "chip": "এক বোর্ডে সব স্লট",
+    "sub": "কোন সময় খালি, কোনটা বুকড, কোনটা অপেক্ষায়।"
+  },
+  "s05-c": {
+    "layout": "browser",
+    "img": "02-real-app-screenshots/booking-management/02-book-team-with-discount.png",
+    "chip": "ডিসকাউন্ট ও অগ্রিমসহ বুকিং",
+    "focus": [
+      313,
+      920,
+      384,
+      142
+    ],
+    "sub": "ফোনে আসা বুকিং নিন কয়েক সেকেন্ডেই।"
+  },
+  "s06-a": {
+    "layout": "browser",
+    "img": "02-real-app-screenshots/manager-dashboard/00-manager-login.png",
+    "chip": "ম্যানেজারের আলাদা লগইন",
+    "sub": "মালিক যুক্ত করলেই ম্যানেজার পান নিজের লগইন।"
+  },
+  "s06-b": {
+    "layout": "browser",
+    "img": "02-real-app-screenshots/manager-dashboard/01-manager-dashboard.png",
+    "chip": "বুকিং • কনফার্ম • পেমেন্ট • কাস্টমার",
+    "focus": [
+      16,
+      70,
+      224,
+      80
+    ],
+    "sub": "প্রতিদিনের বুকিং, কনফার্ম, পেমেন্ট আর কাস্টমার।"
+  },
+  "s06-c": {
+    "layout": "browser",
+    "img": "02-real-app-screenshots/manager-dashboard/15-manager-pricing-view-only.png",
+    "chip": "ভাড়া, খরচ, রিপোর্ট — শুধু মালিকের হাতে",
+    "lock": true,
+    "sub": "কাজ ভাগ হয়, নিয়ন্ত্রণ থাকে আপনার।"
+  },
+  "s07-a": {
+    "layout": "browser",
+    "img": "02-real-app-screenshots/payment-management/01-booking-details-and-payments.png",
+    "chip": "পরিশোধ • বাকি • পেমেন্টের মাধ্যম",
+    "focus": [
+      970,
+      478,
+      200,
+      52
+    ],
+    "sub": "কত টাকা পরিশোধ হয়েছে আর কত বাকি।"
+  },
+  "s07-b": {
+    "layout": "browser",
+    "img": "02-real-app-screenshots/reports/01-reports-overview.png",
+    "chip": "আদায় • খরচ • নিট আয় • এক ক্লিকে এক্সেল",
+    "focus": [
+      1668,
+      48,
+      220,
+      40
+    ],
+    "sub": "দরকার হলে এক ক্লিকে এক্সেলে ডাউনলোড।"
+  },
+  "s08-a": {
+    "layout": "triptych",
+    "cards": [
+      [
+        "খেলোয়াড়",
+        "সহজ খোঁজা, সহজ রিকোয়েস্ট",
+        "02-real-app-screenshots/turf-discovery/01-explore-nearest-first.png"
+      ],
+      [
+        "মালিক",
+        "গোছানো ব্যবসা, পরিষ্কার হিসাব",
+        "02-real-app-screenshots/owner-dashboard/01-dashboard.png"
+      ],
+      [
+        "ম্যানেজার",
+        "স্পষ্ট দায়িত্ব",
+        "02-real-app-screenshots/manager-dashboard/01-manager-dashboard.png"
+      ]
+    ],
+    "sub": "মাঠের বাইরের ঝামেলা কমলে, মাঠের ভেতরের আনন্দটাই বাড়ে।"
+  },
+  "s08-b": {
+    "layout": "cinema",
+    "bg": "goal",
+    "title": "খেলা হোক আরও সহজে",
+    "sub": "মাঠের ভেতরের আনন্দটাই বাড়ে।"
+  },
+  "s09-a": {
+    "layout": "browser",
+    "img": "02-real-app-screenshots/public-homepage/05-register-your-turf.png",
+    "chip": "আপনার টার্ফ যুক্ত করুন",
+    "sub": "আজই আপনার টার্ফ যুক্ত করুন টার্ফবাড়িতে।"
+  },
+  "s09-b": {
+    "layout": "cta",
+    "title": "প্রতিটি টার্ফের ঠিকানা",
+    "sub": "টার্ফবাড়ি—প্রতিটি টার্ফের ঠিকানা। খেলা হোক আরও সহজে।",
+    "url": "turfbari.com"
+  }
+}

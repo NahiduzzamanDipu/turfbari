@@ -1,4 +1,4 @@
-"""Abstract base models shared by every TURFOS app."""
+"""Abstract base models shared by every TurfBari app."""
 
 import uuid
 

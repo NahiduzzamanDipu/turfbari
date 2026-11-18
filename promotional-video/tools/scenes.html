@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>TurfBari scene renderer</title>
+<!-- Renders illustrated turf scenes in the TurfBari palette. Usage: scenes.html?scene=night&w=1600&h=1067 -->
+<style>
+  html, body { margin: 0; background: #020617; }
+  svg { display: block; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const q = new URLSearchParams(location.search);
+const W = +q.get("w") || 1600, H = +q.get("h") || 1067;
+const scene = q.get("scene") || "night";
+const PRIMARY = "#065f46", LIME = "#bef264", EMERALD = "#10b981";
+
+function rand(seed) { let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+
+function pitch({ horizon, topL, topR, sky, grassA, grassB, lines = true, goal = "far", players = 0, seed = 7 }) {
+  const r = rand(seed);
+  const bands = [];
+  let y = horizon, step = 6;
+  let i = 0;
+  while (y < H) {
+    const h = step;
+    const t = (y - horizon) / (H - horizon);
+    // left/right edges of the pitch trapezoid at this y
+    bands.push(`<rect x="0" y="${y}" width="${W}" height="${h + 1}" fill="${i % 2 ? grassA : grassB}" />`);
+    y += h; step *= 1.22; i++;
+  }
+  const bl = -W * 0.35, br = W * 1.35;
+  const at = (t) => [topL + (bl - topL) * t, topR + (br - topR) * t, horizon + (H - horizon) * t];
+  const [hl, hr, hy] = at(0.32);
+  const cy = hy, cx = W / 2;
+  let svg = `
+    <defs>
+      <clipPath id="field"><polygon points="${topL},${horizon} ${topR},${horizon} ${br},${H} ${bl},${H}" /></clipPath>
+      <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#020617" stop-opacity=".55"/><stop offset=".55" stop-color="#020617" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <rect width="${W}" height="${H}" fill="url(#sky)"/>
+    ${sky}
+    <rect x="0" y="${horizon}" width="${W}" height="${H - horizon}" fill="${grassB}"/>
+    <g clip-path="url(#field)">${bands.join("")}</g>
+    <rect x="0" y="${horizon}" width="${W}" height="${H - horizon}" fill="url(#fade)"/>`;
+  if (lines) {
+    svg += `<g fill="none" stroke="#f8fafc" stroke-opacity=".88" stroke-width="${W / 400}">
+      <polygon points="${topL},${horizon} ${topR},${horizon} ${br},${H} ${bl},${H}" />
+      <line x1="${hl}" y1="${hy}" x2="${hr}" y2="${hy}" />
+      <ellipse cx="${cx}" cy="${cy}" rx="${W * 0.13}" ry="${W * 0.03}" />
+      <polygon points="${W * 0.39},${horizon} ${W * 0.61},${horizon} ${W * 0.64},${horizon + (H - horizon) * 0.07} ${W * 0.36},${horizon + (H - horizon) * 0.07}" />
+    </g>
+    <circle cx="${cx}" cy="${cy}" r="${W / 300}" fill="#f8fafc"/>`;
+  }
+  if (goal === "far") {
+    const gw = W * 0.09, gh = W * 0.03, gx = cx - gw / 2, gy = horizon - gh;
+    let net = "";
+    for (let k = 1; k < 12; k++) net += `<line x1="${gx + (gw * k) / 12}" y1="${gy}" x2="${gx + (gw * k) / 12}" y2="${horizon}" />`;
+    for (let k = 1; k < 4; k++) net += `<line x1="${gx}" y1="${gy + (gh * k) / 4}" x2="${gx + gw}" y2="${gy + (gh * k) / 4}" />`;
+    svg += `<g stroke="#e2e8f0" stroke-opacity=".5" stroke-width="1">${net}</g>
+      <path d="M${gx} ${horizon}V${gy}H${gx + gw}V${horizon}" fill="none" stroke="#fff" stroke-width="${W / 450}"/>`;
+  }
+  for (let p = 0; p < players; p++) {
+    const t = 0.12 + r() * 0.5;
+    const [l, rr, py] = at(t);
+    const px = l + (rr - l) * (0.2 + r() * 0.6);
+    const s = 18 + t * 90;
+    const kit = p % 2 ? LIME : "#f8fafc";
+    svg += `<g transform="translate(${px} ${py}) scale(${s / 60})">
+      <ellipse cx="0" cy="0" rx="16" ry="4" fill="#000" opacity=".35"/>
+      <path d="M-7 0 L-4 -26 L4 -26 L7 0 Z" fill="#0f172a"/>
+      <path d="M-10 -26 Q0 -32 10 -26 L8 -50 L-8 -50 Z" fill="${kit}"/>
+      <circle cx="0" cy="-57" r="7" fill="#1e293b"/></g>`;
+  }
+  return svg;
+}
+
+function floodlight(x, top, bottom, side, intensity = 1) {
+  const lamps = [];
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++)
+    lamps.push(`<rect x="${x - 40 + c * 20}" y="${top - 30 + r * 16}" width="16" height="12" rx="2" fill="#fefce8"/>`);
+  const tx = side < 0 ? W * 0.75 : W * 0.25;
+  return `
+    <polygon points="${x - 30},${top} ${x + 30},${top} ${tx + 520},${H} ${tx - 520},${H}" fill="url(#beam)" opacity="${0.55 * intensity}"/>
+    <line x1="${x}" y1="${top}" x2="${x}" y2="${bottom}" stroke="#0f172a" stroke-width="10"/>
+    <rect x="${x - 46}" y="${top - 36}" width="92" height="56" rx="6" fill="#1e293b"/>
+    ${lamps.join("")}
+    <circle cx="${x}" cy="${top - 8}" r="160" fill="url(#glow)" opacity="${intensity}"/>`;
+}
+
+function skyline(base, color, seed, windows = true) {
+  const r = rand(seed);
+  let x = 0, out = "";
+  while (x < W) {
+    const w = 40 + r() * 110, h = 40 + r() * 230;
+    out += `<rect x="${x}" y="${base - h}" width="${w}" height="${h + 2}" fill="${color}"/>`;
+    if (windows) for (let wy = base - h + 12; wy < base - 10; wy += 18)
+      for (let wx = x + 8; wx < x + w - 10; wx += 16)
+        if (r() < 0.28) out += `<rect x="${wx}" y="${wy}" width="6" height="8" fill="#fde68a" opacity="${0.4 + r() * 0.5}"/>`;
+    x += w + 4;
+  }
+  return out;
+}
+
+const defs = (skyStops) => `<defs>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">${skyStops}</linearGradient>
+  <radialGradient id="glow"><stop offset="0" stop-color="#fffbeb" stop-opacity=".95"/><stop offset=".25" stop-color="#fef9c3" stop-opacity=".45"/><stop offset="1" stop-color="#fef9c3" stop-opacity="0"/></radialGradient>
+  <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fefce8" stop-opacity=".55"/><stop offset="1" stop-color="#fefce8" stop-opacity="0"/></linearGradient>
+  <radialGradient id="vignette" cx=".5" cy=".55" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".6"/></radialGradient>
+</defs>`;
+
+const SCENES = {
+  // Wide night match under floodlights
+  night: () => defs(`<stop offset="0" stop-color="#020617"/><stop offset=".55" stop-color="#062c22"/><stop offset="1" stop-color="#0b3b2e"/>`) +
+    pitch({ horizon: H * 0.42, topL: W * 0.22, topR: W * 0.78, grassA: "#15803d", grassB: "#16a34a", players: 10,
+      sky: skyline(H * 0.42, "#0b1220", 3) }) +
+    floodlight(W * 0.08, H * 0.12, H * 0.9, 1) + floodlight(W * 0.92, H * 0.12, H * 0.9, -1) +
+    `<rect width="${W}" height="${H}" fill="url(#vignette)"/>`,
+  // Rooftop turf at dusk with Dhaka-like skyline
+  rooftop: () => defs(`<stop offset="0" stop-color="#1e1b4b"/><stop offset=".45" stop-color="#7c2d12"/><stop offset=".62" stop-color="#f59e0b"/><stop offset="1" stop-color="#fde68a"/>`) +
+    `<circle cx="${W * 0.7}" cy="${H * 0.5}" r="${W * 0.06}" fill="#fef3c7" opacity=".9"/>` +
+    pitch({ horizon: H * 0.55, topL: W * 0.12, topR: W * 0.88, grassA: "#166534", grassB: "#15803d", players: 6, seed: 11,
+      sky: skyline(H * 0.55, "#1c1917", 9) }) +
+    `<g stroke="#0f172a" stroke-opacity=".55" stroke-width="2">${Array.from({ length: 40 }, (_, k) => `<line x1="${(k * W) / 39}" y1="${H * 0.18}" x2="${(k * W) / 39}" y2="${H}"/>`).join("")}</g>
+     <line x1="0" y1="${H * 0.18}" x2="${W}" y2="${H * 0.18}" stroke="#0f172a" stroke-width="8"/>` +
+    floodlight(W * 0.04, H * 0.16, H, 1, 0.6) + floodlight(W * 0.96, H * 0.16, H, -1, 0.6) +
+    `<rect width="${W}" height="${H}" fill="url(#vignette)"/>`,
+  // Goal-mouth view
+  goal: () => {
+    const gx = W * 0.2, gw = W * 0.6, gy = H * 0.2, gh = H * 0.45;
+    let net = "";
+    for (let k = 0; k <= 30; k++) net += `<line x1="${gx + (gw * k) / 30}" y1="${gy}" x2="${gx + gw * 0.08 + ((gw * 0.84) * k) / 30}" y2="${gy + gh * 0.9}"/>`;
+    for (let k = 0; k <= 14; k++) net += `<line x1="${gx + (gw * 0.08 * k) / 14}" y1="${gy + (gh * 0.9 * k) / 14}" x2="${gx + gw - (gw * 0.08 * k) / 14}" y2="${gy + (gh * 0.9 * k) / 14}"/>`;
+    return defs(`<stop offset="0" stop-color="#020617"/><stop offset="1" stop-color="#0b3b2e"/>`) +
+      `<rect width="${W}" height="${H}" fill="url(#sky)"/>` +
+      `<rect x="0" y="${H * 0.62}" width="${W}" height="${H * 0.38}" fill="#15803d"/>` +
+      Array.from({ length: 7 }, (_, k) => `<rect x="0" y="${H * 0.62 + k * k * 9}" width="${W}" height="${(k + 1) * 8}" fill="#16a34a" opacity=".7"/>`).join("") +
+      `<g stroke="#e2e8f0" stroke-opacity=".45" stroke-width="2">${net}</g>
+       <path d="M${gx} ${gy + gh}V${gy}H${gx + gw}V${gy + gh}" fill="none" stroke="#fff" stroke-width="16" stroke-linejoin="round"/>
+       <path d="M${-W * 0.1} ${H * 0.92} L${W * 1.1} ${H * 0.92}" stroke="#fff" stroke-width="10" opacity=".9"/>` +
+      ball(W * 0.62, H * 0.82, W * 0.045) +
+      floodlight(W * 0.05, H * 0.1, H * 0.62, 1, 0.8) + floodlight(W * 0.95, H * 0.1, H * 0.62, -1, 0.8) +
+      `<rect width="${W}" height="${H}" fill="url(#vignette)"/>`;
+  },
+  // Ball close-up on turf with bokeh
+  ball: () => {
+    let bokeh = "";
+    const r = rand(5);
+    for (let k = 0; k < 26; k++) bokeh += `<circle cx="${r() * W}" cy="${r() * H * 0.5}" r="${10 + r() * 40}" fill="${k % 3 ? "#fef9c3" : LIME}" opacity="${0.08 + r() * 0.25}"/>`;
+    let blades = "";
+    for (let k = 0; k < 900; k++) {
+      const x = r() * W, y = H * 0.55 + r() * H * 0.45, h = 10 + ((y - H * 0.55) / (H * 0.45)) * 50;
+      blades += `<line x1="${x}" y1="${y}" x2="${x + (r() - 0.5) * 8}" y2="${y - h}" stroke="${r() < 0.5 ? "#22c55e" : "#15803d"}" stroke-width="${1 + r() * 2}" />`;
+    }
+    return defs(`<stop offset="0" stop-color="#020617"/><stop offset=".6" stop-color="#062c22"/><stop offset="1" stop-color="#14532d"/>`) +
+      `<rect width="${W}" height="${H}" fill="url(#sky)"/>${bokeh}
+       <rect x="0" y="${H * 0.55}" width="${W}" height="${H * 0.45}" fill="#166534"/>${blades}` +
+      `<ellipse cx="${W * 0.5}" cy="${H * 0.8}" rx="${W * 0.16}" ry="${W * 0.03}" fill="#000" opacity=".45"/>` +
+      ball(W * 0.5, H * 0.62, W * 0.15) +
+      `<line x1="${-W * 0.1}" y1="${H * 0.97}" x2="${W * 1.1}" y2="${H * 0.88}" stroke="#fff" stroke-width="14" opacity=".85"/>` +
+      `<rect width="${W}" height="${H}" fill="url(#vignette)"/>`;
+  },
+  // Brand background: emerald gradient with pitch lines and lime glow
+  brand: () => `<defs>
+      <radialGradient id="g1" cx=".15" cy="0" r="1"><stop offset="0" stop-color="${LIME}" stop-opacity=".35"/><stop offset=".5" stop-color="${LIME}" stop-opacity="0"/></radialGradient>
+      <radialGradient id="g2" cx="1" cy=".1" r=".9"><stop offset="0" stop-color="${EMERALD}" stop-opacity=".45"/><stop offset="1" stop-color="${EMERALD}" stop-opacity="0"/></radialGradient>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#022c22"/><stop offset="1" stop-color="${PRIMARY}"/></linearGradient>
+    </defs>
+    <rect width="${W}" height="${H}" fill="url(#bg)"/>
+    <rect width="${W}" height="${H}" fill="url(#g1)"/><rect width="${W}" height="${H}" fill="url(#g2)"/>
+    <g fill="none" stroke="#ecfdf5" stroke-opacity=".08" stroke-width="4">
+      <rect x="${W * 0.05}" y="${H * 0.08}" width="${W * 0.9}" height="${H * 0.84}" rx="8"/>
+      <line x1="${W / 2}" y1="${H * 0.08}" x2="${W / 2}" y2="${H * 0.92}"/>
+      <circle cx="${W / 2}" cy="${H / 2}" r="${H * 0.16}"/>
+      <rect x="${W * 0.05}" y="${H * 0.3}" width="${W * 0.12}" height="${H * 0.4}"/>
+      <rect x="${W * 0.83}" y="${H * 0.3}" width="${W * 0.12}" height="${H * 0.4}"/>
+    </g>`,
+};
+
+function ball(cx, cy, r) {
+  const rot = [0, 72, 144, 216, 288];
+  const s = r / 6.9;
+  return `<g transform="translate(${cx} ${cy}) scale(${s})">
+    <defs><clipPath id="bc${Math.round(cx)}"><circle r="6.9"/></clipPath>
+      <radialGradient id="shade${Math.round(cx)}" cx=".35" cy=".3" r=".8"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></radialGradient></defs>
+    <circle r="6.9" fill="#fff"/>
+    <g clip-path="url(#bc${Math.round(cx)})" fill="#0f172a">
+      <polygon points="0,-2.6 2.473,-0.803 1.528,2.103 -1.528,2.103 -2.473,-0.803"/>
+      ${rot.map((d) => `<g transform="rotate(${d})"><line y1="-2.6" y2="-5.4" stroke="#0f172a" stroke-width=".5"/><polygon points="0,2.6 -2.473,0.803 -1.528,-2.103 1.528,-2.103 2.473,0.803" transform="translate(0 -8)"/></g>`).join("")}
+    </g>
+    <circle r="6.9" fill="url(#shade${Math.round(cx)})"/></g>`;
+}
+
+document.getElementById("root").innerHTML =
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${SCENES[scene]()}</svg>`;
+document.title = "ready";
+</script>
+</body>
+</html>

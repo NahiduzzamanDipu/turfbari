@@ -1,11 +1,48 @@
 """Turf serializers. PUBLIC serializers use explicit field whitelists — never `__all__`."""
 
+import re
+
 from rest_framework import serializers
 
 from apps.locations.models import Area, District
 
 from .geo import coords_from_maps_url, google_maps_link, is_google_maps_url
 from .models import Amenity, OperatingHours, PricingRule, Turf, TurfField
+
+HEX_COLOR = re.compile(r"#[0-9a-f]{6}")
+
+
+def contrast_with_white(hex_color: str) -> float:
+    """WCAG contrast ratio of white text on this colour."""
+
+    def channel(c: int) -> float:
+        c = c / 255
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
+    r, g, b = (int(hex_color[i : i + 2], 16) for i in (1, 3, 5))
+    lum = 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+    return 1.05 / (lum + 0.05)
+
+
+class MediaURLField(serializers.Field):
+    """Site-relative URL of a stored file ("/media/..."), or None. Works behind any proxy/host."""
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("read_only", True)
+        super().__init__(**kwargs)
+
+    def to_representation(self, value):
+        return value.url if value else None
+
+
+def photo_payload(photo) -> dict:
+    return {
+        "url": photo.image.url,
+        "thumbnail_url": photo.thumbnail.url,
+        "width": photo.width,
+        "height": photo.height,
+        "caption": photo.caption,
+    }
 
 
 class AmenitySerializer(serializers.ModelSerializer):
@@ -28,6 +65,8 @@ class PublicTurfCardSerializer(serializers.ModelSerializer):
     fields_count = serializers.IntegerField(read_only=True)
     map_link = serializers.SerializerMethodField()
     distance_km = serializers.SerializerMethodField()
+    profile_image_url = MediaURLField(source="profile_image")
+    cover_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Turf
@@ -42,6 +81,8 @@ class PublicTurfCardSerializer(serializers.ModelSerializer):
             "longitude",
             "map_link",
             "distance_km",
+            "profile_image_url",
+            "cover_url",
             "turf_type",
             "surface",
             "amenities",
@@ -56,6 +97,10 @@ class PublicTurfCardSerializer(serializers.ModelSerializer):
 
     def get_min_price(self, obj):
         return str(obj.min_public_price) if obj.show_pricing and obj.min_public_price is not None else None
+
+    def get_cover_url(self, obj):
+        photos = list(obj.photos.all())  # prefetched by the views
+        return photos[0].thumbnail.url if photos else None
 
     def get_map_link(self, obj):
         if obj.maps_url:
@@ -94,6 +139,8 @@ class PublicTurfDetailSerializer(PublicTurfCardSerializer):
     hours = HoursSerializer(many=True)
     pricing = serializers.SerializerMethodField()
     base_rates = serializers.SerializerMethodField()
+    photos = serializers.SerializerMethodField()
+    theme = serializers.SerializerMethodField()
 
     class Meta(PublicTurfCardSerializer.Meta):
         fields = PublicTurfCardSerializer.Meta.fields + [
@@ -108,7 +155,15 @@ class PublicTurfDetailSerializer(PublicTurfCardSerializer):
             "hours",
             "pricing",
             "base_rates",
+            "photos",
+            "theme",
         ]
+
+    def get_theme(self, obj):
+        return {"preset": obj.theme_preset, "color": obj.theme_color or None}
+
+    def get_photos(self, obj):
+        return [photo_payload(p) for p in obj.photos.all()]
 
     def get_fields_list(self, obj):
         return PublicFieldSerializer([f for f in obj.fields.all() if f.is_active], many=True).data
@@ -211,6 +266,7 @@ class TurfSettingsSerializer(serializers.ModelSerializer):
     amenities = serializers.SlugRelatedField(slug_field="slug", many=True, queryset=Amenity.objects.all())
     district = serializers.SlugRelatedField(slug_field="slug", queryset=District.objects.all())
     area = serializers.SlugRelatedField(slug_field="slug", queryset=Area.objects.all(), allow_null=True)
+    profile_image_url = MediaURLField(source="profile_image")
 
     class Meta:
         model = Turf
@@ -238,8 +294,21 @@ class TurfSettingsSerializer(serializers.ModelSerializer):
             "public_booking_enabled",
             "show_pricing",
             "weekend_days",
+            "profile_image_url",
+            "theme_preset",
+            "theme_color",
         ]
         read_only_fields = ["slug", "status"]
+
+    def validate_theme_color(self, value):
+        value = (value or "").strip().lower()
+        if value and not HEX_COLOR.fullmatch(value):
+            raise serializers.ValidationError("Use a colour like #1f7a4d.")
+        if value and contrast_with_white(value) < 3:
+            raise serializers.ValidationError(
+                "This colour is too light — white text on buttons would be hard to read. Pick a darker shade."
+            )
+        return value
 
     def validate_maps_url(self, value):
         value = (value or "").strip()

@@ -1,8 +1,10 @@
 """Workspace tenancy. The tenant always comes from the user's membership, never from request data."""
 
 from rest_framework import viewsets
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.permissions import SAFE_METHODS, BasePermission
+
+from apps.audit.services import AuditedViewSetMixin, label
 
 ACTIVE_TURF_SESSION_KEY = "active_turf_id"
 
@@ -32,13 +34,22 @@ def resolve_membership(request):
 
 class TurfSuspended(PermissionDenied):
     default_code = "turf_suspended"
-    default_detail = "This turf is suspended. Contact TURFOS support to reactivate it."
+    default_detail = "This turf is suspended. Contact TurfBari support to reactivate it."
+
+
+class SubscriptionInactive(APIException):
+    status_code = 402
+    default_code = "subscription_inactive"
+    default_detail = (
+        "Your TurfBari subscription has ended. Renew it from the Subscription page to keep taking bookings."
+    )
 
 
 class IsTenantMember(BasePermission):
     """Sets request.tenant / request.membership. Views may declare:
     - owner_only = True          -> every method requires the OWNER role
     - owner_only_writes = True   -> unsafe methods require the OWNER role
+    - allow_inactive_subscription = True -> writes allowed even when the subscription has lapsed
     """
 
     message = "You don't have access to a turf workspace."
@@ -63,10 +74,15 @@ class IsTenantMember(BasePermission):
             return False
         if unsafe and not membership.turf.is_operational:
             raise TurfSuspended()
+        if unsafe and not getattr(view, "allow_inactive_subscription", False):
+            from apps.subscriptions.services import standing
+
+            if not standing(membership.turf).can_operate:
+                raise SubscriptionInactive()
         return True
 
 
-class TenantViewSet(viewsets.ModelViewSet):
+class TenantViewSet(AuditedViewSetMixin, viewsets.ModelViewSet):
     """Base for every workspace collection: queries and writes are pinned to request.tenant.
     Objects belonging to another tenant are simply not in the queryset -> 404."""
 
@@ -75,5 +91,16 @@ class TenantViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return super().get_queryset().filter(turf=self.request.tenant)
 
-    def perform_create(self, serializer):
-        serializer.save(turf=self.request.tenant)
+    def perform_create(self, serializer, **extra):
+        serializer.save(turf=self.request.tenant, **extra)
+        self._audit("added", serializer.instance)
+
+    def perform_update(self, serializer):
+        changed = sorted(serializer.validated_data)
+        serializer.save()
+        self._audit("updated", serializer.instance, {"fields": changed})
+
+    def perform_destroy(self, instance):
+        name, pk, kind = label(instance), instance.pk, type(instance).__name__.lower()
+        instance.delete()
+        self._audit_deleted(name, pk, kind)

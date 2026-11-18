@@ -27,7 +27,7 @@ export function SystemStatusPage() {
             Smart turf management
           </h1>
           <p className="mt-3 text-muted-foreground">
-            Development build. This page checks that the web app can reach the TURFOS API and its services.
+            Development build. This page checks that the web app can reach the TurfBari API and its services.
           </p>
         </div>
 

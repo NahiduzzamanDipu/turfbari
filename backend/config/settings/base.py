@@ -4,6 +4,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # backend/
 REPO_DIR = BASE_DIR.parent
@@ -17,8 +18,26 @@ DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
 
-PLATFORM_NAME = "TURFOS"
+PLATFORM_NAME = "TurfBari"
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:5173")
+# Public base URL of this API for payment-gateway callbacks; blank = derive from the request.
+PUBLIC_API_URL = env("PUBLIC_API_URL", default="")
+# Behind our Nginx (docker-compose.prod.yml), X-Real-IP holds the real client address.
+# Never enable without a proxy that overwrites the header, or clients could spoof it.
+TRUST_X_REAL_IP = env.bool("TRUST_X_REAL_IP", default=False)
+
+# ------------------------------------------------------------- subscription payments
+# Accounts owners send plan fees to (shown on the subscription page; blank = method hidden).
+SUBSCRIPTION_PAYMENT_ACCOUNTS = {
+    "bkash": env("TURFBARI_BKASH_NUMBER", default=""),
+    "nagad": env("TURFBARI_NAGAD_NUMBER", default=""),
+    "rocket": env("TURFBARI_ROCKET_NUMBER", default=""),
+    "bank": env("TURFBARI_BANK_DETAILS", default=""),
+}
+# SSLCommerz hosted checkout (cards + mobile banking). Blank = online checkout hidden.
+SSLCOMMERZ_STORE_ID = env("SSLCOMMERZ_STORE_ID", default="")
+SSLCOMMERZ_STORE_PASSWORD = env("SSLCOMMERZ_STORE_PASSWORD", default="")
+SSLCOMMERZ_SANDBOX = env.bool("SSLCOMMERZ_SANDBOX", default=True)
 
 # --------------------------------------------------------------------------- apps
 DJANGO_APPS = [
@@ -44,6 +63,8 @@ LOCAL_APPS = [
     "apps.bookings",
     "apps.applications",
     "apps.expenses",
+    "apps.subscriptions",
+    "apps.audit",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -96,6 +117,8 @@ DATABASES["default"].update(
             "ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'",
             # READ COMMITTED + SELECT ... FOR UPDATE row locks guard booking overlaps.
             "isolation_level": "read committed",
+            # Options from the URL query, e.g. ?ssl_mode=REQUIRED for hosted MySQL (Aiven, TiDB).
+            **DATABASES["default"].get("OPTIONS", {}),
         },
         "TEST": {"CHARSET": "utf8mb4", "COLLATION": "utf8mb4_unicode_ci"},
     }
@@ -107,14 +130,14 @@ REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
 # Redis cache when CACHE_URL is set; otherwise a per-process memory cache (fine for local dev,
 # not for multi-worker production — prod must set CACHE_URL so throttles are shared).
 _cache_url = env("CACHE_URL", default="")
-CACHES = {
-    "default": (
-        {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": _cache_url}
-        if _cache_url
-        else {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
-    )
-    | {"KEY_PREFIX": "turfos"}
-}
+# CACHE_URL=db://<table> uses a shared MySQL table instead (hosts without Redis; run createcachetable).
+if _cache_url.startswith("db://"):
+    _cache = {"BACKEND": "django.core.cache.backends.db.DatabaseCache", "LOCATION": _cache_url[5:]}
+elif _cache_url:
+    _cache = {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": _cache_url}
+else:
+    _cache = {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+CACHES = {"default": _cache | {"KEY_PREFIX": "turfbari"}}
 
 # --------------------------------------------------------------- authentication
 AUTHENTICATION_BACKENDS = [
@@ -133,11 +156,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 PASSWORD_RESET_TIMEOUT = 60 * 60  # 1 hour
 
-SESSION_COOKIE_NAME = "turfos_session"
+SESSION_COOKIE_NAME = "turfbari_session"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  # "remember me" length; short sessions expire on browser close
-CSRF_COOKIE_NAME = "turfos_csrftoken"
+CSRF_COOKIE_NAME = "turfbari_csrftoken"
 CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_HTTPONLY = False  # SPA reads it to send X-CSRFToken
 
@@ -157,6 +180,10 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+# Single-host deploys (no Nginx in front): Django serves the built React app from this folder.
+FRONTEND_DIST = env("FRONTEND_DIST", default="")
+# ...and serves /static/ and uploaded /media/ itself (low-traffic hosts only).
+SERVE_MEDIA = env.bool("SERVE_MEDIA", default=False)
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
 
@@ -182,6 +209,7 @@ REST_FRAMEWORK = {
         "anon": "120/min",
         "user": "600/min",
         "login": "10/min",
+        "two_factor": "10/min",
         "public_booking": "5/min",
         "public_application": "3/hour",
     },
@@ -189,7 +217,7 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "TURFOS API",
+    "TITLE": "TurfBari API",
     "DESCRIPTION": "Smart Turf Management System — public, admin and workspace APIs.",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
@@ -204,6 +232,13 @@ CELERY_TASK_ACKS_LATE = True
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+# Synced into django-celery-beat's tables when beat starts (editable later in Django admin).
+CELERY_BEAT_SCHEDULE = {
+    "plan-expiry-reminders": {
+        "task": "subscriptions.send_expiry_reminders",
+        "schedule": crontab(hour=9, minute=0),  # 9 AM Asia/Dhaka, daily
+    },
+}
 
 # ----------------------------------------------------------------------- email
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
@@ -212,7 +247,7 @@ EMAIL_PORT = env.int("EMAIL_PORT", default=1025)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=False)
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="TURFOS <no-reply@turfos.local>")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="TurfBari <no-reply@turfbari.com>")
 
 # ---------------------------------------------------------------------- security
 X_FRAME_OPTIONS = "DENY"

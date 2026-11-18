@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8" />
+<title>TurfBari reference frame</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Inter:wght@400;600&family=Hind+Siliguri:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root { --emerald: #006040; --tile: #065f46; --lime: #bef264; --ink: #0b1d13; --mist: #f7fbf8; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; }
+  body { font-family: "Hind Siliguri", "Noto Sans Bengali", "Nirmala UI", sans-serif; color: #fff; }
+  .frame { position: relative; width: 1920px; height: 1080px; overflow: hidden;
+    background: radial-gradient(70rem 40rem at 8% -10%, rgb(190 242 100 / .28), transparent 60%),
+                radial-gradient(60rem 40rem at 110% 10%, rgb(16 185 129 / .35), transparent 60%),
+                linear-gradient(135deg, #022c22, var(--tile)); }
+  .lines { position: absolute; inset: 60px; border: 3px solid rgb(236 253 245 / .07); border-radius: 10px; }
+  .lines::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; border-left: 3px solid rgb(236 253 245 / .07); }
+  .brand { position: absolute; left: 72px; top: 56px; display: flex; align-items: center; gap: 14px; z-index: 5; }
+  .brand svg { width: 52px; height: 52px; }
+  .word { font-family: "Barlow Condensed"; font-weight: 800; font-size: 44px; letter-spacing: .02em; }
+  .word b { color: var(--lime); }
+  .chip { position: absolute; left: 72px; top: 132px; z-index: 5; background: var(--lime); color: var(--ink);
+    font-weight: 700; font-size: 40px; padding: 10px 26px 6px; border-radius: 999px; box-shadow: 0 10px 30px rgb(0 0 0 / .25); }
+  .sub { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); z-index: 6; max-width: 1500px; text-align: center;
+    font-weight: 500; font-size: 42px; line-height: 1.35; padding: 8px 26px 4px; background: rgb(0 0 0 / .62); border-radius: 12px; }
+  .tag { position: absolute; right: 24px; bottom: 14px; z-index: 6; font: 600 14px Inter, sans-serif; letter-spacing: .08em;
+    color: rgb(255 255 255 / .55); text-transform: uppercase; }
+  .window { position: absolute; left: 50%; top: 206px; transform: translateX(-50%); width: 1240px; border-radius: 18px; overflow: hidden;
+    background: #fff; box-shadow: 0 40px 90px rgb(0 0 0 / .45), 0 0 0 1px rgb(255 255 255 / .15); }
+  .window .bar { height: 38px; background: #e9efeb; display: flex; align-items: center; gap: 9px; padding: 0 16px; }
+  .window .bar i { width: 13px; height: 13px; border-radius: 50%; background: #c9d3cd; display: block; }
+  .window .bar span { margin-left: 18px; font: 500 15px Inter, sans-serif; color: #526259; background: #fff; border-radius: 8px; padding: 3px 14px; }
+  .window .shot { position: relative; width: 1240px; height: 698px; }
+  .window img.ui { width: 100%; height: 100%; display: block; }
+  .focus { position: absolute; border: 5px solid var(--lime); border-radius: 14px; box-shadow: 0 0 0 9999px rgb(2 44 34 / .32), 0 0 30px rgb(190 242 100 / .8); }
+  .lock { position: absolute; right: 24px; top: 24px; width: 88px; height: 88px; border-radius: 24px; background: var(--ink); display: grid; place-items: center; box-shadow: 0 10px 30px rgb(0 0 0 / .35); }
+  .phones { position: absolute; inset: 200px 0 120px; display: flex; justify-content: center; align-items: center; gap: 90px; }
+  .phone { width: 392px; height: 822px; border-radius: 56px; background: #0b1d13; padding: 14px; box-shadow: 0 40px 90px rgb(0 0 0 / .5); position: relative; }
+  .phone:nth-child(1) { transform: rotate(-4deg); } .phone:nth-child(2) { transform: rotate(4deg) translateY(30px); }
+  .phone img { width: 364px; height: 794px; object-fit: cover; object-position: top; border-radius: 44px; display: block; background: #fff; }
+  .phone::before { content: ""; position: absolute; top: 24px; left: 50%; transform: translateX(-50%); width: 110px; height: 26px; border-radius: 20px; background: #0b1d13; z-index: 2; }
+  .bgimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(2 12 8 / .82), rgb(2 12 8 / .15) 70%); }
+  .big { position: absolute; left: 120px; top: 360px; z-index: 5; font-weight: 700; font-size: 128px; line-height: 1.2; max-width: 1200px; text-shadow: 0 8px 40px rgb(0 0 0 / .5); }
+  .big em { font-style: normal; color: var(--lime); }
+  .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; z-index: 4; }
+  .lockup { display: flex; align-items: center; gap: 48px; }
+  .lockup svg { width: 220px; height: 220px; filter: drop-shadow(0 20px 40px rgb(0 0 0 / .35)); }
+  .lockup .word { font-size: 196px; }
+  .tagline { font-weight: 700; font-size: 72px; }
+  .pills { display: flex; gap: 28px; margin-top: 10px; }
+  .pill { font-weight: 700; font-size: 44px; padding: 16px 44px 10px; border-radius: 999px; }
+  .pill.solid { background: var(--lime); color: var(--ink); } .pill.ghost { border: 3px solid rgb(255 255 255 / .8); }
+  .url { font: 600 40px Inter, sans-serif; letter-spacing: .04em; color: rgb(255 255 255 / .85); }
+  .cards3 { position: absolute; inset: 230px 90px 150px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 44px; }
+  .card { border-radius: 30px; background: rgb(255 255 255 / .1); border: 1px solid rgb(255 255 255 / .22); backdrop-filter: blur(18px); padding: 26px; display: flex; flex-direction: column; gap: 14px; }
+  .card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; object-position: top left; border-radius: 16px; }
+  .card h3 { margin: 6px 0 0; font-size: 58px; color: var(--lime); } .card p { margin: 0; font-size: 38px; font-weight: 500; }
+  .icons { position: absolute; inset: 300px 160px 200px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 60px; }
+  .icons div { border-radius: 36px; background: rgb(255 255 255 / .08); border: 1px solid rgb(255 255 255 / .18); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+  .icons svg { width: 160px; height: 160px; stroke: var(--lime); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .icons b { font-size: 64px; }
+  .standee { position: absolute; left: 330px; top: 250px; width: 520px; padding: 34px 34px 28px; border-radius: 32px; background: #fff; color: var(--ink); text-align: center; box-shadow: 0 50px 100px rgb(0 0 0 / .55); transform: perspective(1400px) rotateY(14deg); }
+  .standee img { width: 400px; height: 400px; display: block; margin: 14px auto; }
+  .standee h4 { margin: 0; font-family: "Barlow Condensed"; font-weight: 800; font-size: 46px; letter-spacing: .02em; text-transform: uppercase; }
+  .standee p { margin: 0; font-weight: 700; font-size: 38px; }
+  .standee .mini { display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .standee .mini svg { width: 44px; height: 44px; }
+  .scanphone { position: absolute; right: 360px; top: 160px; transform: rotate(6deg); }
+  .scanline { position: absolute; left: 20px; right: 20px; top: 46%; height: 6px; background: var(--lime); box-shadow: 0 0 30px var(--lime); z-index: 3; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const MARK = `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="bc"><circle r="6.9"/></clipPath><g id="sg"><line y1="-2.6" y2="-5.4" stroke="#065f46" stroke-width="1" stroke-linecap="round"/><polygon points="0,2.6 -2.473,0.803 -1.528,-2.103 1.528,-2.103 2.473,0.803" transform="translate(0 -8)"/></g></defs><rect width="32" height="32" rx="9" fill="#065f46"/><path d="M5.5 14.6 16 5.6l10.5 9" fill="none" stroke="#bef264" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(16 20.6)"><circle r="6.9" fill="#fff"/><g clip-path="url(#bc)" fill="#065f46"><polygon points="0,-2.6 2.473,-0.803 1.528,2.103 -1.528,2.103 -2.473,-0.803"/><use href="#sg"/><use href="#sg" transform="rotate(72)"/><use href="#sg" transform="rotate(144)"/><use href="#sg" transform="rotate(216)"/><use href="#sg" transform="rotate(288)"/></g></g></svg>`;
+const ICONS = {
+  book: '<svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h8M8 11h6"/></svg>',
+  phone: '<svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/><path d="M15 3.5a6 6 0 0 1 5.5 5.5M15 7a2.5 2.5 0 0 1 2 2"/></svg>',
+  calc: '<svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="#bef264" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+};
+const brand = `<div class="brand">${MARK}<span class="word">Turf<b>Bari</b></span></div>`;
+const tag = (t) => `<div class="tag">${t}</div>`;
+const sub = (t) => (t ? `<div class="sub">${t}</div>` : "");
+const chip = (t) => (t ? `<div class="chip">${t}</div>` : "");
+const SCALE = 1240 / 1920;
+
+function render(f, root) {
+  let html = "";
+  if (f.layout === "browser") {
+    const focus = f.focus ? `<div class="focus" style="left:${f.focus[0] * SCALE - 8}px;top:${f.focus[1] * SCALE - 8}px;width:${f.focus[2] * SCALE + 16}px;height:${f.focus[3] * SCALE + 16}px"></div>` : "";
+    html = `<div class="frame"><div class="lines"></div>${brand}${chip(f.chip)}
+      <div class="window"><div class="bar"><i></i><i></i><i></i><span>turfbari.com</span></div>
+      <div class="shot"><img class="ui" src="${f.root}${f.img}">${focus}${f.lock ? `<div class="lock">${ICONS.lock}</div>` : ""}</div></div>
+      ${sub(f.sub)}${tag("Reference frame · real TurfBari screenshot")}</div>`;
+  } else if (f.layout === "phone") {
+    html = `<div class="frame"><div class="lines"></div>${brand}${chip(f.chip)}
+      <div class="phones">${f.imgs.map((i) => `<div class="phone"><img src="${f.root}${i}"></div>`).join("")}</div>
+      ${sub(f.sub)}${tag("Reference frame · real mobile screenshots")}</div>`;
+  } else if (f.layout === "cinema") {
+    html = `<div class="frame"><img class="bgimg" src="${f.root}03-reference-images/_illustrations/${f.bg}.png"><div class="shade"></div>${brand}
+      <div class="big">${f.title.replace("?", "<em>?</em>")}</div>${sub(f.sub)}${tag("Reference frame · illustration placeholder for AI footage")}</div>`;
+  } else if (f.layout === "icons") {
+    html = `<div class="frame" style="background:linear-gradient(135deg,#07120d,#022c22)">${brand}
+      <div class="icons"><div>${ICONS.book}<b>খাতা</b></div><div>${ICONS.phone}<b>ফোনকল</b></div><div>${ICONS.calc}<b>বাকির হিসাব</b></div></div>
+      ${sub(f.sub)}${tag("Reference frame · motion graphic")}</div>`;
+  } else if (f.layout === "logo" || f.layout === "cta") {
+    const cta = f.layout === "cta"
+      ? `<div class="pills"><div class="pill solid">টার্ফ খুঁজুন</div><div class="pill ghost">আপনার টার্ফ যুক্ত করুন</div></div><div class="url">${f.url}</div>` : "";
+    html = `<div class="frame"><div class="lines"></div><div class="center">
+      <div class="lockup">${MARK}<span class="word">Turf<b>Bari</b></span></div><div class="tagline">${f.title}</div>${cta}</div>
+      ${sub(f.layout === "logo" ? f.sub : "")}${tag("Reference frame · real logo")}</div>`;
+  } else if (f.layout === "triptych") {
+    html = `<div class="frame"><div class="lines"></div>${brand}
+      <div class="cards3">${f.cards.map(([h, p, img]) => `<div class="card"><img src="${f.root}${img}"><h3>${h}</h3><p>${p}</p></div>`).join("")}</div>
+      ${sub(f.sub)}${tag("Reference frame · real screenshots")}</div>`;
+  } else if (f.layout === "qr") {
+    html = `<div class="frame"><img class="bgimg" src="${f.root}03-reference-images/_illustrations/night.png"><div class="shade" style="background:rgb(2 12 8 / .45)"></div>${brand}${chip(f.chip)}
+      <div class="standee"><div class="mini">${MARK}<h4>Green Arena Gulshan</h4></div><img src="${f.root}${f.qr}"><p>স্ক্যান করে স্লট বুক করুন</p></div>
+      <div class="scanphone"><div class="phone"><img src="${f.root}${f.img}"><div class="scanline"></div></div></div>
+      ${sub(f.sub)}${tag("Reference frame · REAL turf QR + real mobile screenshot")}</div>`;
+  }
+  root.innerHTML = html;
+}
+window.renderFrame = (f) => {
+  render(f, document.getElementById("root"));
+  const imgs = [...document.images];
+  return Promise.all([document.fonts.ready, ...imgs.map((i) => (i.complete ? 1 : new Promise((r) => { i.onload = i.onerror = r; })))]).then(
+    () => imgs.filter((i) => !i.naturalWidth).map((i) => i.src),
+  );
+};
+</script>
+</body>
+</html>

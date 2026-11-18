@@ -1,4 +1,4 @@
-# TURFOS — Smart Turf Management System
+# TurfBari — Smart Turf Management System
 
 Multi-tenant turf management SaaS + public turf discovery for Bangladesh.
 Django / DRF / MySQL-compatible database (XAMPP MariaDB or MySQL 8) backend, React / TypeScript / Tailwind frontend.
@@ -13,9 +13,18 @@ Django / DRF / MySQL-compatible database (XAMPP MariaDB or MySQL 8) backend, Rea
 | Login | One login for Super Admin, owners and managers; server decides where you land; lockout after 5 failed attempts; **My account** page (sidebar, bottom) where the Super Admin, owners and managers change their own password |
 | Super Admin (`/admin`) | Platform overview, application pipeline (contact / reject / approve → creates turf + owner login), turf list with suspend/archive, list and feature toggles, add turf manually |
 | Workspace (`/workspace`) | Dashboard with collections chart, bookings day board + searchable list, create / reschedule / confirm / cancel / no-show, payments and refunds with dues, customers, maintenance blocks, fields, opening hours (overnight supported), peak/weekend/special-date pricing, expenses, reports + Excel export, managers, public profile settings incl. Google Maps link and map pin (paste a full Maps link, type coordinates, or use the current location) |
+| Book a slot (`/workspace/book`) | Owner/manager slot board per field and day: free slots with prices, booked slots with the team name, unconfirmed requests highlighted, maintenance blocks; tap free slots (several in a row) to book a team with advance payment; tap a booked slot to call, confirm or cancel |
+| Subscriptions | Monthly / Half-yearly / Yearly plans (prices editable by the Super Admin). **No auto-renewal**: each period is a prepaid invoice. Paying while a plan runs queues the next period after it. Owners see their plan, days left and invoices under Workspace → Subscription and can renew or switch plan. 10 days before the end a banner warns; after the end there are 3 grace days, then the turf is hidden from Explore and new bookings pause (history stays readable, renewing always works) |
+| Payments | Owners pay online through SSLCommerz (cards, bKash, Nagad, Rocket; set `SSLCOMMERZ_*` in `.env`, every payment is validated server-to-server) or send money to the bKash / Nagad / Rocket / bank account in `.env` and submit the TrxID; the Super Admin verifies it under **Plans & payments** |
+| Super Admin plans | Turf list shows each turf's plan (Monthly / Half-yearly / Yearly), paid-until date and open orders, with a plan filter and **Change plan**; plan chosen when adding a turf or approving an application (paid now, or invoice the owner); dashboard counts turfs per plan |
+| Pictures | Workspace → Settings → Pictures: one square **profile picture** (logo) shown on the turf card and page, and up to **12 public-page photos** (drag & drop, captions, reorder, first = cover on Explore and the turf page, full-screen viewer for players). Uploads are checked with Pillow, resized, re-encoded to WebP and stripped of camera/GPS data; stored under `backend/media/` (S3 in production) |
+| Plan reminders | Owners get an email (English + বাংলা) 10, 7, 3 and 1 days before their paid time ends, with a renew link. Runs daily at 9 AM via Celery beat, or `python manage.py send_subscription_reminders` (cron/Task Scheduler fallback). Never sent twice (unique per period + day), skipped when the next period is already paid, failed sends retried up to 3 times |
+| Activity & audit log | Every important action is recorded with who, when and from which IP: bookings (created, changed, confirmed/cancelled, online requests), payments and refunds, customers, fields, hours, pricing, settings, pictures, team changes, expenses, subscription orders/payments, sign-ins (incl. failed) and password changes. Owners: Workspace → **Activity** (own turf only; managers can't open it). Super Admin: **Audit log** (all turfs + platform actions, filters, search) |
+| Two-factor sign-in | Super Admins can turn on authenticator-app codes (Google/Microsoft Authenticator, Authy) under **My account**: QR set-up, 10 one-time recovery codes (copy/download), regenerate, turn off (password + code). Sign-in then asks for the code; codes can't be replayed, 5 wrong codes or 5 minutes end the attempt, rate-limited |
+| Public page colours | Workspace → Settings → **Public page colours**: six presets (TurfBari green, Ocean, Sunset, Crimson, Royal, Midnight) or a custom main colour, with live preview. Applied only to that turf's public page; colours too light for white button text are rejected |
 | Safety | No double bookings (row lock per field, proven by a concurrent test), tenant isolation (other turfs' IDs → 404), owner-only actions enforced in the API, suspended turfs are read-only, public serializers are whitelists |
 
-Not built yet (roadmap phases 14–16, 25–26): subscriptions/plans/invoices, email + Celery reminders, theme customization studio, gallery image uploads, MFA, audit log, Docker production images.
+Not built yet: SMS/WhatsApp reminders (email only today), two-factor sign-in for owners and managers (Super Admins only today), and automatic database backups for the Docker stack.
 
 Tests: 34 backend (`pytest`) + 9 frontend (`vitest`).
 
@@ -37,13 +46,13 @@ docs/       architecture and guides
 ### 1. Database (XAMPP MariaDB)
 
 Start **MySQL** in the XAMPP Control Panel. Then create the database and app user once
-(XAMPP's `root` has no password by default; pick your own password for `turfos`):
+(XAMPP's `root` has no password by default; pick your own password for `turfbari`):
 
 ```powershell
-C:\xampp\mysql\bin\mysql.exe -h localhost -u root -e "CREATE DATABASE IF NOT EXISTS turfos CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER IF NOT EXISTS 'turfos'@'localhost' IDENTIFIED BY 'your-password'; CREATE USER IF NOT EXISTS 'turfos'@'::1' IDENTIFIED BY 'your-password'; CREATE USER IF NOT EXISTS 'turfos'@'127.0.0.1' IDENTIFIED BY 'your-password'; GRANT ALL ON turfos.* TO 'turfos'@'localhost'; GRANT ALL ON turfos.* TO 'turfos'@'::1'; GRANT ALL ON turfos.* TO 'turfos'@'127.0.0.1'; GRANT ALL ON test_turfos.* TO 'turfos'@'localhost'; GRANT ALL ON test_turfos.* TO 'turfos'@'::1'; GRANT ALL ON test_turfos.* TO 'turfos'@'127.0.0.1'; FLUSH PRIVILEGES;"
+C:\xampp\mysql\bin\mysql.exe -h localhost -u root -e "CREATE DATABASE IF NOT EXISTS turfbari CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER IF NOT EXISTS 'turfbari'@'localhost' IDENTIFIED BY 'your-password'; CREATE USER IF NOT EXISTS 'turfbari'@'::1' IDENTIFIED BY 'your-password'; CREATE USER IF NOT EXISTS 'turfbari'@'127.0.0.1' IDENTIFIED BY 'your-password'; GRANT ALL ON turfbari.* TO 'turfbari'@'localhost'; GRANT ALL ON turfbari.* TO 'turfbari'@'::1'; GRANT ALL ON turfbari.* TO 'turfbari'@'127.0.0.1'; GRANT ALL ON test_turfbari.* TO 'turfbari'@'localhost'; GRANT ALL ON test_turfbari.* TO 'turfbari'@'::1'; GRANT ALL ON test_turfbari.* TO 'turfbari'@'127.0.0.1'; FLUSH PRIVILEGES;"
 ```
 
-`test_turfos` is pytest's temporary database. You can browse the data in phpMyAdmin at http://localhost/phpmyadmin.
+`test_turfbari` is pytest's temporary database. You can browse the data in phpMyAdmin at http://localhost/phpmyadmin.
 
 > If another MySQL server is also listening on `127.0.0.1:3306`, connect to XAMPP through `[::1]` as in `.env.example`.
 
@@ -74,16 +83,16 @@ The API runs on **port 8010** (8000 is often taken by other local projects).
 - Health check: http://127.0.0.1:8010/api/health/
 - API docs (DEBUG only): http://127.0.0.1:8010/api/docs/
 
-`createsuperuser` creates the TURFOS **Super Admin**.
+`createsuperuser` creates the TurfBari **Super Admin**.
 
 #### Demo logins (`seed_demo`, development only)
 
 | Role | Email | Password |
 |---|---|---|
-| Super Admin | admin@turfos.local | TurfosAdmin#2026 |
-| Owner (Green Arena Gulshan) | owner@turfos.local | TurfosOwner#2026 |
-| Owner (Mirpur Kickoff Zone) | mirpur.owner@turfos.local | TurfosOwner#2026 |
-| Manager (Green Arena Gulshan) | manager@turfos.local | TurfosManager#2026 |
+| Super Admin | admin@turfbari.local | TurfBariAdmin#2026 |
+| Owner (Green Arena Gulshan) | owner@turfbari.local | TurfBariOwner#2026 |
+| Owner (Mirpur Kickoff Zone) | mirpur.owner@turfbari.local | TurfBariOwner#2026 |
+| Manager (Green Arena Gulshan) | manager@turfbari.local | TurfBariManager#2026 |
 
 The other demo owners (uttara.owner@, ctg.owner@) use the owner password too. `seed_demo --reset` rebuilds the demo data.
 The command refuses to run when `DJANGO_DEBUG` is false.
@@ -112,6 +121,26 @@ cd backend
 ```
 
 `--pool=solo` is required on Windows; Linux production uses the default prefork pool.
+
+## Production with Docker
+
+`docker-compose.prod.yml` runs the whole stack: MySQL 8.4, Redis, the Django API on gunicorn (migrates and collects
+static files on start), a Celery worker, Celery beat (plan reminders) and Nginx, which serves the React build and
+proxies `/api` plus uploaded `/media`.
+
+```bash
+cp .env.production.example .env.production      # fill in every value; never commit it
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+docker compose -f docker-compose.prod.yml --env-file .env.production exec api python manage.py createsuperuser
+```
+
+- The `web` container listens on port 80 (`HTTP_PORT`). Put HTTPS in front of it (Caddy, Cloudflare, a load balancer
+  or host Nginx) and make sure it sends `X-Forwarded-Proto: https`; Django redirects plain http and sets secure cookies.
+- `TRUST_X_REAL_IP=true` lets audit logs and login lockouts see the visitor's real IP from our Nginx. Leave it off if
+  anything other than this Nginx can reach the API.
+- Uploaded pictures live in the `media` volume, or in S3-compatible storage when `AWS_STORAGE_BUCKET_NAME` is set.
+- Back up the `mysqldata` and `media` volumes; they hold all bookings and pictures.
+- Only one `beat` container may run (the schedule is stored in MySQL by django-celery-beat).
 
 ## Tests and checks
 

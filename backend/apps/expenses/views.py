@@ -23,6 +23,8 @@ class ExpenseViewSet(TenantViewSet):
     serializer_class = ExpenseSerializer
     owner_only = True
     filter_backends = []
+    audit_noun = "expense"
+    audit_category = "expense"
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -36,4 +38,4 @@ class ExpenseViewSet(TenantViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(turf=self.request.tenant, created_by=self.request.user)
+        super().perform_create(serializer, created_by=self.request.user)

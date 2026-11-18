@@ -1,0 +1,46 @@
+;FFMETADATA1
+[CHAPTER]
+TIMEBASE=1/1000
+START=0
+END=15760
+title=মাঠ কোথায়? — Finding a turf
+[CHAPTER]
+TIMEBASE=1/1000
+START=15760
+END=31170
+title=টার্ফবাড়ি — Introducing TurfBari
+[CHAPTER]
+TIMEBASE=1/1000
+START=31170
+END=53500
+title=টার্ফ খুঁজুন — Turf discovery
+[CHAPTER]
+TIMEBASE=1/1000
+START=53500
+END=81160
+title=টার্ফ পেজ ও QR বুকিং — Turf page & QR booking
+[CHAPTER]
+TIMEBASE=1/1000
+START=81160
+END=107620
+title=মালিকের ড্যাশবোর্ড — Owner dashboard
+[CHAPTER]
+TIMEBASE=1/1000
+START=107620
+END=126760
+title=ম্যানেজার — Manager workspace
+[CHAPTER]
+TIMEBASE=1/1000
+START=126760
+END=146040
+title=পেমেন্ট ও রিপোর্ট — Payments & reports
+[CHAPTER]
+TIMEBASE=1/1000
+START=146040
+END=159680
+title=সবার জন্য সহজ — Benefits
+[CHAPTER]
+TIMEBASE=1/1000
+START=159680
+END=170000
+title=আজই যুক্ত হোন — Join TurfBari

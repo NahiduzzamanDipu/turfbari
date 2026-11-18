@@ -187,3 +187,13 @@ def test_anonymous_cannot_change_password():
         "/api/auth/change-password/", {"current_password": "x", "new_password": "y" * 12}, format="json"
     )
     assert response.status_code in (401, 403)
+
+
+def test_turf_qr_code_is_a_standalone_svg():
+    turf, _ = make_turf()
+    response = APIClient().get(f"/api/public/turfs/{turf.slug}/qr.svg")
+    assert response.status_code == 200 and response["Content-Type"] == "image/svg+xml"
+    body = response.content.decode()
+    # Without the namespace browsers refuse to draw the SVG inside an <img> tag.
+    assert body.startswith("<svg") and 'xmlns="http://www.w3.org/2000/svg"' in body
+    assert "booking page</title>" in body

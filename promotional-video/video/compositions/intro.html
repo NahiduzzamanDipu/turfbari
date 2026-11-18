@@ -1,0 +1,147 @@
+<template>
+<style>
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-Medium.ttf"); font-weight: 500; }
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-SemiBold.ttf"); font-weight: 600; }
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "Barlow Condensed"; src: url("assets/fonts/BarlowCondensed-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "Barlow Condensed"; src: url("assets/fonts/BarlowCondensed-ExtraBold.ttf"); font-weight: 800; }
+#root { position: absolute; inset: 0; overflow: hidden; background: #07120D; font-family: "Hind Siliguri", sans-serif; }
+#root .ground { position: absolute; inset: 0; background: url("assets/illus/brand.png") center/cover; }
+#root .shot { position: absolute; inset: 0; }
+#root .enter { position: absolute; inset: 0; transform-origin: 50% 50%; }
+#root .cam { position: absolute; left: 0; top: 0; width: 1920px; transform-origin: 0 0; }
+#root .win { position: relative; width: 1920px; border-radius: 22px; overflow: hidden; background: #F7FBF8;
+  box-shadow: 0 50px 120px rgba(0,0,0,.5); }
+#root .chrome { height: 44px; background: #E3ECE6; display: flex; align-items: center; gap: 10px; padding-left: 22px; }
+#root .chrome i { width: 13px; height: 13px; border-radius: 50%; background: #B9C7BE; }
+#root .chrome span { margin-left: 22px; background: #fff; border-radius: 9px; padding: 3px 18px; font: 500 19px Inter, sans-serif; color: #33473C; }
+#root .shotimg { display: block; width: 1920px; }
+#root .scan { position: absolute; height: 6px; background: #B6F259; border-radius: 3px; }
+#root .tag { position: absolute; left: 200px; top: 122px; background: #B6F259; color: #10280B; font-weight: 700; font-size: 54px;
+  line-height: 1.3; padding: 8px 30px 12px; border-radius: 16px; box-shadow: 0 18px 40px rgba(0,0,0,.28); white-space: nowrap; }
+#root .tag .hl { color: #006040; }
+#root .w { display: inline-block; }
+#root .big { position: absolute; color: #fff; font-weight: 700; font-size: 96px; line-height: 1.28; text-shadow: 0 6px 30px rgba(0,0,0,.45); }
+#root .big .hl { color: #B6F259; }
+#root .big.hero { left: 200px; top: 300px; width: 1300px; }
+#root .big.hero.high { top: 118px; }
+#root .big.top { left: 200px; top: 150px; width: 1520px; font-size: 72px; }
+#root .big.center { left: 0; right: 0; top: 360px; text-align: center; font-size: 110px; }
+#root .big.side-right { left: 200px; top: 330px; width: 900px; font-size: 84px; }
+#root .big.side-left { right: 200px; top: 330px; width: 900px; font-size: 84px; }
+#root .big.under { left: 0; right: 0; top: 640px; text-align: center; font-size: 72px; }
+#root .chips { position: absolute; left: 1180px; top: 300px; display: flex; flex-direction: column; gap: 26px; align-items: flex-start; }
+#root .chip { background: rgba(7,18,13,.82); color: #fff; font-weight: 600; font-size: 50px; padding: 10px 30px 14px; border-radius: 14px;
+  border-left: 8px solid #B6F259; }
+#root .illus { position: absolute; inset: 0; transform-origin: 50% 55%; }
+#root .illus img { width: 1920px; height: 1080px; display: block; }
+#root .shade { position: absolute; inset: 0; background: #020806; opacity: 0; }
+#root .flood { position: absolute; inset: 0; background: #B6F259; opacity: 0; }
+#root .dip { position: absolute; inset: 0; background: #000; opacity: 0; }
+#root .paperground { position: absolute; inset: 0; background: #0A1611 url("assets/illus/brand.png") center/cover; opacity: 1; }
+#root .card { position: absolute; height: 300px; background: #FAF6EA; border-radius: 10px; box-shadow: 0 30px 70px rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; color: #1B1B1B; font-weight: 700; font-size: 104px; }
+#root .strike { position: absolute; left: 40px; right: 40px; top: 50%; height: 16px; margin-top: -2px; background: #DF2225; border-radius: 8px;
+  transform-origin: 0 50%; }
+#root .phone { position: absolute; top: 40px; width: 457px; height: 956px; border-radius: 64px; background: #0B0F0D; padding: 14px;
+  box-shadow: 0 50px 120px rgba(0,0,0,.55); }
+#root .phone.right { left: 1330px; }
+#root .phone.left { left: 210px; }
+#root .phone .screen { position: relative; width: 429px; height: 928px; border-radius: 50px; overflow: hidden; background: #F7FBF8; }
+#root .pscreen { position: absolute; left: 0; top: 0; width: 429px; height: 928px; opacity: 0; }
+#root .phone.small { top: 175px; width: 340px; height: 708px; padding: 12px; border-radius: 50px; }
+#root .phone.small .screen { width: 316px; height: 684px; border-radius: 40px; }
+#root .phone.small .pscreen { width: 316px; height: 684px; }
+#root .miniwin { position: absolute; left: 700px; top: 200px; width: 1060px; border-radius: 16px; overflow: hidden; background: #F7FBF8;
+  box-shadow: 0 50px 120px rgba(0,0,0,.5); }
+#root .miniwin img { display: block; width: 1060px; }
+#root .miniwin .chrome { height: 36px; }
+#root .label { position: absolute; color: #fff; font-weight: 700; font-size: 52px; text-shadow: 0 4px 20px rgba(0,0,0,.4); }
+#root .label .hl { color: #B6F259; }
+#root .label.l1 { left: 200px; top: 70px; }
+#root .label.l2 { left: 700px; top: 110px; }
+#root .lockup { position: absolute; left: 0; right: 0; top: 330px; display: flex; align-items: center; justify-content: center; gap: 34px; }
+#root .lockup .mark { width: 200px; height: 200px; border-radius: 44px; }
+#root .wordmark { font-family: "Barlow Condensed", sans-serif; font-weight: 800; font-size: 210px; color: #fff; line-height: 1; letter-spacing: 1px; }
+#root .wordmark b { color: #B6F259; font-weight: 800; }
+#root .lockup.end { top: 210px; }
+#root .big.under2 { left: 0; right: 0; top: 470px; text-align: center; font-size: 84px; }
+#root .sub { position: absolute; left: 0; right: 0; top: 600px; text-align: center; color: rgba(255,255,255,.85); font-size: 52px; font-weight: 600; }
+#root .ctas { position: absolute; left: 0; right: 0; top: 712px; display: flex; justify-content: center; gap: 28px; }
+#root .btn { font-size: 46px; font-weight: 700; padding: 12px 40px 16px; border-radius: 16px; }
+#root .btn.solid { background: #B6F259; color: #10280B; }
+#root .btn.ghost { color: #fff; border: 3px solid rgba(255,255,255,.85); }
+#root .url { position: absolute; left: 0; right: 0; top: 830px; text-align: center; color: #fff; font: 700 58px "Barlow Condensed", sans-serif; letter-spacing: 3px; }
+#root .cursor { position: absolute; left: 0; top: 0; width: 62px; height: 62px; fill: #fff; stroke: #0B1D13; stroke-width: 1.5px; z-index: 50;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+#root .sb { position: absolute; top: 262px; width: 560px; background: #F7FBF8; border-radius: 22px; overflow: hidden;
+  box-shadow: 0 40px 100px rgba(0,0,0,.45); padding-bottom: 10px; }
+#root .sb.owner { left: 330px; }
+#root .sb.manager { left: 1030px; }
+#root .sbhead { height: 74px; background: #006040; color: #fff; font-size: 42px; font-weight: 700; text-align: center; line-height: 74px; margin-bottom: 8px; }
+#root .navrow { position: relative; height: 36px; line-height: 36px; padding: 0 28px; font: 500 28px Inter, sans-serif; color: #24362C; }
+#root .navrow.own { color: #0B1D13; font-weight: 700; }
+#root .lock { position: absolute; right: 26px; top: 5px; width: 26px; height: 26px; fill: #006040; stroke: #006040; stroke-width: 2.2; }
+#root .viewonly { margin-left: 14px; font: 600 28px "Hind Siliguri", sans-serif; background: #FFF1C9; color: #7A4B00; padding: 0 10px 2px; border-radius: 8px; }
+
+#root .viewport { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #F7FBF8; }
+#root .page { position: absolute; left: 0; top: 0; width: 1920px; opacity: 0; }
+#root .page.first { opacity: 1; }
+#root .urlbox { position: relative; display: inline-block; margin-left: 22px; width: 760px; height: 30px; background: #fff;
+  border-radius: 9px; }
+#root .urlt { position: absolute; left: 18px; top: 3px; font: 500 19px Inter, sans-serif; color: #33473C; opacity: 0; white-space: nowrap; }
+#root .urlt.on { opacity: 1; }
+#root .chrome span.urlbox { padding: 0; }
+#root .tag2 { position: absolute; left: 200px; top: 118px; display: flex; align-items: stretch; filter: drop-shadow(0 16px 34px rgba(0,0,0,.35)); }
+#root .tag2 .bar { width: 10px; background: #B6F259; border-radius: 6px 0 0 6px; transform-origin: 50% 0; }
+#root .tag2 .tx { background: rgba(7,18,13,.94); color: #fff; font-weight: 700; font-size: 52px; line-height: 1.3;
+  padding: 8px 30px 12px 24px; border-radius: 0 14px 14px 0; white-space: nowrap; }
+#root .tag2 .hl { color: #B6F259; }
+#root .chpanel { position: absolute; inset: 0; background: #B6F259; display: flex; flex-direction: column; justify-content: center;
+  padding-left: 200px; }
+#root .kicker { font: 700 40px "Barlow Condensed", sans-serif; letter-spacing: 6px; color: #006040; margin-bottom: 6px; }
+#root .chtitle { font-weight: 700; font-size: 128px; line-height: 1.2; color: #10280B; }
+#root .chtitle .hl { color: #006040; }
+#root .cursor { width: 54px; height: 54px; fill: #fff; stroke: #0B1D13; stroke-width: 1.6px; stroke-linejoin: round;
+  filter: drop-shadow(0 5px 8px rgba(0,0,0,.35)); transform-origin: 18% 12%; }
+</style>
+<div id="root" data-composition-id="intro" data-width="1920" data-height="1080" data-layout-allow-overlap>
+<div class="ground"></div>
+<div id="i1" class="clip shot" data-start="0" data-duration="3.24" data-track-index="1" style="z-index:2"><div id="i1-in" class="enter">
+<div class="lockup" id="i1-lock"><img id="i1-mark" class="mark" src="assets/mark.png" alt=""><div id="i1-word" class="wordmark">Turf<b>Bari</b></div></div>
+</div>
+</div>
+<div id="i2" class="clip shot" data-start="3.24" data-duration="7.9" data-track-index="1" style="z-index:3"><div id="i2-in" class="enter">
+<div id="i2-ph" class="phone left small"><div class="screen"><img class="pscreen" style="opacity:1" src="assets/shots/m_explore.png" alt=""></div></div>
+<div id="i2-win" class="miniwin"><div class="chrome" data-layout-ignore><i></i><i></i><i></i><span>turfbari.com</span></div><img src="assets/shots/dash.png" alt=""></div>
+</div>
+<div id="i2-l1" class="label l1"><span class="w hl">খেলোয়াড়দের</span> <span class="w">জন্য</span></div><div id="i2-l2" class="label l2"><span class="w hl">মালিক</span> <span class="w hl">ও</span> <span class="w hl">ম্যানেজারদের</span> <span class="w">জন্য</span></div>
+</div>
+<div id="i3" class="clip shot" data-start="11.14" data-duration="4.27" data-track-index="1" style="z-index:4"><div id="i3-in" class="enter">
+<div class="lockup" id="i3-lock"><img id="i3-mark" class="mark" src="assets/mark.png" alt=""><div id="i3-word" class="wordmark">Turf<b>Bari</b></div></div>
+<div id="i3-line0" class="big under"><span class="w">সব</span> <span class="w">এক</span> <span class="w">প্ল্যাটফর্মে</span></div>
+<div id="i3-line1" class="big under"><span class="w">প্রতিটি</span> <span class="w">টার্ফের</span> <span class="w hl">ঠিকানা</span></div>
+</div>
+</div>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+tl.fromTo("#i1-mark", {scale: 0.3, rotation: -12, opacity: 0}, {scale: 1, rotation: 0, opacity: 1, duration: 0.7, ease: "back.out(1.6)"}, 0.29);
+tl.fromTo("#i1-word", {clipPath: "inset(0% 100% 0% 0%)", x: -30}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.6, ease: "expo.out"}, 1.79);
+tl.fromTo("#i1-in", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out"}, 0);
+tl.fromTo("#i2-ph", {y: 140, opacity: 0}, {y: 0, opacity: 1, duration: 0.6, ease: "expo.out"}, 3.39);
+tl.fromTo("#i2-l1 .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 3.54);
+tl.fromTo("#i2-win", {x: 220, opacity: 0, filter: "blur(14px)"}, {x: 0, opacity: 1, filter: "blur(0px)", duration: 0.6, ease: "expo.out"}, 6.69);
+tl.fromTo("#i2-l2 .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 6.84);
+tl.to(["#i2-ph", "#i2-win"], {scale: 0.94, duration: 0.8, ease: "power2.inOut"}, 10.24);
+tl.fromTo("#i2-in", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out"}, 3.24);
+tl.fromTo("#i3-line0 .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 11.29);
+tl.to("#i3-line0", {opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power3.in"}, 12.56);
+tl.fromTo("#i3-line1 .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 12.89);
+tl.fromTo("#i3-mark", {scale: 0.3, rotation: -12, opacity: 0}, {scale: 1, rotation: 0, opacity: 1, duration: 0.7, ease: "back.out(1.6)"}, 11.19);
+tl.fromTo("#i3-word", {clipPath: "inset(0% 100% 0% 0%)", x: -30}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.6, ease: "expo.out"}, 11.34);
+tl.fromTo("#i3-in", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out"}, 11.14);
+tl.to("#i3-in", {scale: 1.6, opacity: 0, filter: "blur(12px)", duration: 0.3, ease: "power3.in"}, 15.11);
+window.__timelines["intro"] = tl;
+</script>
+</template>

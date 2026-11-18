@@ -1,9 +1,9 @@
-"""Project-local MySQL server for TURFOS development (no Windows service, no admin rights).
+"""Project-local MySQL server for TurfBari development (no Windows service, no admin rights).
 
 Uses the installed MySQL Server binaries, with data kept in <repo>/.mysql/ (git-ignored).
 The server listens on 127.0.0.1 only.
 
-    python scripts/local_mysql.py init     # one time: create data dir, root password, turfos DB + user
+    python scripts/local_mysql.py init     # one time: create data dir, root password, turfbari DB + user
     python scripts/local_mysql.py start    # run the server in the foreground (Ctrl+C to stop)
     python scripts/local_mysql.py stop     # shut down a running server
     python scripts/local_mysql.py status

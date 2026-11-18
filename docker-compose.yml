@@ -1,15 +1,15 @@
-# Optional local services for TURFOS (MySQL 8.4, Redis, Mailpit).
+# Optional local services for TurfBari (MySQL 8.4, Redis, Mailpit).
 # Usage: docker compose up -d
 # Without Docker, install MySQL 8 natively instead — see README.
-name: turfos
+name: turfbari
 
 services:
   mysql:
     image: mysql:8.4
     command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-turfos}
-      MYSQL_USER: ${MYSQL_USER:-turfos}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-turfbari}
+      MYSQL_USER: ${MYSQL_USER:-turfbari}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
     ports:

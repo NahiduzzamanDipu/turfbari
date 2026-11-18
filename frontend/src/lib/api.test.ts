@@ -9,7 +9,7 @@ function jsonResponse(status: number, body: unknown) {
 describe("api()", () => {
   afterEach(() => {
     vi.restoreAllMocks();
-    document.cookie = "turfos_csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "turfbari_csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
   });
 
   it("prefixes /api and returns parsed JSON", async () => {
@@ -19,7 +19,7 @@ describe("api()", () => {
   });
 
   it("sends the CSRF cookie value on unsafe methods", async () => {
-    document.cookie = "turfos_csrftoken=abc123";
+    document.cookie = "turfbari_csrftoken=abc123";
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse(201, { id: 1 }));
     await api("/things/", { method: "POST", json: { a: 1 } });
     const headers = fetchMock.mock.calls[0]?.[1]?.headers as Headers;

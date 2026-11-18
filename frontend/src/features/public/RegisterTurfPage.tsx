@@ -42,7 +42,7 @@ export function RegisterTurfPage() {
   return (
     <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 lg:grid-cols-[1fr_32rem]">
       <div>
-        <h1 className="font-display text-5xl font-extrabold uppercase leading-none">List your turf on TURFOS</h1>
+        <h1 className="font-display text-5xl font-extrabold uppercase leading-none">List your turf on TurfBari</h1>
         <p className="mt-4 text-lg text-muted-foreground">
           Tell us about your turf. After a quick call we set up your workspace and send your login.
         </p>

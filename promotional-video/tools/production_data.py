@@ -1,0 +1,475 @@
+"""Single source of truth for the TurfBari Bengali promo (scenes, voiceover, prompts).
+
+Everything in 04-09, the README and the PDF is generated from this file by build_package.py,
+so the voiceover, storyboard and subtitles can never drift apart. Edit here, then rebuild.
+"""
+
+BRAND = "TurfBari"
+BRAND_BN = "টার্ফবাড়ি"
+TAGLINE_BN = "প্রতিটি টার্ফের ঠিকানা"
+URL = "turfbari.com"  # unregistered as of 2026-11-18 — register before publishing
+TOTAL_SECONDS = 215  # 3:35
+
+# Screenshot shortcuts (relative to promotional-video/)
+S = "02-real-app-screenshots/"
+
+SCENES = [
+    {
+        "id": 1,
+        "title_bn": "হুক — মাঠ কোথায়?",
+        "title_en": "Hook — where's the pitch?",
+        "start": 0,
+        "end": 20,
+        "vo": [
+            "দল রেডি, বুট রেডি, মনটাও রেডি।",
+            "কিন্তু মাঠ কোথায়?",
+            "কোন টার্ফে আজ রাতে সময় খালি, ভাড়া কত, কাকে ফোন করবেন—খুঁজতে খুঁজতেই সন্ধ্যা পেরিয়ে যায়।",
+            "আর টার্ফ মালিকের দিন কাটে খাতা, একের পর এক ফোনকল আর বাকির হিসাব মেলাতে।",
+        ],
+        "onscreen": ["দল রেডি। মাঠ কোথায়?", "খাতা • ফোনকল • বাকির হিসাব"],
+        "shots": [
+            ("0:00–0:05", "AI video VID-01: slow push-in on a floodlit night pitch, lights flicker on one by one. Kinetic text «দল রেডি। মাঠ কোথায়?» slams in on the beat.", "—"),
+            ("0:05–0:13", "AI video VID-02: friends at a tea stall scrolling phones, one makes a call, shrugs. Quick cuts (1–1.5 s).", "—"),
+            ("0:13–0:20", "AI image IMG-03 with slow Ken Burns: turf counter at night — paper ledger, ringing phone, calculator. Text «খাতা • ফোনকল • বাকির হিসাব» types on, each word with a soft tick.", "—"),
+        ],
+        "screens": [],
+        "transition": "Whip-pan blur into a lime light-sweep that reveals the logo (Scene 2).",
+        "audio": "Music starts with a filtered pulse (−18 dB), crowd ambience low; one bass hit on «মাঠ কোথায়?».",
+        "frames": ["s01-a", "s01-b"],
+    },
+    {
+        "id": 2,
+        "title_bn": "পরিচিতি — টার্ফবাড়ি",
+        "title_en": "Introducing TurfBari",
+        "start": 20,
+        "end": 38,
+        "vo": [
+            "এই দুই দিকের ঝামেলা সহজ করতেই এসেছে টার্ফবাড়ি।",
+            "খেলোয়াড়দের জন্য টার্ফ খোঁজা আর বুকিং রিকোয়েস্ট পাঠানো, আর মালিক ও ম্যানেজারদের জন্য পুরো টার্ফ ব্যবসা সামলানোর গোছানো ড্যাশবোর্ড—সব এক প্ল্যাটফর্মে।",
+            "টার্ফবাড়ি—প্রতিটি টার্ফের ঠিকানা।",
+        ],
+        "onscreen": ["টার্ফবাড়ি", "প্রতিটি টার্ফের ঠিকানা", "খেলোয়াড় • মালিক • ম্যানেজার"],
+        "shots": [
+            ("0:20–0:26", "Logo reveal on brand background: lime roof draws on (stroke animation), ball drops in and bounces once, wordmark «TurfBari» slides out from the mark.", "01-brand-assets/logo/turfbari-mark.svg"),
+            ("0:26–0:34", "Real homepage in a browser frame; slow dolly-in on the hero headline and search bar.", S + "public-homepage/01-home-hero.png"),
+            ("0:34–0:38", "Three chips pop up: খেলোয়াড় • মালিক • ম্যানেজার, then tagline lock-up.", "—"),
+        ],
+        "screens": [S + "public-homepage/01-home-hero.png"],
+        "transition": "Zoom-through the search bar into the Explore page.",
+        "audio": "Music opens up to full beat at the logo (−14 dB under VO). Logo whoosh + soft ball bounce SFX.",
+        "frames": ["s02-a", "s02-b"],
+    },
+    {
+        "id": 3,
+        "title_bn": "টার্ফ খোঁজা — অ্যাকাউন্ট ছাড়াই",
+        "title_en": "Public turf discovery",
+        "start": 38,
+        "end": 68,
+        "vo": [
+            "টার্ফবাড়ির ওয়েবসাইটে টার্ফ খুঁজতে কোনো অ্যাকাউন্ট লাগে না।",
+            "লোকেশনের অনুমতি দিলেই আপনার সবচেয়ে কাছের টার্ফগুলো আগে দেখাবে, পাশে লেখা থাকবে কত দূরে।",
+            "চাইলে জেলা আর এলাকা বেছে নিন, কিংবা টার্ফের নাম লিখে সার্চ করুন।",
+            "প্রতিটি কার্ডে ছবি, ইনডোর না আউটডোর, কয়টি মাঠ আর ঘণ্টাপ্রতি শুরুর ভাড়া—একনজরেই।",
+            "দশ জায়গায় ফোন করার দিন শেষ।",
+        ],
+        "onscreen": ["অ্যাকাউন্ট ছাড়াই টার্ফ খুঁজুন", "কাছের টার্ফ আগে — দূরত্বসহ", "জেলা • এলাকা • নাম দিয়ে সার্চ"],
+        "shots": [
+            ("0:38–0:46", "Explore page «Nearest first». Animate the «Showing turfs nearest to you» chip with a lime pulse; zoom on the «700 m away» badge.", S + "turf-discovery/01-explore-nearest-first.png"),
+            ("0:46–0:54", "District filter then area filter (cross-dissolve between the two real screens); animated cursor clicks the District select.", S + "turf-discovery/02-explore-district-filter.png | " + S + "turf-discovery/03-explore-district-area-filter.png"),
+            ("0:54–0:60", "Search by name «Uttara» — type-on effect in the search box, results appear.", S + "turf-discovery/04-explore-search-by-name.png"),
+            ("0:60–1:08", "Phone mock-up: mobile Explore scrolling; turf cards stagger in (80 ms apart).", S + "turf-discovery/06-mobile-explore.png"),
+        ],
+        "screens": [
+            S + "turf-discovery/01-explore-nearest-first.png",
+            S + "turf-discovery/02-explore-district-filter.png",
+            S + "turf-discovery/04-explore-search-by-name.png",
+            S + "turf-discovery/06-mobile-explore.png",
+        ],
+        "transition": "Card-expand: the Green Arena card scales up into its turf page.",
+        "audio": "Soft UI clicks on each filter; light «tick» per card reveal (−24 dB).",
+        "frames": ["s03-a", "s03-b", "s03-c"],
+    },
+    {
+        "id": 4,
+        "title_bn": "টার্ফের বিস্তারিত ও QR বুকিং",
+        "title_en": "Turf details and QR booking",
+        "start": 68,
+        "end": 98,
+        "vo": [
+            "পছন্দের টার্ফে ঢুকলেই দেখবেন ছবির গ্যালারি, সুবিধাগুলো, মাঠের তথ্য, খোলার সময় আর প্রতিটি স্লটের ভাড়া।",
+            "ম্যাপে এক ট্যাপেই পেয়ে যাবেন পৌঁছানোর রাস্তা।",
+            "প্রতিটি টার্ফের আছে নিজস্ব QR কোড—স্ক্যান করলেই খুলে যায় সেই টার্ফের বুকিং পেজ।",
+            "তারিখ, মাঠ আর খালি সময় বেছে নিন, নাম আর মোবাইল নম্বর দিয়ে পাঠিয়ে দিন বুকিং রিকোয়েস্ট।",
+            "টার্ফ কর্তৃপক্ষ কনফার্ম করলেই খেলা পাকা; রেফারেন্স নম্বর দিয়ে যেকোনো সময় স্ট্যাটাসও দেখে নিতে পারবেন।",
+        ],
+        "onscreen": [
+            "ছবি • সুবিধা • খোলার সময় • ভাড়া",
+            "প্রতিটি টার্ফের নিজস্ব QR কোড",
+            "রিকোয়েস্ট পাঠান → টার্ফ কনফার্ম করবে",
+        ],
+        "shots": [
+            ("1:08–1:16", "Turf page: cover photo, gallery strip; open the gallery viewer (real lightbox screenshot).", S + "turf-details/01-turf-cover-gallery.png | " + S + "turf-details/06-gallery-viewer.png"),
+            ("1:16–1:20", "Prices & opening hours panel slides in; lime highlight on «Prices per hour». Tap «Directions».", S + "turf-details/04-turf-prices-hours.png"),
+            ("1:20–1:26", "QR standee at the turf gate (reference frame s04-b uses the REAL QR). AI video VID-05: phone scans it; light sweep across the code; cut to the phone screen.", S + "qr-booking/00-real-turf-qr-code.svg | " + S + "turf-details/07-turf-qr-code.png"),
+            ("1:26–1:34", "Phone mock-up sequence: field + date → two evening slots tapped → form filled.", S + "qr-booking/02-mobile-pick-field-and-date.png | " + S + "qr-booking/03-mobile-pick-time-slots.png | " + S + "qr-booking/04-mobile-booking-form.png"),
+            ("1:34–1:38", "«Request sent!» with reference, then the status page showing «Pending».", S + "qr-booking/05-mobile-request-sent.png | " + S + "qr-booking/07-booking-status-desktop.png"),
+        ],
+        "screens": [
+            S + "turf-details/01-turf-cover-gallery.png",
+            S + "turf-details/07-turf-qr-code.png",
+            S + "qr-booking/03-mobile-pick-time-slots.png",
+            S + "qr-booking/05-mobile-request-sent.png",
+        ],
+        "transition": "Match-cut: the «Pending» badge on the player's phone becomes the pending-requests banner on the owner dashboard.",
+        "audio": "QR scan «bip» + short rising synth; tap sounds on slots; a gentle «ding» on Request sent.",
+        "frames": ["s04-a", "s04-b", "s04-c", "s04-d"],
+    },
+    {
+        "id": 5,
+        "title_bn": "টার্ফ মালিকের ড্যাশবোর্ড",
+        "title_en": "Turf Owner Dashboard",
+        "start": 98,
+        "end": 130,
+        "vo": [
+            "এবার টার্ফ মালিকের পালা।",
+            "ড্যাশবোর্ডে আজকের বুকিং, আজকের আদায়, এই মাসের আয় আর মোট বকেয়া—সব একনজরে।",
+            "বুক আ স্লট বোর্ডে দেখুন কোন সময় খালি, কোনটা বুকড, আর কোন রিকোয়েস্ট কনফার্মের অপেক্ষায়।",
+            "ফোনে কোনো দল বুকিং চাইলে কয়েক সেকেন্ডেই নিয়ে নিন—ডিসকাউন্ট আর অগ্রিম টাকাসহ।",
+            "মাঠ, খোলার সময়, পিক আওয়ার আর উইকেন্ডের ভাড়া, কাস্টমারের বুকিং ইতিহাস—সবকিছু থাকে গোছানো, খাতা ছাড়াই।",
+        ],
+        "onscreen": ["মালিকের ড্যাশবোর্ড", "এক বোর্ডে সব স্লট", "ডিসকাউন্ট ও অগ্রিমসহ বুকিং", "মাঠ • সময় • ভাড়া • কাস্টমার"],
+        "shots": [
+            ("1:38–1:46", "Owner dashboard. Count-up animation is NOT allowed on the real numbers — instead highlight each stat card in turn with a lime outline. Chart line draws on (mask reveal of the real chart).", S + "owner-dashboard/01-dashboard.png"),
+            ("1:46–1:54", "Book a slot board: colour legend callout (Free / Booked / Request / Maintenance).", S + "booking-management/01-book-a-slot-board.png"),
+            ("1:54–2:02", "Two slots selected, team details, 10% discount chip, price summary (real screen).", S + "booking-management/02-book-team-with-discount.png"),
+            ("2:02–2:10", "Quick montage, 2 s each: Fields → Opening hours → Pricing rules → Customers.", S + "field-and-pricing/01-fields.png | " + S + "field-and-pricing/02-opening-hours.png | " + S + "field-and-pricing/03-pricing-rules.png | " + S + "customer-management/01-customers.png"),
+        ],
+        "screens": [
+            S + "owner-dashboard/01-dashboard.png",
+            S + "booking-management/01-book-a-slot-board.png",
+            S + "booking-management/02-book-team-with-discount.png",
+            S + "customer-management/01-customers.png",
+        ],
+        "transition": "Slide the sidebar: the owner sidebar morphs into the shorter manager sidebar.",
+        "audio": "Music steady; subtle keyboard/typing SFX under the booking form; click on the 10% chip.",
+        "frames": ["s05-a", "s05-b", "s05-c"],
+    },
+    {
+        "id": 6,
+        "title_bn": "ম্যানেজারের ড্যাশবোর্ড",
+        "title_en": "Manager Dashboard",
+        "start": 130,
+        "end": 155,
+        "vo": [
+            "আর ম্যানেজার?",
+            "মালিক টিম পেজ থেকে ম্যানেজার যুক্ত করলেই তিনি পান নিজের আলাদা লগইন।",
+            "ম্যানেজার প্রতিদিনের বুকিং নেন, রিকোয়েস্ট কনফার্ম করেন, পেমেন্ট রেকর্ড করেন আর কাস্টমার সামলান।",
+            "ভাড়া বদলানো, খরচ, রিপোর্ট আর টিম—এগুলো থাকে শুধু মালিকের হাতে।",
+            "কাজ ভাগ হয়, নিয়ন্ত্রণ থাকে আপনার।",
+        ],
+        "onscreen": ["ম্যানেজারের আলাদা লগইন", "বুকিং • কনফার্ম • পেমেন্ট • কাস্টমার", "ভাড়া, খরচ, রিপোর্ট — শুধু মালিকের হাতে"],
+        "shots": [
+            ("2:10–2:15", "Owner's Team page (add manager), then the manager login screen.", S + "owner-dashboard/03-team-managers.png | " + S + "manager-dashboard/00-manager-login.png"),
+            ("2:15–2:22", "Manager dashboard — circle the «Manager» role label and the shorter sidebar (no Expenses / Reports / Team).", S + "manager-dashboard/01-manager-dashboard.png"),
+            ("2:22–2:30", "Manager confirms a pending request and records a payment (real booking dialog).", S + "manager-dashboard/09-manager-booking-details-and-payments.png | " + S + "manager-dashboard/03-manager-book-a-slot-board.png"),
+            ("2:30–2:35", "Manager's Pricing page is view-only (no «Add rule» button) — show with a lock icon overlay.", S + "manager-dashboard/15-manager-pricing-view-only.png"),
+        ],
+        "screens": [
+            S + "manager-dashboard/00-manager-login.png",
+            S + "manager-dashboard/01-manager-dashboard.png",
+            S + "manager-dashboard/09-manager-booking-details-and-payments.png",
+            S + "manager-dashboard/15-manager-pricing-view-only.png",
+        ],
+        "transition": "Push transition upward into the payments panel.",
+        "audio": "Small «lock» click on the view-only shot. VO slightly warmer on «নিয়ন্ত্রণ থাকে আপনার».",
+        "frames": ["s06-a", "s06-b", "s06-c"],
+    },
+    {
+        "id": 7,
+        "title_bn": "পেমেন্ট, রিপোর্ট ও ব্যবসার হিসাব",
+        "title_en": "Payments, reports and insights",
+        "start": 155,
+        "end": 180,
+        "vo": [
+            "প্রতিটি বুকিংয়ে দেখা যায় মোট ভাড়া, কত টাকা পরিশোধ হয়েছে আর কত বাকি।",
+            "ক্যাশ, বিকাশ বা নগদ—যেভাবেই টাকা আসুক, রেকর্ড থাকে বুকিংয়ের সঙ্গেই।",
+            "রিপোর্টে দেখুন আদায়, খরচ আর নিট আয়, দিনভিত্তিক আদায়ের চার্ট, আর কোন মাঠে কত বুকিং।",
+            "দরকার হলে এক ক্লিকে এক্সেলে ডাউনলোড।",
+        ],
+        "onscreen": ["পরিশোধ • বাকি • পেমেন্টের মাধ্যম", "আদায় • খরচ • নিট আয়", "এক ক্লিকে এক্সেল"],
+        "shots": [
+            ("2:35–2:43", "Booking dialog: zoom on «Paid ৳0.00 · Due ৳5,600.00» and the payment row (Cash / bKash / Nagad).", S + "payment-management/01-booking-details-and-payments.png"),
+            ("2:43–2:55", "Reports: the real bar chart builds left-to-right (mask wipe, no altered values); then By field and By payment method tables slide up.", S + "reports/01-reports-overview.png"),
+            ("2:55–3:00", "Cursor clicks «Export bookings (Excel)»; an .xlsx icon drops into a Downloads tray.", S + "reports/01-reports-overview.png"),
+        ],
+        "screens": [S + "payment-management/01-booking-details-and-payments.png", S + "reports/01-reports-overview.png", S + "reports/03-expenses.png"],
+        "transition": "Pull back from the screen to a cinematic shot (VID-06 owner smiling at laptop).",
+        "audio": "Cash-register «ka-ching» is too loud for this brand — use a soft coin chime (−22 dB). Paper-swoosh on the export.",
+        "frames": ["s07-a", "s07-b"],
+    },
+    {
+        "id": 8,
+        "title_bn": "সবার জন্য সুবিধা",
+        "title_en": "The overall benefit",
+        "start": 180,
+        "end": 198,
+        "vo": [
+            "খেলোয়াড়দের জন্য সহজে টার্ফ খোঁজা আর ঝামেলাহীন বুকিং রিকোয়েস্ট।",
+            "মালিকের জন্য গোছানো ব্যবসা আর পরিষ্কার হিসাব।",
+            "ম্যানেজারের জন্য স্পষ্ট দায়িত্ব।",
+            "মাঠের বাইরের ঝামেলা কমলে, মাঠের ভেতরের আনন্দটাই বাড়ে।",
+        ],
+        "onscreen": ["খেলোয়াড় — সহজ খোঁজা, সহজ রিকোয়েস্ট", "মালিক — গোছানো ব্যবসা", "ম্যানেজার — স্পষ্ট দায়িত্ব"],
+        "shots": [
+            ("3:00–3:10", "Triptych: three glass cards (Player / Owner / Manager) each with a real mini-screenshot; cards flip in one after another.", S + "turf-discovery/05-mobile-home.png | " + S + "owner-dashboard/01-dashboard.png | " + S + "manager-dashboard/01-manager-dashboard.png"),
+            ("3:10–3:18", "AI video VID-03 / IMG-08: goal celebration under floodlights, slow motion, lime flare.", "—"),
+        ],
+        "screens": [S + "turf-discovery/05-mobile-home.png"],
+        "transition": "Flash to white-lime then cut to the brand background.",
+        "audio": "Music builds; crowd cheer swells under the last line, then drops for the CTA.",
+        "frames": ["s08-a", "s08-b"],
+    },
+    {
+        "id": 9,
+        "title_bn": "শেষ বার্তা ও আহ্বান",
+        "title_en": "Final branding and call to action",
+        "start": 198,
+        "end": 215,
+        "vo": [
+            "আপনি টার্ফ মালিক হলে, আজই আপনার টার্ফ যুক্ত করুন টার্ফবাড়িতে।",
+            "আর খেলতে ভালোবাসলে, খুঁজে নিন আপনার পরের ম্যাচের মাঠ।",
+            "টার্ফবাড়ি—প্রতিটি টার্ফের ঠিকানা। খেলা হোক আরও সহজে।",
+        ],
+        "onscreen": ["আপনার টার্ফ যুক্ত করুন", "টার্ফ খুঁজুন", "টার্ফবাড়ি — প্রতিটি টার্ফের ঠিকানা", URL],
+        "shots": [
+            ("3:18–3:26", "Real «List your turf» page in a browser frame, then the Explore page — CTA buttons pulse once.", S + "public-homepage/05-register-your-turf.png | " + S + "turf-discovery/01-explore-nearest-first.png"),
+            ("3:26–3:35", "End card: logo lock-up centred, tagline below, two CTA pills «টার্ফ খুঁজুন» and «আপনার টার্ফ যুক্ত করুন», URL at the bottom. Hold 4 s, fade to black.", "01-brand-assets/logo/turfbari-logo-horizontal-on-dark.png"),
+        ],
+        "screens": [S + "public-homepage/05-register-your-turf.png"],
+        "transition": "Fade to black (1 s).",
+        "audio": "Music resolves on the tagline; final logo sting (single bass + shimmer). Silence for the last 0.5 s.",
+        "frames": ["s09-a", "s09-b"],
+    },
+]
+
+# --------------------------------------------------------------------------- reference frames
+# Rendered by tools/render-frames.mjs through tools/frames.html. Every UI pixel comes from a real screenshot.
+FRAMES = {
+    "s01-a": {"layout": "cinema", "bg": "night", "title": "দল রেডি। মাঠ কোথায়?", "sub": "কিন্তু মাঠ কোথায়?"},
+    "s01-b": {"layout": "icons", "title": "খাতা • ফোনকল • বাকির হিসাব", "sub": "আর টার্ফ মালিকের দিন কাটে খাতা, ফোনকল আর বাকির হিসাব মেলাতে।"},
+    "s02-a": {"layout": "logo", "title": "প্রতিটি টার্ফের ঠিকানা", "sub": "এই দুই দিকের ঝামেলা সহজ করতেই এসেছে টার্ফবাড়ি।"},
+    "s02-b": {"layout": "browser", "img": S + "public-homepage/01-home-hero.png", "chip": "খেলোয়াড় • মালিক • ম্যানেজার", "sub": "সব এক প্ল্যাটফর্মে।"},
+    "s03-a": {"layout": "browser", "img": S + "turf-discovery/01-explore-nearest-first.png", "chip": "কাছের টার্ফ আগে — দূরত্বসহ", "focus": [400, 200, 460, 52], "sub": "আপনার সবচেয়ে কাছের টার্ফগুলো আগে দেখাবে।"},
+    "s03-b": {"layout": "browser", "img": S + "turf-discovery/03-explore-district-area-filter.png", "chip": "জেলা • এলাকা • নাম দিয়ে সার্চ", "focus": [400, 250, 230, 230], "sub": "চাইলে জেলা আর এলাকা বেছে নিন।"},
+    "s03-c": {"layout": "phone", "imgs": [S + "turf-discovery/05-mobile-home.png", S + "turf-discovery/06-mobile-explore.png"], "chip": "অ্যাকাউন্ট ছাড়াই টার্ফ খুঁজুন", "sub": "দশ জায়গায় ফোন করার দিন শেষ।"},
+    "s04-a": {"layout": "browser", "img": S + "turf-details/01-turf-cover-gallery.png", "chip": "ছবি • সুবিধা • খোলার সময় • ভাড়া", "sub": "ছবির গ্যালারি, সুবিধা, খোলার সময় আর ভাড়া।"},
+    "s04-b": {"layout": "qr", "qr": S + "qr-booking/00-real-turf-qr-code.svg", "img": S + "qr-booking/01-mobile-turf-page-after-scan.png", "chip": "প্রতিটি টার্ফের নিজস্ব QR কোড", "sub": "স্ক্যান করলেই খুলে যায় সেই টার্ফের বুকিং পেজ।"},
+    "s04-c": {"layout": "phone", "imgs": [S + "qr-booking/03-mobile-pick-time-slots.png", S + "qr-booking/04-mobile-booking-form.png"], "chip": "তারিখ • মাঠ • খালি সময়", "sub": "নাম আর মোবাইল নম্বর দিয়ে পাঠিয়ে দিন বুকিং রিকোয়েস্ট।"},
+    "s04-d": {"layout": "phone", "imgs": [S + "qr-booking/05-mobile-request-sent.png", S + "qr-booking/06-mobile-booking-status.png"], "chip": "রিকোয়েস্ট পাঠান → টার্ফ কনফার্ম করবে", "sub": "টার্ফ কর্তৃপক্ষ কনফার্ম করলেই খেলা পাকা।"},
+    "s05-a": {"layout": "browser", "img": S + "owner-dashboard/01-dashboard.png", "chip": "মালিকের ড্যাশবোর্ড", "focus": [288, 182, 1600, 114], "sub": "আজকের বুকিং, আদায়, মাসের আয় আর বকেয়া—একনজরে।"},
+    "s05-b": {"layout": "browser", "img": S + "booking-management/01-book-a-slot-board.png", "chip": "এক বোর্ডে সব স্লট", "sub": "কোন সময় খালি, কোনটা বুকড, কোনটা অপেক্ষায়।"},
+    "s05-c": {"layout": "browser", "img": S + "booking-management/02-book-team-with-discount.png", "chip": "ডিসকাউন্ট ও অগ্রিমসহ বুকিং", "focus": [313, 920, 384, 142], "sub": "ফোনে আসা বুকিং নিন কয়েক সেকেন্ডেই।"},
+    "s06-a": {"layout": "browser", "img": S + "manager-dashboard/00-manager-login.png", "chip": "ম্যানেজারের আলাদা লগইন", "sub": "মালিক যুক্ত করলেই ম্যানেজার পান নিজের লগইন।"},
+    "s06-b": {"layout": "browser", "img": S + "manager-dashboard/01-manager-dashboard.png", "chip": "বুকিং • কনফার্ম • পেমেন্ট • কাস্টমার", "focus": [16, 70, 224, 80], "sub": "প্রতিদিনের বুকিং, কনফার্ম, পেমেন্ট আর কাস্টমার।"},
+    "s06-c": {"layout": "browser", "img": S + "manager-dashboard/15-manager-pricing-view-only.png", "chip": "ভাড়া, খরচ, রিপোর্ট — শুধু মালিকের হাতে", "lock": True, "sub": "কাজ ভাগ হয়, নিয়ন্ত্রণ থাকে আপনার।"},
+    "s07-a": {"layout": "browser", "img": S + "payment-management/01-booking-details-and-payments.png", "chip": "পরিশোধ • বাকি • পেমেন্টের মাধ্যম", "focus": [970, 478, 200, 52], "sub": "কত টাকা পরিশোধ হয়েছে আর কত বাকি।"},
+    "s07-b": {"layout": "browser", "img": S + "reports/01-reports-overview.png", "chip": "আদায় • খরচ • নিট আয় • এক ক্লিকে এক্সেল", "focus": [1668, 48, 220, 40], "sub": "দরকার হলে এক ক্লিকে এক্সেলে ডাউনলোড।"},
+    "s08-a": {"layout": "triptych", "cards": [
+        ["খেলোয়াড়", "সহজ খোঁজা, সহজ রিকোয়েস্ট", S + "turf-discovery/01-explore-nearest-first.png"],
+        ["মালিক", "গোছানো ব্যবসা, পরিষ্কার হিসাব", S + "owner-dashboard/01-dashboard.png"],
+        ["ম্যানেজার", "স্পষ্ট দায়িত্ব", S + "manager-dashboard/01-manager-dashboard.png"],
+    ], "sub": "মাঠের বাইরের ঝামেলা কমলে, মাঠের ভেতরের আনন্দটাই বাড়ে।"},
+    "s08-b": {"layout": "cinema", "bg": "goal", "title": "খেলা হোক আরও সহজে", "sub": "মাঠের ভেতরের আনন্দটাই বাড়ে।"},
+    "s09-a": {"layout": "browser", "img": S + "public-homepage/05-register-your-turf.png", "chip": "আপনার টার্ফ যুক্ত করুন", "sub": "আজই আপনার টার্ফ যুক্ত করুন টার্ফবাড়িতে।"},
+    "s09-b": {"layout": "cta", "title": "প্রতিটি টার্ফের ঠিকানা", "sub": "টার্ফবাড়ি—প্রতিটি টার্ফের ঠিকানা। খেলা হোক আরও সহজে।"},
+}
+
+# --------------------------------------------------------------------------- AI image prompts
+PALETTE_TEXT = (
+    "Colour palette locked to the TurfBari brand: deep emerald #065F46 / #006040, lime highlight #B6F259 / #BEF264, "
+    "ink #0B1D13, mist white #F7FBF8; night scenes graded teal-green with warm sodium/LED floodlight whites."
+)
+NEGATIVE_IMAGE = (
+    "no text, no letters, no numbers, no logos, no brand marks, no watermarks, no readable signage, no QR codes, "
+    "no app interfaces or UI on screens (screens must be blank or plain green for replacement), no distorted faces, "
+    "no extra fingers, no warped hands, no cartoon style, no oversaturated neon, no stadium sponsor boards"
+)
+
+IMAGE_PROMPTS = [
+    {
+        "id": "IMG-01", "scene": 1, "title": "Night turf, floodlights coming on",
+        "subject": "An empty 7-a-side artificial-grass football turf in Dhaka at night, rooftop or fenced urban lot, goal in the centre background",
+        "environment": "Dense Dhaka skyline with lit apartment windows behind tall black netting; light rain haze in the air",
+        "composition": "Wide symmetrical shot from the halfway line, low height; goal on the vertical centre line, skyline across the top third, empty space top-left for Bengali title",
+        "camera": "Eye level 1.2 m, 24 mm lens, f/2.8, slight dutch tilt 0°",
+        "lighting": "Four LED floodlight towers, two already on and two flickering on, volumetric beams cutting through haze, wet turf reflections",
+        "mood": "Anticipation, about to play", "style": "Cinematic photorealistic sports commercial, shallow grain",
+        "ratio": "16:9 (1920×1080 or larger)",
+    },
+    {
+        "id": "IMG-02", "scene": 1, "title": "Friends trying to find a turf",
+        "subject": "Five Bangladeshi friends in their 20s in football kits and joggers at a roadside tea stall, two holding phones, one on a call looking frustrated",
+        "environment": "Evening street in Dhaka, rickshaws softly blurred behind, warm tea-stall bulbs",
+        "composition": "Medium group shot, rule of thirds, phones visible but screens facing away from camera",
+        "camera": "Handheld feel, 35 mm, f/2, slight motion blur on background",
+        "lighting": "Warm tungsten from the stall mixed with cool street light; emerald-tinted shadows",
+        "mood": "Relatable everyday frustration, light-hearted", "style": "Documentary-style photorealistic, natural skin tones",
+        "ratio": "16:9",
+    },
+    {
+        "id": "IMG-03", "scene": 1, "title": "Turf counter chaos (owner's side)",
+        "subject": "A turf reception counter at night: open handwritten booking ledger with crossed-out times, a ringing feature phone, calculator, cash in a tray",
+        "environment": "Small office cabin beside the pitch; through the window the floodlit turf glows green",
+        "composition": "Top-down 30° angle close-up on the counter, ledger in the lower third, window light in the top right",
+        "camera": "50 mm macro-ish, f/2.8, very shallow depth of field",
+        "lighting": "Single warm desk lamp, green spill from the turf outside",
+        "mood": "Overwhelmed, messy, analogue", "style": "Photorealistic still life, cinematic",
+        "ratio": "16:9",
+        "extra": "Handwriting must be illegible scribbles (no real words or numbers).",
+    },
+    {
+        "id": "IMG-04", "scene": 4, "title": "QR standee at the turf entrance (for compositing the real QR)",
+        "subject": "A modern acrylic table standee or wall plate at a turf gate, with a large BLANK white square panel where a QR code will be composited in post",
+        "environment": "Turf entrance with black netting, floodlit pitch softly out of focus behind",
+        "composition": "Standee on the right third facing the camera at 15°, blank panel perfectly flat and unobstructed",
+        "camera": "Eye level, 50 mm, f/2",
+        "lighting": "Soft key from the left, floodlight bokeh behind",
+        "mood": "Clean, modern, trustworthy", "style": "Photorealistic product shot",
+        "ratio": "16:9",
+        "extra": "Leave the panel pure white with crisp corners so the REAL QR (02-real-app-screenshots/qr-booking/00-real-turf-qr-code.svg) can be corner-pinned on top. Never let the AI draw a QR.",
+    },
+    {
+        "id": "IMG-05", "scene": 4, "title": "Phone scanning the standee",
+        "subject": "Close-up of a young player's hand holding a modern smartphone up to the standee; phone screen plain emerald green (#065F46) for screen replacement",
+        "environment": "Turf entrance at night, same standee as IMG-04",
+        "composition": "Over-the-shoulder, phone in the centre third, standee blurred behind the phone",
+        "camera": "85 mm, f/1.8", "lighting": "Phone screen glow on fingers, floodlight rim light",
+        "mood": "Quick, effortless", "style": "Photorealistic commercial",
+        "ratio": "16:9",
+        "extra": "Screen must be a flat uniform green, no UI, no reflections of text, so the real mobile screenshot can be tracked in.",
+    },
+    {
+        "id": "IMG-06", "scene": 5, "title": "Turf owner checking bookings",
+        "subject": "Bangladeshi turf owner in his 40s, smart casual (panjabi or polo), smiling slightly while looking at a laptop on the reception desk; laptop screen faces away or shows plain green",
+        "environment": "Tidy turf reception with a small plant, window to the floodlit pitch",
+        "composition": "Medium shot from 45°, owner on the left third, pitch glow on the right",
+        "camera": "35 mm, f/2.2", "lighting": "Soft daylight-balanced key, green ambient from outside",
+        "mood": "In control, relaxed", "style": "Photorealistic corporate-lifestyle",
+        "ratio": "16:9",
+    },
+    {
+        "id": "IMG-07", "scene": 6, "title": "Manager organising the day",
+        "subject": "Young turf manager (man or woman, 25–30) at pitch-side holding a tablet, talking to a team captain; tablet screen plain green",
+        "environment": "Turf sideline at dusk, players warming up behind",
+        "composition": "Two-shot, manager in focus foreground right, captain soft left",
+        "camera": "50 mm, f/2", "lighting": "Golden-hour key, floodlights just turning on",
+        "mood": "Organised, friendly, professional", "style": "Photorealistic sports-lifestyle",
+        "ratio": "16:9",
+    },
+    {
+        "id": "IMG-08", "scene": 8, "title": "Goal celebration under lights",
+        "subject": "A player in a lime bib celebrating a goal with teammates running in, ball in the back of the net",
+        "environment": "Floodlit urban turf at night, light haze, net still moving",
+        "composition": "Low-angle wide, celebrating player centre-left, net and goal on the right",
+        "camera": "Low angle 0.5 m, 24 mm, f/2.8, 1/1000 s frozen motion",
+        "lighting": "Back-lit by floodlights, strong rim light, lime flare",
+        "mood": "Joy, release, togetherness", "style": "Photorealistic sports commercial, high dynamic range",
+        "ratio": "16:9",
+    },
+    {
+        "id": "IMG-09", "scene": 2, "title": "Brand background plate",
+        "subject": "Abstract top-down view of artificial turf blades with faint white pitch markings, soft emerald gradient",
+        "environment": "Studio-clean, no people", "composition": "Even texture with darker vignette, clean centre for the logo",
+        "camera": "Top-down, 100 mm macro texture", "lighting": "Soft diffused, slight lime glow top-left",
+        "mood": "Premium, calm", "style": "Minimal photographic texture",
+        "ratio": "16:9",
+    },
+    {
+        "id": "IMG-10", "scene": 9, "title": "Aerial dusk turf for the end card",
+        "subject": "Drone view of a rooftop turf in a Bangladeshi city at blue hour, game in progress, tiny players",
+        "environment": "Surrounding rooftops, water tanks, distant lights", "composition": "Top-down 70°, turf in the lower half, sky gradient upper half for logo and CTA",
+        "camera": "Drone 24 mm", "lighting": "Blue hour + floodlights",
+        "mood": "Aspirational, city-wide", "style": "Photorealistic aerial cinematic",
+        "ratio": "16:9",
+    },
+]
+
+# --------------------------------------------------------------------------- AI video prompts
+NEGATIVE_VIDEO = (
+    "no on-screen text, no subtitles, no logos or brand marks, no readable QR codes, no app interfaces, "
+    "no warped faces or limbs, no morphing objects, no flicker artefacts, no fast shaky camera, no sponsor boards"
+)
+
+VIDEO_PROMPTS = [
+    {"id": "VID-01", "scene": 1, "title": "Opening floodlit pitch", "duration": "6 s",
+     "camera": "Slow dolly-in at knee height from the halfway line towards the goal, 24 mm",
+     "subject": "Empty rooftop artificial turf at night; floodlights switch on one after another (left, right, left, right), beams catching drizzle",
+     "lighting": "Starts dark teal, ends with crisp white LED floodlight", "environment": "Dhaka skyline with lit windows behind black netting",
+     "grade": "Teal-emerald shadows, neutral whites, lime accents in reflections; matches TurfBari palette"},
+    {"id": "VID-02", "scene": 1, "title": "Friends arrive at the turf", "duration": "5 s",
+     "camera": "Steadicam tracking backwards in front of the group, 35 mm",
+     "subject": "Five friends with a ball and kit bags walk through the turf gate laughing; one bounces the ball",
+     "lighting": "Floodlight back-light, warm street light front", "environment": "Turf entrance with netting, stairs to a rooftop",
+     "grade": "Same teal-emerald grade as VID-01"},
+    {"id": "VID-03", "scene": 6, "title": "Manager organising daily bookings", "duration": "5 s",
+     "camera": "Slow arc around the manager, 50 mm, shallow depth",
+     "subject": "Manager at pitch-side taps a tablet (screen plain green for replacement) and gives a thumbs-up to an arriving team captain",
+     "lighting": "Dusk, floodlights warming up", "environment": "Turf sideline, players warming up out of focus",
+     "grade": "Warm dusk into emerald night"},
+    {"id": "VID-04", "scene": 5, "title": "Owner checking booking information", "duration": "5 s",
+     "camera": "Push-in from medium to close-up, 35 mm → 50 mm",
+     "subject": "Turf owner at reception scrolls a laptop (screen faces away), nods with a relaxed smile, closes an old paper ledger and puts it aside",
+     "lighting": "Soft desk key, green spill from the pitch window", "environment": "Tidy reception, pitch visible through the window",
+     "grade": "Neutral skin, emerald background"},
+    {"id": "VID-05", "scene": 4, "title": "Smartphone scanning the QR", "duration": "4 s",
+     "camera": "Locked-off over-the-shoulder, 85 mm, rack focus from standee to phone",
+     "subject": "Hand raises a phone to a standee with a BLANK white panel; phone screen plain green; small haptic shake when it 'scans'",
+     "lighting": "Phone glow on fingers, floodlight bokeh", "environment": "Turf gate at night",
+     "grade": "Emerald-teal, lime rim highlight",
+     "extra": "Composite the real QR on the standee and the real mobile screenshots on the phone in post."},
+    {"id": "VID-06", "scene": 7, "title": "Technology transition plate", "duration": "3 s",
+     "camera": "Top-down macro moving forward over artificial turf blades",
+     "subject": "Turf blades become thin glowing lime light lines that form a grid (abstract data feel), no text",
+     "lighting": "Dark emerald base with lime light streaks", "environment": "Abstract",
+     "grade": "Brand emerald #065F46 → lime #BEF264 glow"},
+    {"id": "VID-07", "scene": 9, "title": "Final brand reveal plate", "duration": "6 s",
+     "camera": "Drone pull-back and rise from the centre circle of a rooftop turf at blue hour",
+     "subject": "Players freeze mid-play as the camera rises; city lights twinkle; the top half of frame clears to sky for the logo",
+     "lighting": "Blue hour + white floodlights", "environment": "Bangladeshi city rooftops",
+     "grade": "Deep emerald sky gradient, lime highlights",
+     "extra": "Add the real logo (01-brand-assets/logo) in the edit — never generate the logo with AI."},
+]
+
+# --------------------------------------------------------------------------- feature audit
+AUDIT = {
+    "implemented": [
+        ("Public website", "Home with search and district filter; no account needed"),
+        ("Turf discovery", "Explore with district / area / type / price / amenity filters, name search, sort; 'near me' with distance badges"),
+        ("Turf details", "Cover photo, gallery + full-screen viewer, profile picture, amenities, fields, opening hours, price table, contact, Google Maps directions"),
+        ("QR code", "Unique QR per turf that opens its booking page (shown on the turf page and in owner Settings, downloadable SVG)"),
+        ("Public booking", "Pick field, date and free slots; send a request with name + mobile; status stays Pending until the turf confirms"),
+        ("Booking status", "Look up a request with reference + mobile number"),
+        ("Owner dashboard", "Today's bookings, collected today, this month, dues outstanding, 14-day collections chart, coming up, pending-requests banner"),
+        ("Book a slot board", "Free / booked / request / maintenance per field and day; book a team with discount (৳ or %) and advance"),
+        ("Booking management", "Day board and list, filters, confirm / reject / reschedule / cancel / no-show"),
+        ("Payments", "Record payments and refunds per booking (cash, bKash, Nagad, Rocket, card, bank) with paid / due"),
+        ("Customers", "Customer list with bookings count, total paid and last booking"),
+        ("Fields, hours, pricing", "Fields, opening hours (incl. past midnight), peak / weekend / special-date pricing rules"),
+        ("Maintenance", "Block a field for repairs"),
+        ("Expenses & reports", "Expenses; reports with collected, expenses, net, bookings, daily chart, by field, by payment method, Excel export (owner only)"),
+        ("Team", "Owner adds managers; each manager gets a separate login"),
+        ("Manager workspace", "Dashboard, book a slot, bookings, confirm, record payments, customers, maintenance; fields / hours / pricing view-only"),
+        ("Public profile", "Owner edits listing, photos, profile picture, Google Maps pin"),
+    ],
+    "partial": [
+        ("Manager permissions", "Fixed by role (not configurable per manager). The script says what the role can and can't do."),
+        ("Activity log", "Being built in a parallel session; not shown in the video until it is finished and tested."),
+    ],
+    "missing": [
+        ("Notification centre", "Not built — only the dashboard's pending-requests banner exists. Not mentioned in the video."),
+        ("Online payment by players", "Not built — players don't pay online; staff record payments. The video never says 'pay online'."),
+        ("Booking calendar (month view)", "Not built — there is a day board and a list. The video says 'board', not 'calendar'."),
+        ("SMS / email to players", "Not built — the turf calls the player to confirm. The video says the turf confirms."),
+        ("Customer / manager-activity reports", "Not built — reports cover collections, expenses, fields and payment methods."),
+    ],
+}

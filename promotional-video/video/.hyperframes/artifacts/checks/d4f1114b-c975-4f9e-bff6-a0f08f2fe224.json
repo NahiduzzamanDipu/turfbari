@@ -1,0 +1,2875 @@
+{
+  "ok": false,
+  "strict": false,
+  "browserSkipped": false,
+  "lint": {
+    "ok": false,
+    "errorCount": 113,
+    "warningCount": 12,
+    "infoCount": 0,
+    "findings": [
+      {
+        "code": "timeline_track_too_dense",
+        "severity": "warning",
+        "message": "This HTML file has 4 timed elements. Smaller sub-compositions keep timelines easier to read, iterate on, and diff.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\benefits.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move coherent scene groups into smaller .html files and mount them from the parent with data-composition-src so the timeline stays easier to inspect, revise, and validate."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg0\" resolves to element <div id=\"cg0\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg0",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg1\" resolves to element <div id=\"cg1\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg1",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg2\" resolves to element <div id=\"cg2\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg2",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg3\" resolves to element <div id=\"cg3\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg3",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg4\" resolves to element <div id=\"cg4\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg4",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg5\" resolves to element <div id=\"cg5\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg5",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg6\" resolves to element <div id=\"cg6\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg6",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg7\" resolves to element <div id=\"cg7\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg7",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg8\" resolves to element <div id=\"cg8\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg8",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg9\" resolves to element <div id=\"cg9\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg9",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg10\" resolves to element <div id=\"cg10\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg10",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg11\" resolves to element <div id=\"cg11\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg11",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg12\" resolves to element <div id=\"cg12\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg12",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg13\" resolves to element <div id=\"cg13\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg13",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg14\" resolves to element <div id=\"cg14\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg14",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg15\" resolves to element <div id=\"cg15\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg15",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg16\" resolves to element <div id=\"cg16\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg16",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg17\" resolves to element <div id=\"cg17\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg17",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg18\" resolves to element <div id=\"cg18\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg18",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg19\" resolves to element <div id=\"cg19\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg19",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg20\" resolves to element <div id=\"cg20\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg20",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg21\" resolves to element <div id=\"cg21\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg21",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg22\" resolves to element <div id=\"cg22\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg22",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg23\" resolves to element <div id=\"cg23\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg23",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg24\" resolves to element <div id=\"cg24\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg24",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg25\" resolves to element <div id=\"cg25\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg25",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg26\" resolves to element <div id=\"cg26\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg26",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg27\" resolves to element <div id=\"cg27\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg27",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg28\" resolves to element <div id=\"cg28\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg28",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg29\" resolves to element <div id=\"cg29\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg29",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg30\" resolves to element <div id=\"cg30\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg30",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg31\" resolves to element <div id=\"cg31\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg31",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg32\" resolves to element <div id=\"cg32\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg32",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg33\" resolves to element <div id=\"cg33\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg33",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg34\" resolves to element <div id=\"cg34\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg34",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg35\" resolves to element <div id=\"cg35\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg35",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg36\" resolves to element <div id=\"cg36\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg36",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg37\" resolves to element <div id=\"cg37\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg37",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg38\" resolves to element <div id=\"cg38\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg38",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg39\" resolves to element <div id=\"cg39\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg39",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg40\" resolves to element <div id=\"cg40\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg40",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg41\" resolves to element <div id=\"cg41\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg41",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg42\" resolves to element <div id=\"cg42\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg42",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg43\" resolves to element <div id=\"cg43\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg43",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg44\" resolves to element <div id=\"cg44\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg44",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg45\" resolves to element <div id=\"cg45\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg45",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg46\" resolves to element <div id=\"cg46\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg46",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg47\" resolves to element <div id=\"cg47\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg47",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg48\" resolves to element <div id=\"cg48\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg48",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg49\" resolves to element <div id=\"cg49\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg49",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg50\" resolves to element <div id=\"cg50\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg50",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg51\" resolves to element <div id=\"cg51\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg51",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg52\" resolves to element <div id=\"cg52\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg52",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg53\" resolves to element <div id=\"cg53\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg53",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg54\" resolves to element <div id=\"cg54\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg54",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg55\" resolves to element <div id=\"cg55\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg55",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg56\" resolves to element <div id=\"cg56\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg56",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg57\" resolves to element <div id=\"cg57\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg57",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg58\" resolves to element <div id=\"cg58\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg58",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg59\" resolves to element <div id=\"cg59\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg59",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg60\" resolves to element <div id=\"cg60\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg60",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg61\" resolves to element <div id=\"cg61\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg61",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg62\" resolves to element <div id=\"cg62\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg62",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg63\" resolves to element <div id=\"cg63\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg63",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg64\" resolves to element <div id=\"cg64\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg64",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg65\" resolves to element <div id=\"cg65\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg65",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg66\" resolves to element <div id=\"cg66\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg66",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg67\" resolves to element <div id=\"cg67\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg67",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg68\" resolves to element <div id=\"cg68\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg68",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg69\" resolves to element <div id=\"cg69\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg69",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg70\" resolves to element <div id=\"cg70\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg70",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg71\" resolves to element <div id=\"cg71\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg71",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg72\" resolves to element <div id=\"cg72\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg72",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg73\" resolves to element <div id=\"cg73\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg73",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg74\" resolves to element <div id=\"cg74\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg74",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg75\" resolves to element <div id=\"cg75\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg75",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg76\" resolves to element <div id=\"cg76\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg76",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg77\" resolves to element <div id=\"cg77\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg77",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg78\" resolves to element <div id=\"cg78\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg78",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg79\" resolves to element <div id=\"cg79\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg79",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg80\" resolves to element <div id=\"cg80\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg80",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg81\" resolves to element <div id=\"cg81\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg81",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg82\" resolves to element <div id=\"cg82\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg82",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg83\" resolves to element <div id=\"cg83\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg83",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg84\" resolves to element <div id=\"cg84\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg84",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg85\" resolves to element <div id=\"cg85\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg85",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg86\" resolves to element <div id=\"cg86\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg86",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg87\" resolves to element <div id=\"cg87\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg87",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg88\" resolves to element <div id=\"cg88\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg88",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg89\" resolves to element <div id=\"cg89\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg89",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg90\" resolves to element <div id=\"cg90\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg90",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg91\" resolves to element <div id=\"cg91\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg91",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg92\" resolves to element <div id=\"cg92\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg92",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg93\" resolves to element <div id=\"cg93\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg93",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg94\" resolves to element <div id=\"cg94\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg94",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg95\" resolves to element <div id=\"cg95\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg95",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg96\" resolves to element <div id=\"cg96\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg96",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg97\" resolves to element <div id=\"cg97\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg97",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg98\" resolves to element <div id=\"cg98\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg98",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg99\" resolves to element <div id=\"cg99\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg99",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg100\" resolves to element <div id=\"cg100\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg100",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg101\" resolves to element <div id=\"cg101\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg101",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg102\" resolves to element <div id=\"cg102\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg102",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg103\" resolves to element <div id=\"cg103\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg103",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg104\" resolves to element <div id=\"cg104\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg104",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg105\" resolves to element <div id=\"cg105\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg105",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg106\" resolves to element <div id=\"cg106\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg106",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg107\" resolves to element <div id=\"cg107\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg107",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg108\" resolves to element <div id=\"cg108\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg108",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg109\" resolves to element <div id=\"cg109\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg109",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg110\" resolves to element <div id=\"cg110\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg110",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg111\" resolves to element <div id=\"cg111\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg111",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets visibility on a clip element. Selector \"#cg112\" resolves to element <div id=\"cg112\" class=\"clip cg\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#cg112",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "composition_file_too_large",
+        "severity": "warning",
+        "message": "This HTML composition file has 925 lines. Smaller sub-compositions are easier to read, iterate on, and diff.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Split this sub-composition further into smaller .html files, then mount them from the parent with data-composition-src so each file stays small enough to inspect, revise, and validate independently."
+      },
+      {
+        "code": "timeline_track_too_dense",
+        "severity": "warning",
+        "message": "This HTML file has 113 timed elements. Smaller sub-compositions keep timelines easier to read, iterate on, and diff.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\captions.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move coherent scene groups into smaller .html files and mount them from the parent with data-composition-src so the timeline stays easier to inspect, revise, and validate."
+      },
+      {
+        "code": "timeline_track_too_dense",
+        "severity": "warning",
+        "message": "This HTML file has 4 timed elements. Smaller sub-compositions keep timelines easier to read, iterate on, and diff.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\details.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move coherent scene groups into smaller .html files and mount them from the parent with data-composition-src so the timeline stays easier to inspect, revise, and validate."
+      },
+      {
+        "code": "duplicate_media_discovery_risk",
+        "severity": "warning",
+        "message": "Detected 2 matching img entries with the same source/start/duration.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\discover.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Avoid duplicated media nodes that can be discovered twice during compilation."
+      },
+      {
+        "code": "timeline_track_too_dense",
+        "severity": "warning",
+        "message": "This HTML file has 6 timed elements. Smaller sub-compositions keep timelines easier to read, iterate on, and diff.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\discover.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move coherent scene groups into smaller .html files and mount them from the parent with data-composition-src so the timeline stays easier to inspect, revise, and validate."
+      },
+      {
+        "code": "duplicate_media_discovery_risk",
+        "severity": "warning",
+        "message": "Detected 2 matching img entries with the same source/start/duration.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\intro.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Avoid duplicated media nodes that can be discovered twice during compilation."
+      },
+      {
+        "code": "timeline_track_too_dense",
+        "severity": "warning",
+        "message": "This HTML file has 8 timed elements. Smaller sub-compositions keep timelines easier to read, iterate on, and diff.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\manager.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move coherent scene groups into smaller .html files and mount them from the parent with data-composition-src so the timeline stays easier to inspect, revise, and validate."
+      },
+      {
+        "code": "duplicate_media_discovery_risk",
+        "severity": "warning",
+        "message": "Detected 2 matching img entries with the same source/start/duration.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\money.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Avoid duplicated media nodes that can be discovered twice during compilation."
+      },
+      {
+        "code": "duplicate_media_discovery_risk",
+        "severity": "warning",
+        "message": "Detected 3 matching img entries with the same source/start/duration.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\money.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Avoid duplicated media nodes that can be discovered twice during compilation."
+      },
+      {
+        "code": "timeline_track_too_dense",
+        "severity": "warning",
+        "message": "This HTML file has 5 timed elements. Smaller sub-compositions keep timelines easier to read, iterate on, and diff.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\money.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move coherent scene groups into smaller .html files and mount them from the parent with data-composition-src so the timeline stays easier to inspect, revise, and validate."
+      },
+      {
+        "code": "timeline_track_too_dense",
+        "severity": "warning",
+        "message": "This HTML file has 8 timed elements. Smaller sub-compositions keep timelines easier to read, iterate on, and diff.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "C:\\Users\\mdnah\\TURF\\promotional-video\\video\\compositions\\owner.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move coherent scene groups into smaller .html files and mount them from the parent with data-composition-src so the timeline stays easier to inspect, revise, and validate."
+      }
+    ],
+    "filesScanned": 11
+  },
+  "runtime": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": []
+  },
+  "layout": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 7,
+    "findings": [
+      {
+        "code": "canvas_overflow",
+        "severity": "info",
+        "time": 47.222,
+        "selector": "#d5-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+        "message": "Text extends outside the composition canvas.",
+        "rect": {
+          "left": -478.8,
+          "top": -567.7,
+          "right": -230.51,
+          "bottom": -517.1,
+          "width": 248.29,
+          "height": 50.6
+        },
+        "containerSelector": "#root",
+        "text": "turfbari.com",
+        "fixHint": "Move the text inward, reduce its size, or mark intentional off-canvas animation with data-layout-allow-overflow.",
+        "containerRect": {
+          "left": 0,
+          "top": 0,
+          "right": 1920,
+          "bottom": 1080,
+          "width": 1920,
+          "height": 1080
+        },
+        "overflow": {
+          "left": 478.8,
+          "top": 567.7
+        },
+        "dataAttributes": {},
+        "sourceFile": "compositions/discover.html",
+        "bbox": {
+          "x": -478.8,
+          "y": -567.7,
+          "width": 248.29,
+          "height": 50.6
+        },
+        "firstSeen": 47.222,
+        "lastSeen": 47.222,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          47.222
+        ]
+      },
+      {
+        "code": "escaped_container",
+        "severity": "info",
+        "time": 47.222,
+        "selector": "#d5-cam",
+        "message": "Positioned element renders far outside its offset parent — its coordinates were likely computed in a different frame (canvas/viewport pixels).",
+        "rect": {
+          "left": -767,
+          "top": -590.8,
+          "right": 3457,
+          "bottom": 1882,
+          "width": 4224,
+          "height": 2472.8
+        },
+        "containerSelector": "#d5-in",
+        "text": "turfbari.com",
+        "fixHint": "Compute left/top in the offset parent's frame (subtract its rect), or mark intentional placement with data-layout-allow-overflow.",
+        "containerRect": {
+          "left": 0,
+          "top": 0,
+          "right": 1920,
+          "bottom": 1080,
+          "width": 1920,
+          "height": 1080
+        },
+        "dataAttributes": {},
+        "sourceFile": "compositions/discover.html",
+        "bbox": {
+          "x": -767,
+          "y": -590.8,
+          "width": 4224,
+          "height": 2472.8
+        },
+        "firstSeen": 47.222,
+        "lastSeen": 47.222,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          47.222
+        ]
+      },
+      {
+        "code": "panel_out_of_canvas",
+        "severity": "info",
+        "time": 85,
+        "selector": "#o1-cam > div:nth-of-type(1) > div:nth-of-type(1)",
+        "message": "Painted panel extends outside the composition canvas.",
+        "rect": {
+          "left": -125,
+          "top": 0,
+          "right": 2851,
+          "bottom": 68.2,
+          "width": 2976,
+          "height": 68.2
+        },
+        "containerSelector": "#root",
+        "text": "turfbari.com",
+        "fixHint": "Move the panel inward, or mark intentional off-canvas animation with data-layout-allow-overflow.",
+        "containerRect": {
+          "left": 0,
+          "top": 0,
+          "right": 1920,
+          "bottom": 1080,
+          "width": 1920,
+          "height": 1080
+        },
+        "overflow": {
+          "left": 125,
+          "right": 931
+        },
+        "dataAttributes": {},
+        "sourceFile": "compositions/owner.html",
+        "bbox": {
+          "x": -125,
+          "y": 0,
+          "width": 2976,
+          "height": 68.2
+        },
+        "firstSeen": 85,
+        "lastSeen": 85,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          85
+        ]
+      },
+      {
+        "code": "canvas_overflow",
+        "severity": "info",
+        "time": 103.889,
+        "selector": "#o7-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+        "message": "Text extends outside the composition canvas.",
+        "rect": {
+          "left": -247.7,
+          "top": 2.45,
+          "right": -100.98,
+          "bottom": 32.35,
+          "width": 146.72,
+          "height": 29.9
+        },
+        "containerSelector": "#root",
+        "text": "turfbari.com",
+        "fixHint": "Move the text inward, reduce its size, or mark intentional off-canvas animation with data-layout-allow-overflow.",
+        "containerRect": {
+          "left": 0,
+          "top": 0,
+          "right": 1920,
+          "bottom": 1080,
+          "width": 1920,
+          "height": 1080
+        },
+        "overflow": {
+          "left": 247.7
+        },
+        "dataAttributes": {},
+        "sourceFile": "compositions/owner.html",
+        "bbox": {
+          "x": -247.7,
+          "y": 2.45,
+          "width": 146.72,
+          "height": 29.9
+        },
+        "firstSeen": 103.889,
+        "lastSeen": 103.889,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          103.889
+        ]
+      },
+      {
+        "code": "panel_out_of_canvas",
+        "severity": "info",
+        "time": 103.889,
+        "selector": "#o7-cam > div:nth-of-type(1) > div:nth-of-type(1)",
+        "message": "Painted panel extends outside the composition canvas.",
+        "rect": {
+          "left": -418,
+          "top": -11.2,
+          "right": 2078,
+          "bottom": 46,
+          "width": 2496,
+          "height": 57.2
+        },
+        "containerSelector": "#root",
+        "text": "turfbari.com",
+        "fixHint": "Move the panel inward, or mark intentional off-canvas animation with data-layout-allow-overflow.",
+        "containerRect": {
+          "left": 0,
+          "top": 0,
+          "right": 1920,
+          "bottom": 1080,
+          "width": 1920,
+          "height": 1080
+        },
+        "overflow": {
+          "left": 418,
+          "right": 158
+        },
+        "dataAttributes": {},
+        "sourceFile": "compositions/owner.html",
+        "bbox": {
+          "x": -418,
+          "y": -11.2,
+          "width": 2496,
+          "height": 57.2
+        },
+        "firstSeen": 103.889,
+        "lastSeen": 103.889,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          103.889
+        ]
+      },
+      {
+        "code": "canvas_overflow",
+        "severity": "info",
+        "time": 141.667,
+        "selector": "#p4-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+        "message": "Text extends outside the composition canvas.",
+        "rect": {
+          "left": -325.23,
+          "top": -220.44,
+          "right": -165.43,
+          "bottom": -187.87,
+          "width": 159.8,
+          "height": 32.57
+        },
+        "containerSelector": "#root",
+        "text": "turfbari.com",
+        "fixHint": "Move the text inward, reduce its size, or mark intentional off-canvas animation with data-layout-allow-overflow.",
+        "containerRect": {
+          "left": 0,
+          "top": 0,
+          "right": 1920,
+          "bottom": 1080,
+          "width": 1920,
+          "height": 1080
+        },
+        "overflow": {
+          "left": 325.23,
+          "top": 220.44
+        },
+        "dataAttributes": {},
+        "sourceFile": "compositions/money.html",
+        "bbox": {
+          "x": -325.23,
+          "y": -220.44,
+          "width": 159.8,
+          "height": 32.57
+        },
+        "firstSeen": 141.667,
+        "lastSeen": 141.667,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          141.667
+        ]
+      },
+      {
+        "code": "canvas_overflow",
+        "severity": "info",
+        "time": 160.556,
+        "selector": "#c1-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+        "message": "Text extends outside the composition canvas.",
+        "rect": {
+          "left": 29.06,
+          "top": -52.38,
+          "right": 155.8,
+          "bottom": -26.55,
+          "width": 126.74,
+          "height": 25.83
+        },
+        "containerSelector": "#root",
+        "text": "turfbari.com",
+        "fixHint": "Move the text inward, reduce its size, or mark intentional off-canvas animation with data-layout-allow-overflow.",
+        "containerRect": {
+          "left": 0,
+          "top": 0,
+          "right": 1920,
+          "bottom": 1080,
+          "width": 1920,
+          "height": 1080
+        },
+        "overflow": {
+          "top": 52.38
+        },
+        "dataAttributes": {},
+        "sourceFile": "compositions/cta.html",
+        "bbox": {
+          "x": 29.06,
+          "y": -52.38,
+          "width": 126.74,
+          "height": 25.83
+        },
+        "firstSeen": 160.556,
+        "lastSeen": 160.556,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          160.556
+        ]
+      }
+    ],
+    "duration": 170,
+    "samples": [
+      9.444,
+      28.333,
+      47.222,
+      66.111,
+      85,
+      103.889,
+      122.778,
+      141.667,
+      160.556
+    ],
+    "transitionSamples": [],
+    "transitionSamplesDropped": 0,
+    "tolerance": 2,
+    "totalIssueCount": 7,
+    "truncated": false,
+    "faceCheck": {
+      "ran": true,
+      "candidates": 0,
+      "faces": 0
+    }
+  },
+  "motion": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": false,
+    "samples": 0
+  },
+  "contrast": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 4,
+    "infoCount": 0,
+    "findings": [
+      {
+        "code": "contrast_aa_failure",
+        "severity": "warning",
+        "message": "Contrast is 2.92:1; WCAG AA requires 3:1.",
+        "text": "আপনি",
+        "fg": "rgb(255,255,255)",
+        "bg": "rgb(145,153,148)",
+        "ratio": 2.92,
+        "requiredRatio": 3,
+        "suggestedColor": "rgb(74,74,74)",
+        "large": true,
+        "selector": "#cw104-0",
+        "dataAttributes": {},
+        "sourceFile": "compositions/captions.html",
+        "bbox": {
+          "x": 724.265625,
+          "y": 902.5,
+          "width": 131.203125,
+          "height": 67.5
+        },
+        "time": 160.556,
+        "times": [
+          160.556
+        ]
+      },
+      {
+        "code": "contrast_aa_failure",
+        "severity": "warning",
+        "message": "Contrast is 2.92:1; WCAG AA requires 3:1.",
+        "text": "টার্ফ",
+        "fg": "rgb(255,255,255)",
+        "bg": "rgb(145,153,148)",
+        "ratio": 2.92,
+        "requiredRatio": 3,
+        "suggestedColor": "rgb(74,74,74)",
+        "large": true,
+        "selector": "#cw104-1",
+        "dataAttributes": {},
+        "sourceFile": "compositions/captions.html",
+        "bbox": {
+          "x": 867.53125,
+          "y": 902.5,
+          "width": 81.8125,
+          "height": 67.5
+        },
+        "time": 160.556,
+        "times": [
+          160.556
+        ]
+      },
+      {
+        "code": "contrast_aa_failure",
+        "severity": "warning",
+        "message": "Contrast is 2.92:1; WCAG AA requires 3:1.",
+        "text": "মালিক",
+        "fg": "rgb(255,255,255)",
+        "bg": "rgb(145,153,148)",
+        "ratio": 2.92,
+        "requiredRatio": 3,
+        "suggestedColor": "rgb(74,74,74)",
+        "large": true,
+        "selector": "#cw104-2",
+        "dataAttributes": {},
+        "sourceFile": "compositions/captions.html",
+        "bbox": {
+          "x": 961.40625,
+          "y": 902.5,
+          "width": 133.609375,
+          "height": 67.5
+        },
+        "time": 160.556,
+        "times": [
+          160.556
+        ]
+      },
+      {
+        "code": "contrast_aa_failure",
+        "severity": "warning",
+        "message": "Contrast is 2.87:1; WCAG AA requires 3:1.",
+        "text": "হলে,",
+        "fg": "rgb(253,253,253)",
+        "bg": "rgb(145,153,148)",
+        "ratio": 2.87,
+        "requiredRatio": 3,
+        "suggestedColor": "rgb(74,74,74)",
+        "large": true,
+        "selector": "#cw104-3",
+        "dataAttributes": {},
+        "sourceFile": "compositions/captions.html",
+        "bbox": {
+          "x": 1107.078125,
+          "y": 902.5,
+          "width": 88.65625,
+          "height": 67.5
+        },
+        "time": 160.556,
+        "times": [
+          160.556
+        ]
+      }
+    ],
+    "enabled": true,
+    "samples": [
+      9.444,
+      47.222,
+      85,
+      122.778,
+      160.556
+    ],
+    "checked": 74,
+    "passed": 70
+  },
+  "craft": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 9,
+    "infoCount": 0,
+    "findings": [
+      {
+        "code": "first_frame_empty",
+        "severity": "warning",
+        "message": "Frame 0 shows only the background, and the first frame is the thumbnail on social players: have the title or key image already on screen at 0 s instead of entering from nothing; see references/review.md.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and \"turfbari.com\" renders at 18 px for 4.26 s: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "turfbari.com",
+        "selector": "#i2-win > div:nth-of-type(1) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/intro.html",
+        "bbox": {
+          "x": 841.76,
+          "y": 206.5,
+          "width": 112.86,
+          "height": 23
+        },
+        "time": 22.705,
+        "times": [
+          22.705
+        ],
+        "fontPx": 17.88,
+        "floorPx": 28,
+        "seconds": 4.257,
+        "elements": [
+          {
+            "selector": "#i2-win > div:nth-of-type(1) > span:nth-of-type(1)",
+            "text": "turfbari.com",
+            "fontPx": 17.88,
+            "time": 22.705,
+            "seconds": 4.257
+          }
+        ]
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 4 text elements stay under it for 0.5 s or more, the smallest \"turfbari.com\" at 16 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "turfbari.com",
+        "selector": "#d1-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/discover.html",
+        "bbox": {
+          "x": 280.02,
+          "y": 87.67,
+          "width": 92.57,
+          "height": 18.87
+        },
+        "time": 31.503,
+        "times": [
+          31.503,
+          34.624,
+          40.868,
+          42.855
+        ],
+        "fontPx": 15.58,
+        "floorPx": 28,
+        "seconds": 1.135,
+        "elements": [
+          {
+            "selector": "#d1-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+            "text": "turfbari.com",
+            "fontPx": 15.58,
+            "time": 31.503,
+            "seconds": 1.135
+          },
+          {
+            "selector": "#d2-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+            "text": "turfbari.com",
+            "fontPx": 15.58,
+            "time": 34.624,
+            "seconds": 1.42
+          },
+          {
+            "selector": "#d3-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+            "text": "turfbari.com",
+            "fontPx": 21.85,
+            "time": 40.868,
+            "seconds": 0.568
+          },
+          {
+            "selector": "#d4-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+            "text": "turfbari.com",
+            "fontPx": 22.8,
+            "time": 42.855,
+            "seconds": 0.851
+          }
+        ]
+      },
+      {
+        "code": "line_unread",
+        "severity": "warning",
+        "message": "\"turfbari.com\" (2 words) is on screen 0.23 s (±0.01 s), under its 0.40 s floor: hold it about 0.5 s + 0.3 s a word (1.10 s here) before it leaves or changes; see references/motion.md.",
+        "text": "turfbari.com",
+        "selector": "#d4-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/discover.html",
+        "bbox": {
+          "x": 53.26,
+          "y": 13.82,
+          "width": 148.53,
+          "height": 30.270000000000003
+        },
+        "time": 43.404,
+        "words": 2,
+        "seconds": 0.231,
+        "floorSeconds": 0.4,
+        "measured": [
+          {
+            "time": 42.571,
+            "opacity": null,
+            "heightPx": null
+          },
+          {
+            "time": 42.855,
+            "opacity": 0.86,
+            "heightPx": 28
+          },
+          {
+            "time": 43.139,
+            "opacity": 1,
+            "heightPx": 28
+          },
+          {
+            "time": 43.422,
+            "opacity": 1,
+            "heightPx": 30
+          },
+          {
+            "time": 43.706,
+            "opacity": null,
+            "heightPx": null
+          },
+          {
+            "time": 43.99,
+            "opacity": null,
+            "heightPx": null
+          },
+          {
+            "time": 44.274,
+            "opacity": null,
+            "heightPx": null
+          }
+        ]
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and \"turfbari.com\" renders at 19 px for 1.70 s: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "turfbari.com",
+        "selector": "#t1-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/details.html",
+        "bbox": {
+          "x": 141.03,
+          "y": 10.5,
+          "width": 112.86,
+          "height": 23
+        },
+        "time": 53.639,
+        "times": [
+          53.639
+        ],
+        "fontPx": 19,
+        "floorPx": 28,
+        "seconds": 1.703,
+        "elements": [
+          {
+            "selector": "#t1-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+            "text": "turfbari.com",
+            "fontPx": 19,
+            "time": 53.639,
+            "seconds": 1.703
+          }
+        ]
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and \"turfbari.com\" renders at 16 px for 1.70 s: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "turfbari.com",
+        "selector": "#o1-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/owner.html",
+        "bbox": {
+          "x": 246.42,
+          "y": 65.3,
+          "width": 97.14,
+          "height": 19.8
+        },
+        "time": 81.452,
+        "times": [
+          81.452
+        ],
+        "fontPx": 16.34,
+        "floorPx": 28,
+        "seconds": 1.703,
+        "elements": [
+          {
+            "selector": "#o1-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+            "text": "turfbari.com",
+            "fontPx": 16.34,
+            "time": 81.452,
+            "seconds": 1.703
+          }
+        ]
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and \"শুধু দেখা\" renders at 22 px for 4.83 s: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "শুধু দেখা",
+        "selector": "#m7-viewonly",
+        "dataAttributes": {},
+        "sourceFile": "compositions/manager.html",
+        "bbox": {
+          "x": 1175.48,
+          "y": 621.91,
+          "width": 74.38,
+          "height": 36
+        },
+        "time": 119.199,
+        "times": [
+          119.199
+        ],
+        "fontPx": 22,
+        "floorPx": 28,
+        "seconds": 4.825,
+        "elements": [
+          {
+            "selector": "#m7-viewonly",
+            "text": "শুধু দেখা",
+            "fontPx": 22,
+            "time": 119.199,
+            "seconds": 4.825
+          }
+        ]
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 2 text elements stay under it for 0.5 s or more, the smallest \"turfbari.com\" at 16 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "turfbari.com",
+        "selector": "#b2-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/benefits.html",
+        "bbox": {
+          "x": 368.3,
+          "y": 65.73,
+          "width": 97.06,
+          "height": 19.78
+        },
+        "time": 150.134,
+        "times": [
+          150.134,
+          153.539
+        ],
+        "fontPx": 16.34,
+        "floorPx": 28,
+        "seconds": 1.135,
+        "elements": [
+          {
+            "selector": "#b2-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+            "text": "turfbari.com",
+            "fontPx": 16.34,
+            "time": 150.134,
+            "seconds": 1.135
+          },
+          {
+            "selector": "#b3-cam > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1)",
+            "text": "turfbari.com",
+            "fontPx": 16.34,
+            "time": 153.539,
+            "seconds": 0.852
+          }
+        ]
+      },
+      {
+        "code": "line_unread",
+        "severity": "warning",
+        "message": "\"মাঠের বাইরের ঝামেলা কমলে,\" (4 words) is on screen 1.19 s (±0.01 s), under its 1.27 s floor: hold it about 0.5 s + 0.3 s a word (1.70 s here) before it leaves or changes; see references/motion.md.",
+        "text": "মাঠের বাইরের ঝামেলা কমলে,",
+        "selector": "#b4-ti0",
+        "dataAttributes": {},
+        "sourceFile": "compositions/benefits.html",
+        "bbox": {
+          "x": 200,
+          "y": 283,
+          "width": 1115.92,
+          "height": 155
+        },
+        "time": 155.845,
+        "words": 4,
+        "seconds": 1.188,
+        "floorSeconds": 1.275,
+        "measured": [
+          {
+            "time": 155.242,
+            "opacity": null,
+            "heightPx": null
+          },
+          {
+            "time": 155.526,
+            "opacity": null,
+            "heightPx": null
+          },
+          {
+            "time": 155.81,
+            "opacity": null,
+            "heightPx": null
+          },
+          {
+            "time": 156.093,
+            "opacity": 1,
+            "heightPx": 155
+          },
+          {
+            "time": 156.377,
+            "opacity": 1,
+            "heightPx": 155
+          },
+          {
+            "time": 156.661,
+            "opacity": 1,
+            "heightPx": 155
+          },
+          {
+            "time": 156.945,
+            "opacity": 0.98,
+            "heightPx": 155
+          },
+          {
+            "time": 157.229,
+            "opacity": null,
+            "heightPx": null
+          },
+          {
+            "time": 157.513,
+            "opacity": null,
+            "heightPx": null
+          },
+          {
+            "time": 157.796,
+            "opacity": null,
+            "heightPx": null
+          }
+        ]
+      }
+    ],
+    "enabled": true,
+    "step": 0.2839999999999989,
+    "samples": 599
+  },
+  "audio": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": []
+  },
+  "hdr": {
+    "autoPromotion": null,
+    "inspection": "available"
+  },
+  "snapshots": {
+    "enabled": false,
+    "files": [],
+    "times": [],
+    "findingFiles": []
+  }
+}

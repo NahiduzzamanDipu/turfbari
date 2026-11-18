@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8" />
+<title>TurfBari brand sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* Tokens copied verbatim from frontend/src/index.css (light + dark). */
+  :root {
+    --background: oklch(0.985 0.006 155); --foreground: oklch(0.21 0.03 160);
+    --primary: oklch(0.43 0.1 163); --primary-foreground: oklch(0.985 0.01 155);
+    --secondary: oklch(0.95 0.02 160); --muted-foreground: oklch(0.48 0.025 160);
+    --accent: oklch(0.89 0.19 128); --accent-foreground: oklch(0.25 0.06 140);
+    --destructive: oklch(0.58 0.22 27); --ring: oklch(0.55 0.12 163);
+    --dark-background: oklch(0.17 0.02 165); --dark-primary: oklch(0.72 0.14 160); --dark-accent: oklch(0.86 0.19 128);
+  }
+  html, body { margin: 0; }
+  body { font-family: Inter, sans-serif; color: var(--foreground); }
+  .stage { width: var(--w); height: var(--h); display: flex; align-items: center; justify-content: center; }
+  .lockup { display: inline-flex; align-items: center; gap: calc(var(--s) * 0.28); }
+  .lockup svg { width: var(--s); height: var(--s); }
+  .word { font-family: "Barlow Condensed", sans-serif; font-weight: 800; letter-spacing: .02em; font-size: calc(var(--s) * 0.82); line-height: 1; }
+  .word b { color: var(--primary); font-weight: 800; }
+  .dark .word { color: #f8fafc; } .dark .word b { color: #bef264; }
+  .sheet { padding: 64px; background: var(--background); width: 1792px; }
+  h1 { font-family: "Barlow Condensed"; font-weight: 800; font-size: 56px; text-transform: uppercase; margin: 0 0 8px; }
+  h2 { font-family: "Barlow Condensed"; font-weight: 700; font-size: 32px; text-transform: uppercase; margin: 40px 0 16px; }
+  .sw { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
+  .chip { border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgb(0 0 0 / .06); background: #fff; }
+  .chip .c { height: 140px; } .chip p { margin: 0; padding: 10px 14px; font-size: 15px; line-height: 1.45; }
+  .chip code { font-size: 13px; color: var(--muted-foreground); }
+  .bn { font-family: "Hind Siliguri", "Noto Sans Bengali", "Nirmala UI", sans-serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const MARK = `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="b"><circle r="6.9"/></clipPath><g id="s"><line y1="-2.6" y2="-5.4" stroke="#065f46" stroke-width="1" stroke-linecap="round"/><polygon points="0,2.6 -2.473,0.803 -1.528,-2.103 1.528,-2.103 2.473,0.803" transform="translate(0 -8)"/></g></defs><rect width="32" height="32" rx="9" fill="#065f46"/><path d="M5.5 14.6 16 5.6l10.5 9" fill="none" stroke="#bef264" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(16 20.6)"><circle r="6.9" fill="#fff"/><g clip-path="url(#b)" fill="#065f46"><polygon points="0,-2.6 2.473,-0.803 1.528,2.103 -1.528,2.103 -2.473,-0.803"/><use href="#s"/><use href="#s" transform="rotate(72)"/><use href="#s" transform="rotate(144)"/><use href="#s" transform="rotate(216)"/><use href="#s" transform="rotate(288)"/></g></g></svg>`;
+
+function toHex(css) {
+  const c = document.createElement("canvas"); c.width = c.height = 1;
+  const g = c.getContext("2d"); g.fillStyle = "#000"; g.fillStyle = css; g.fillRect(0, 0, 1, 1);
+  const [r, gg, b] = g.getImageData(0, 0, 1, 1).data;
+  return { hex: "#" + [r, gg, b].map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase(), rgb: `${r}, ${gg}, ${b}` };
+}
+const TOKENS = [
+  ["Primary · Emerald", "--primary", "Buttons, active nav, prices, logo tile"],
+  ["Accent · Lime", "--accent", "Highlights, Featured badge, logo roof"],
+  ["Foreground · Ink", "--foreground", "Headings and body text"],
+  ["Background · Mist", "--background", "Page background (light)"],
+  ["Secondary · Mint", "--secondary", "Chips, hover, sidebar active"],
+  ["Accent ink", "--accent-foreground", "Text on lime"],
+  ["Muted text", "--muted-foreground", "Captions, hints"],
+  ["Ring · Focus", "--ring", "Focus rings, chart line"],
+  ["Destructive", "--destructive", "Reject, dues, errors"],
+  ["Dark background", "--dark-background", "Dark mode / video night scenes"],
+];
+window.PALETTE = TOKENS.map(([name, v, use]) => {
+  const css = getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  return { name, token: v.startsWith("--dark-") ? v.slice(7) + " (.dark)" : v.slice(2), oklch: css, use, ...toHex(css) };
+});
+
+const q = new URLSearchParams(location.search);
+const view = q.get("view") || "palette";
+const root = document.getElementById("root");
+const size = (w, h, s) => `--w:${w}px;--h:${h}px;--s:${s}px`;
+const lockup = `<span class="lockup">${MARK}<span class="word">Turf<b>Bari</b></span></span>`;
+
+if (view === "mark") root.innerHTML = `<div class="stage" style="${size(1024, 1024, 1024)}">${MARK.replace("<svg", '<svg width="1024" height="1024"')}</div>`;
+if (view === "logo-light") root.innerHTML = `<div class="stage" style="${size(1600, 480, 220)}">${lockup}</div>`;
+if (view === "logo-dark") root.innerHTML = `<div class="stage dark" style="${size(1600, 480, 220)};background:${q.has("clear") ? "transparent" : "#022c22"}">${lockup}</div>`;
+if (view === "palette") root.innerHTML = `<div class="sheet"><h1>TurfBari colours</h1>
+  <p>Exact tokens from <code>frontend/src/index.css</code> (oklch), converted to sRGB by the browser.</p>
+  <div class="sw">${window.PALETTE.map((p) => `<div class="chip"><div class="c" style="background:${p.oklch}"></div>
+  <p><b>${p.name}</b><br>${p.hex} · rgb(${p.rgb})<br><code>${p.oklch}</code><br><span style="color:var(--muted-foreground)">${p.use}</span></p></div>`).join("")}</div></div>`;
+if (view === "type") root.innerHTML = `<div class="sheet"><h1>TurfBari typography</h1>
+  <h2>Display — Barlow Condensed 800, uppercase</h2>
+  <div style="font-family:'Barlow Condensed';font-weight:800;font-size:96px;text-transform:uppercase;line-height:.95">Find a turf. Book a slot.<br>Play tonight.</div>
+  <h2>Interface — Inter 400/600</h2>
+  <div style="font-size:28px">Today's bookings · Collected today · Dues outstanding · Book a slot</div>
+  <h2 class="bn">বাংলা লেখা — Hind Siliguri 700 (শিরোনাম) / 500 (সাবটাইটেল)</h2>
+  <div class="bn" style="font-weight:700;font-size:84px;line-height:1.25">মাঠ খুঁজুন। স্লট বুক করুন।</div>
+  <div class="bn" style="font-weight:500;font-size:40px;line-height:1.5">টার্ফবাড়ি — প্রতিটি টার্ফের ঠিকানা। খেলা হোক আরও সহজে।</div>
+  <p style="margin-top:32px;color:var(--muted-foreground);font-size:18px">The app has no Bengali UI font, so Hind Siliguri (Google Fonts, OFL) is used for Bengali text in the video; it pairs with Barlow Condensed's compact, sporty shapes. Fallback: Noto Sans Bengali.</p></div>`;
+document.fonts.ready.then(() => (document.title = "ready"));
+</script>
+</body>
+</html>

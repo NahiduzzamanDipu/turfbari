@@ -8,6 +8,8 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from apps.subscriptions.models import Plan
+from apps.subscriptions.services import assign_plan
 from apps.turfs.models import TenantMembership, Turf
 from apps.turfs.services import provision_defaults, unique_slug
 
@@ -31,8 +33,14 @@ def create_turf_with_owner(
     owner_phone,
     number_of_fields=1,
     hourly_rate=Decimal("1500.00"),
+    plan=None,
+    payment_received=True,
+    assigned_by=None,
 ) -> tuple[Turf, object, str | None]:
-    """Returns (turf, owner_user, temp_password or None if the owner already had an account)."""
+    """Returns (turf, owner_user, temp_password or None if the owner already had an account).
+
+    `plan` defaults to the monthly plan. With payment_received=False the first period waits for the
+    owner to pay from their workspace (the turf stays off Explore until then)."""
     User = get_user_model()
     owner_email = owner_email.strip().lower()
     owner = User.objects.filter(email=owner_email).first()
@@ -57,11 +65,20 @@ def create_turf_with_owner(
     )
     TenantMembership.objects.create(user=owner, turf=turf, role=TenantMembership.Role.OWNER)
     provision_defaults(turf, fields=number_of_fields, hourly_rate=hourly_rate)
+    plan = plan or Plan.objects.get(period=Plan.Period.MONTHLY)
+    assign_plan(turf, plan, paid=payment_received, by=assigned_by, note="First subscription")
     return turf, owner, password
 
 
 @transaction.atomic
-def approve_application(application: TurfApplication, *, reviewer, hourly_rate=Decimal("1500.00")) -> dict:
+def approve_application(
+    application: TurfApplication,
+    *,
+    reviewer,
+    hourly_rate=Decimal("1500.00"),
+    plan=None,
+    payment_received=True,
+) -> dict:
     application = TurfApplication.objects.select_for_update().get(pk=application.pk)
     if application.status == TurfApplication.Status.APPROVED:
         raise ValidationError({"status": ["This application is already approved."]})
@@ -78,6 +95,9 @@ def approve_application(application: TurfApplication, *, reviewer, hourly_rate=D
         owner_phone=application.phone,
         number_of_fields=application.number_of_fields,
         hourly_rate=hourly_rate,
+        plan=plan,
+        payment_received=payment_received,
+        assigned_by=reviewer,
     )
     application.status = TurfApplication.Status.APPROVED
     application.reviewed_by = reviewer

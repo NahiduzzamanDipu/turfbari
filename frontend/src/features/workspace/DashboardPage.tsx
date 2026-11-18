@@ -27,7 +27,7 @@ export function DashboardPage() {
     <>
       <PageHeader
         title={d.turf.name}
-        description={d.turf.status !== "active" ? "This turf is suspended — view-only until TURFOS reactivates it." : "Today at a glance."}
+        description={d.turf.status !== "active" ? "This turf is suspended — view-only until TurfBari reactivates it." : "Today at a glance."}
         actions={
           <Button asChild>
             <Link to="/workspace/bookings?new=1">

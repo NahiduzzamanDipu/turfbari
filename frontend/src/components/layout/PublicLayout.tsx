@@ -21,7 +21,7 @@ export function PublicLayout() {
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-lg">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-          <Link to="/" aria-label="TURFOS home">
+          <Link to="/" aria-label="TurfBari home">
             <Logo />
           </Link>
           <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
@@ -86,7 +86,7 @@ export function PublicLayout() {
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <Logo className="[&_span]:text-lg" />
           <p>Find a turf, book your slot, play. Made for football in Bangladesh.</p>
-          <p>© {new Date().getFullYear()} TURFOS</p>
+          <p>© {new Date().getFullYear()} TurfBari</p>
         </div>
       </footer>
     </div>

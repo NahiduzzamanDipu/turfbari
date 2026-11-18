@@ -9,6 +9,7 @@ import { FormField, Input } from "@/components/ui/form";
 import { errorText } from "@/features/workspace/hooks";
 import { api } from "@/lib/api";
 import { useMe } from "./auth";
+import { TwoFactorCard } from "./TwoFactorCard";
 
 const EMPTY = { current_password: "", new_password: "", confirm: "" };
 
@@ -133,6 +134,7 @@ export function AccountPage() {
             </form>
           </CardContent>
         </Card>
+        {user?.is_platform_admin && <TwoFactorCard />}
       </div>
     </>
   );
