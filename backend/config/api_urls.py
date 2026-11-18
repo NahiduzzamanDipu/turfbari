@@ -8,6 +8,7 @@ from apps.accounts import views as auth
 from apps.applications.admin_views import AdminDashboardView, ApplicationAdminViewSet, TurfAdminViewSet
 from apps.audit import views as audit
 from apps.bookings import workspace_views as ws
+from apps.common.live import LiveView
 from apps.expenses.views import ExpenseViewSet
 from apps.subscriptions import views as subs
 from apps.turfs import public_views as public
@@ -91,6 +92,7 @@ payment_urls = [
 ]
 
 urlpatterns = [
+    path("live/", LiveView.as_view()),
     path("public/", include(public_urls)),
     path("payments/", include(payment_urls)),
     path("auth/", include(auth_urls)),

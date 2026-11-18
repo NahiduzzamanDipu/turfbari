@@ -5,6 +5,7 @@ import { Link, NavLink, Outlet } from "react-router";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { useLogout, useMe, useSwitchTurf } from "@/features/auth/auth";
+import { type LiveState, useLiveSync } from "@/lib/live";
 import { SubscriptionBanner } from "@/features/workspace/SubscriptionBanner";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,8 @@ export interface NavItem {
   icon: React.ReactNode;
   end?: boolean;
   ownerOnly?: boolean;
+  /** Live count shown as a badge (e.g. booking requests waiting). */
+  badge?: keyof Pick<LiveState, "pending_requests" | "pending_applications" | "pending_payments">;
 }
 
 /** Sidebar shell shared by the Super Admin console and the turf workspace. */
@@ -22,6 +25,7 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
   const logout = useLogout();
   const switchTurf = useSwitchTurf();
   const [open, setOpen] = useState(false);
+  const live = useLiveSync(area);
   const data = me.data;
   const active = data?.memberships.find((m) => m.turf_id === data.active_turf_id);
   const isOwner = active?.role === "owner";
@@ -75,6 +79,14 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
           >
             {item.icon}
             {item.label}
+            {item.badge && (live?.[item.badge] ?? 0) > 0 && (
+              <span
+                className="ml-auto rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white"
+                aria-label={`${live?.[item.badge]} waiting`}
+              >
+                {live?.[item.badge]}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

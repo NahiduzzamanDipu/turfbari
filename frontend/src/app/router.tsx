@@ -46,16 +46,16 @@ import { FieldsPage, HoursPage, ManagersPage, PricingPage, SettingsPage } from "
 
 const ADMIN_NAV: NavItem[] = [
   { to: "/admin", label: "Overview", icon: <LayoutDashboard />, end: true },
-  { to: "/admin/applications", label: "Applications", icon: <Inbox /> },
+  { to: "/admin/applications", label: "Applications", icon: <Inbox />, badge: "pending_applications" },
   { to: "/admin/turfs", label: "Turfs", icon: <Building2 /> },
-  { to: "/admin/billing", label: "Plans & payments", icon: <CreditCard /> },
+  { to: "/admin/billing", label: "Plans & payments", icon: <CreditCard />, badge: "pending_payments" },
   { to: "/admin/audit", label: "Audit log", icon: <History /> },
 ];
 
 const WORKSPACE_NAV: NavItem[] = [
   { to: "/workspace", label: "Dashboard", icon: <LayoutDashboard />, end: true },
   { to: "/workspace/book", label: "Book a slot", icon: <CalendarPlus /> },
-  { to: "/workspace/bookings", label: "Bookings", icon: <CalendarDays /> },
+  { to: "/workspace/bookings", label: "Bookings", icon: <CalendarDays />, badge: "pending_requests" },
   { to: "/workspace/customers", label: "Customers", icon: <Users /> },
   { to: "/workspace/maintenance", label: "Maintenance", icon: <Wrench /> },
   { to: "/workspace/fields", label: "Fields", icon: <Grid2x2 /> },

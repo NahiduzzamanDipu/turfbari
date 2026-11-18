@@ -290,6 +290,7 @@ function BookingPanel({ turf }: { turf: TurfDetail }) {
     queryKey: ["public", "availability", turf.slug, fieldId, day],
     queryFn: () => api<{ slots: Slot[] }>(`/public/turfs/${turf.slug}/availability/?field=${fieldId}&date=${day}`),
     enabled: Boolean(fieldId),
+    refetchInterval: 10_000, // slots taken by other players disappear without a reload
   });
 
   const list = slots.data?.slots ?? [];
