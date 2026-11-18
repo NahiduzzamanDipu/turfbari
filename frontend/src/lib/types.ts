@@ -107,11 +107,35 @@ export interface TurfDetail extends TurfCard {
   base_rates: { field: string; hourly_rate: string }[];
 }
 
+/** free | yours (held by this visitor) | held (someone else is booking) | requested | booked | unavailable | past */
+export type PublicSlotState = "free" | "yours" | "held" | "requested" | "booked" | "unavailable" | "past";
+
 export interface Slot {
   start: string;
   end: string;
   available: boolean;
   price?: string;
+}
+
+export interface PublicSlot extends Slot {
+  state?: PublicSlotState;
+}
+
+/** A 10-minute hold on selected public slots. */
+export interface SlotHold {
+  token: string;
+  field: string;
+  start: string;
+  end: string;
+  expires_at: string;
+}
+
+export interface PublicAvailability {
+  date: string;
+  field: string;
+  slots: PublicSlot[];
+  my_hold: SlotHold | null;
+  cooldown_until: string | null;
 }
 
 export interface PublicBooking {

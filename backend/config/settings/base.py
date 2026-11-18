@@ -31,6 +31,8 @@ PUBLIC_API_URL = env("PUBLIC_API_URL", default="")
 # Behind our Nginx (docker-compose.prod.yml), X-Real-IP holds the real client address.
 # Never enable without a proxy that overwrites the header, or clients could spoof it.
 TRUST_X_REAL_IP = env.bool("TRUST_X_REAL_IP", default=False)
+# META key of a client-IP header that the host's proxy sets and overwrites (see audit.client_ip).
+CLIENT_IP_HEADER = env("CLIENT_IP_HEADER", default="")
 
 # ------------------------------------------------------------- subscription payments
 # Accounts owners send plan fees to (shown on the subscription page; blank = method hidden).
@@ -224,6 +226,7 @@ REST_FRAMEWORK = {
         "two_factor": "10/min",
         "two_factor_resend": "3/min",
         "public_booking": "5/min",
+        "public_hold": "30/min",
         "public_application": "3/hour",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",

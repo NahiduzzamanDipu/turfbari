@@ -8,12 +8,33 @@ log = logging.getLogger(__name__)
 Category = AuditEvent.Category
 
 
+_ip_headers_logged = False
+
+
+def _log_ip_headers_once(meta) -> None:
+    """Help choose CLIENT_IP_HEADER on a new host: logs header NAMES (never values) once per process."""
+    global _ip_headers_logged
+    if _ip_headers_logged:
+        return
+    _ip_headers_logged = True
+    names = sorted(k for k in meta if k.startswith("HTTP_") and ("IP" in k or "FORWARDED" in k))
+    log.info("CLIENT_IP_HEADER is not set; client-IP headers on this request: %s", names)
+
+
 def client_ip(request) -> str | None:
     """REMOTE_ADDR, or X-Real-IP when settings.TRUST_X_REAL_IP says our own proxy sets it.
     X-Forwarded-For is never trusted: clients can put anything in it."""
     from django.conf import settings
 
     meta = getattr(request, "META", {}) or {}
+    # Hosts behind a CDN/proxy that sets a trusted client-IP header (e.g. Render via Cloudflare:
+    # CLIENT_IP_HEADER=HTTP_CF_CONNECTING_IP). Only set it when that proxy overwrites the header.
+    headers = [h.strip() for h in getattr(settings, "CLIENT_IP_HEADER", "").split(",") if h.strip()]
+    for header in headers:
+        if meta.get(header):
+            return meta[header].split(",")[0].strip()[:45] or None
+    if not headers and not settings.DEBUG:
+        _log_ip_headers_once(meta)
     if getattr(settings, "TRUST_X_REAL_IP", False) and meta.get("HTTP_X_REAL_IP"):
         return meta["HTTP_X_REAL_IP"].strip()[:45] or None
     return meta.get("REMOTE_ADDR") or None

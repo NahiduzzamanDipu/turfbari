@@ -1,36 +1,30 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
-  CheckCircle2,
   Clock,
-  Loader2,
   Mail,
   MapPin,
   Phone,
   QrCode,
-  Send,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge, Dialog, ErrorState, FormField, Input, Textarea } from "@/components/ui/form";
+import { Badge, Dialog, ErrorState } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, api } from "@/lib/api";
 import {
   SURFACE_LABEL,
   TURF_TYPE_LABEL,
   WEEKDAYS,
-  addDays,
   fmtClock,
-  fmtDay,
-  fmtRange,
-  todayISO,
   weekdayLabel,
 } from "@/lib/format";
-import type { PublicBooking, Slot, TurfDetail } from "@/lib/types";
-import { cn, formatBDT } from "@/lib/utils";
+import type { TurfDetail } from "@/lib/types";
+import { formatBDT } from "@/lib/utils";
 import { themeStyle } from "@/lib/themes";
+import { BookingPanel } from "./BookingPanel";
 import { PhotoGallery } from "./PhotoGallery";
 import { GoogleMapsPin, TurfArt } from "./shared";
 
@@ -275,210 +269,5 @@ export function TurfDetailPage() {
         </div>
       </Dialog>
     </div>
-  );
-}
-
-function BookingPanel({ turf }: { turf: TurfDetail }) {
-  const [fieldId, setFieldId] = useState(turf.fields_list[0]?.id ?? "");
-  const [day, setDay] = useState(todayISO());
-  const [range, setRange] = useState<{ from: number; to: number } | null>(null);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", team_name: "", notes: "", website: "" });
-  const [done, setDone] = useState<PublicBooking | null>(null);
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(todayISO(), i)), []);
-
-  const slots = useQuery({
-    queryKey: ["public", "availability", turf.slug, fieldId, day],
-    queryFn: () => api<{ slots: Slot[] }>(`/public/turfs/${turf.slug}/availability/?field=${fieldId}&date=${day}`),
-    enabled: Boolean(fieldId),
-    refetchInterval: 10_000, // slots taken by other players disappear without a reload
-  });
-
-  const list = slots.data?.slots ?? [];
-  const chosen = range ? list.slice(range.from, range.to + 1) : [];
-  const total = chosen.reduce((sum, s) => sum + Number(s.price ?? 0), 0);
-
-  const submit = useMutation({
-    mutationFn: () =>
-      api<PublicBooking>(`/public/turfs/${turf.slug}/book/`, {
-        method: "POST",
-        json: { field: fieldId, start: chosen[0]?.start, end: chosen.at(-1)?.end, ...form },
-      }),
-    onSuccess: (b) => {
-      setDone(b);
-      setRange(null);
-      slots.refetch();
-    },
-  });
-  const fieldErrors = submit.error instanceof ApiError ? submit.error.fields : null;
-
-  const pick = (i: number) => {
-    const slot = list[i];
-    if (!slot?.available) return;
-    if (range && i === range.to + 1) setRange({ from: range.from, to: i });
-    else if (range && i >= range.from && i <= range.to) setRange(null);
-    else setRange({ from: i, to: i });
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Book a slot</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {done ? (
-          <div className="flex flex-col items-center gap-3 py-4 text-center" role="status">
-            <CheckCircle2 className="size-12 text-primary" />
-            <p className="text-lg font-semibold">Request sent!</p>
-            <p className="text-sm text-muted-foreground">
-              {done.field}, {fmtDay(done.start)} · {fmtRange(done.start, done.end)}
-              {done.total && <> · {formatBDT(done.total)}</>}
-            </p>
-            <p className="text-sm">
-              Your reference: <span className="font-mono text-base font-bold">{done.reference}</span>
-            </p>
-            <p className="max-w-sm text-sm text-muted-foreground">
-              The turf will call you to confirm. Track it any time on the{" "}
-              <Link to={`/booking-status?reference=${done.reference}`} className="font-semibold text-primary hover:underline">
-                booking status page
-              </Link>
-              .
-            </p>
-            <Button variant="outline" onClick={() => setDone(null)}>
-              Book another slot
-            </Button>
-          </div>
-        ) : (
-          <>
-            {turf.fields_list.length > 1 && (
-              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Field">
-                {turf.fields_list.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={f.id === fieldId}
-                    onClick={() => {
-                      setFieldId(f.id);
-                      setRange(null);
-                    }}
-                    className={cn(
-                      "rounded-full border px-3 py-1.5 text-sm font-medium",
-                      f.id === fieldId ? "border-primary bg-primary text-primary-foreground" : "hover:bg-secondary",
-                    )}
-                  >
-                    {f.name} {f.size && <span className="opacity-75">· {f.size}</span>}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="radiogroup" aria-label="Date">
-              {days.map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  role="radio"
-                  aria-checked={d === day}
-                  onClick={() => {
-                    setDay(d);
-                    setRange(null);
-                  }}
-                  className={cn(
-                    "shrink-0 rounded-lg border px-3 py-2 text-center text-sm",
-                    d === day ? "border-primary bg-primary text-primary-foreground" : "hover:bg-secondary",
-                  )}
-                >
-                  {fmtDay(`${d}T12:00:00+06:00`)}
-                </button>
-              ))}
-            </div>
-
-            {slots.isPending && <Skeleton className="h-32" />}
-            {slots.isError && <ErrorState error={slots.error} onRetry={() => slots.refetch()} />}
-            {slots.data && list.length === 0 && <p className="text-sm text-muted-foreground">Closed on this day.</p>}
-            {list.length > 0 && (
-              <>
-                <p className="text-xs text-muted-foreground">
-                  Tap a free slot; tap the next one to extend your booking.
-                </p>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                  {list.map((s, i) => {
-                    const selected = range !== null && i >= range.from && i <= range.to;
-                    return (
-                      <button
-                        key={s.start}
-                        type="button"
-                        disabled={!s.available}
-                        aria-pressed={selected}
-                        onClick={() => pick(i)}
-                        className={cn(
-                          "rounded-lg border px-2 py-2 text-left text-sm transition",
-                          s.available ? "hover:border-primary" : "cursor-not-allowed bg-muted text-muted-foreground line-through opacity-60",
-                          selected && "border-primary bg-primary text-primary-foreground",
-                        )}
-                      >
-                        <span className="block font-medium">{fmtRange(s.start, s.end)}</span>
-                        {s.price && <span className="tabular text-xs opacity-80">{formatBDT(s.price)}</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-
-            {chosen.length > 0 && (
-              <form
-                className="mt-2 flex flex-col gap-3 border-t pt-4"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  submit.mutate();
-                }}
-              >
-                <p className="text-sm">
-                  <span className="font-semibold">{fmtRange(chosen[0]!.start, chosen.at(-1)!.end)}</span>
-                  {total > 0 && <> · <span className="tabular font-semibold">{formatBDT(total)}</span></>}
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <FormField label="Your name" error={fieldErrors?.name}>
-                    {(id) => <Input id={id} required autoComplete="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />}
-                  </FormField>
-                  <FormField label="Mobile number" error={fieldErrors?.phone} hint="We'll call this number to confirm.">
-                    {(id) => <Input id={id} required type="tel" inputMode="tel" autoComplete="tel" placeholder="01XXXXXXXXX" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />}
-                  </FormField>
-                  <FormField label="Email (optional)" error={fieldErrors?.email}>
-                    {(id) => <Input id={id} type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />}
-                  </FormField>
-                  <FormField label="Team name (optional)">
-                    {(id) => <Input id={id} value={form.team_name} onChange={(e) => setForm({ ...form, team_name: e.target.value })} />}
-                  </FormField>
-                </div>
-                <FormField label="Notes (optional)">
-                  {(id) => <Textarea id={id} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />}
-                </FormField>
-                {/* Honeypot: hidden from people, filled by bots. */}
-                <input
-                  type="text"
-                  name="website"
-                  tabIndex={-1}
-                  autoComplete="off"
-                  aria-hidden
-                  className="hidden"
-                  value={form.website}
-                  onChange={(e) => setForm({ ...form, website: e.target.value })}
-                />
-                {submit.error && (
-                  <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                    {fieldErrors?.start?.[0] ?? fieldErrors?.non_field_errors?.[0] ?? submit.error.message}
-                  </p>
-                )}
-                <Button type="submit" size="lg" disabled={submit.isPending}>
-                  {submit.isPending ? <Loader2 className="animate-spin" /> : <Send />}
-                  Send booking request
-                </Button>
-              </form>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
   );
 }

@@ -134,3 +134,33 @@ class MaintenanceBlock(BaseModel):
     class Meta:
         ordering = ["-start"]
         indexes = [models.Index(fields=["field", "start", "end"])]
+
+
+class SlotHold(BaseModel):
+    """A slot a player has selected on the public page, kept for them for HOLD_MINUTES.
+
+    Other players see it as "someone is booking". If no request is sent before it lapses, the slot
+    frees up and that visitor's IP must wait COOLDOWN_MINUTES before selecting again (see holds.py).
+    Only a keyed hash of the IP is stored.
+    """
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Active"
+        RELEASED = "released", "Released by the player"
+        CONVERTED = "converted", "Turned into a booking request"
+
+    turf = models.ForeignKey("turfs.Turf", on_delete=models.CASCADE, related_name="slot_holds")
+    field = models.ForeignKey("turfs.TurfField", on_delete=models.CASCADE, related_name="slot_holds")
+    start = models.DateTimeField()
+    end = models.DateTimeField()
+    token = models.CharField(max_length=64, unique=True)
+    ip_hash = models.CharField(max_length=64, db_index=True)
+    window_started_at = models.DateTimeField()
+    expires_at = models.DateTimeField(db_index=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.ACTIVE, db_index=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["field", "status", "expires_at"])]
+
+    def __str__(self) -> str:
+        return f"Hold {self.field_id} {self.start:%Y-%m-%d %H:%M} ({self.status})"

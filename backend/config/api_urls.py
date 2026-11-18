@@ -37,6 +37,7 @@ public_urls = [
     path("turfs/<slug:slug>/", public.PublicTurfDetailView.as_view()),
     path("turfs/<slug:slug>/availability/", public.PublicAvailabilityView.as_view()),
     path("turfs/<slug:slug>/book/", public.PublicBookingRequestView.as_view()),
+    path("turfs/<slug:slug>/hold/", public.PublicHoldView.as_view()),
     path("turfs/<slug:slug>/qr.svg", public.TurfQRCodeView.as_view()),
     path("bookings/lookup/", public.PublicBookingLookupView.as_view()),
     path("applications/", public.PublicApplicationView.as_view()),
