@@ -38,6 +38,10 @@ export interface TurfCard {
   district: Place;
   area: Place | null;
   address: string;
+  latitude: string | null;
+  longitude: string | null;
+  map_link: string | null;
+  distance_km: number | null;
   turf_type: "outdoor" | "indoor" | "rooftop";
   surface: string;
   amenities: string[];
@@ -218,6 +222,8 @@ export interface TurfSettings {
   area: string | null;
   address: string;
   maps_url: string;
+  latitude: string | null;
+  longitude: string | null;
   turf_type: string;
   surface: string;
   amenities: string[];

@@ -30,7 +30,7 @@ import {
 } from "@/lib/format";
 import type { PublicBooking, Slot, TurfDetail } from "@/lib/types";
 import { cn, formatBDT } from "@/lib/utils";
-import { TurfArt } from "./shared";
+import { GoogleMapsPin, TurfArt } from "./shared";
 
 export function TurfDetailPage() {
   const { slug = "" } = useParams();
@@ -77,6 +77,16 @@ export function TurfDetailPage() {
       <div className="relative mt-3 overflow-hidden rounded-2xl">
         <TurfArt seed={t.slug} className="h-48 sm:h-64" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        {t.map_link && (
+          <a
+            href={t.map_link}
+            target="_blank"
+            rel="noreferrer"
+            className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-sm font-semibold text-neutral-900 shadow transition hover:scale-105"
+          >
+            <GoogleMapsPin className="size-5" /> Directions
+          </a>
+        )}
         <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-8">
           <div className="mb-2 flex flex-wrap gap-1.5">
             {t.is_featured && <Badge tone="lime">Featured</Badge>}
@@ -173,8 +183,8 @@ export function TurfDetailPage() {
                   <Mail className="size-4 shrink-0" /> {t.public_email}
                 </a>
               )}
-              {t.maps_url && (
-                <a href={t.maps_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-primary">
+              {t.map_link && (
+                <a href={t.map_link} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-primary">
                   <MapPin className="size-4" /> Open in Maps
                 </a>
               )}

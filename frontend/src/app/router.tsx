@@ -17,6 +17,7 @@ import { createBrowserRouter } from "react-router";
 import { AppShell, type NavItem } from "@/components/layout/AppShell";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { AdminApplicationsPage, AdminDashboardPage, AdminTurfsPage } from "@/features/admin/AdminPages";
+import { AccountPage } from "@/features/auth/AccountPage";
 import { RequireRole } from "@/features/auth/auth";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { BookingStatusPage } from "@/features/public/BookingStatusPage";
@@ -80,6 +81,7 @@ export const router = createBrowserRouter([
       { index: true, element: <AdminDashboardPage /> },
       { path: "applications", element: <AdminApplicationsPage /> },
       { path: "turfs", element: <AdminTurfsPage /> },
+      { path: "account", element: <AccountPage /> },
     ],
   },
   {
@@ -101,6 +103,7 @@ export const router = createBrowserRouter([
       { path: "reports", element: <ReportsPage /> },
       { path: "team", element: <ManagersPage /> },
       { path: "settings", element: <SettingsPage /> },
+      { path: "account", element: <AccountPage /> },
     ],
   },
   { path: "*", element: <NotFoundPage /> },

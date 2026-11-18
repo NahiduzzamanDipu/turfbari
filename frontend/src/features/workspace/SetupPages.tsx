@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Loader2, Pencil, Plus, Trash2, UserPlus } from "lucide-react";
+import { Copy, Crosshair, Loader2, MapPinned, Pencil, Plus, Trash2, UserPlus } from "lucide-react";
+import { Link } from "react-router";
+import type * as React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/AppShell";
@@ -410,6 +412,82 @@ export function PricingPage() {
 }
 
 // ------------------------------------------------------------------ settings
+const MAPS_LINK_HINT =
+  "In Google Maps, open your turf, tap Share and copy the link. Full links fill the pin automatically.";
+
+/** Google Maps link + map pin. The pin powers "near me" search; the link opens from the map icon. */
+function MapLocationFields({
+  form,
+  setForm,
+}: {
+  form: TurfSettings;
+  setForm: React.Dispatch<React.SetStateAction<TurfSettings | null>>;
+}) {
+  const [locating, setLocating] = useState(false);
+  const update = (patch: Partial<TurfSettings>) => setForm((f) => (f ? { ...f, ...patch } : f));
+  const hasPin = Boolean(form.latitude && form.longitude);
+  const preview = form.maps_url || (hasPin ? `https://www.google.com/maps/search/?api=1&query=${form.latitude},${form.longitude}` : "");
+
+  const useCurrentLocation = () => {
+    if (!("geolocation" in navigator)) {
+      toast.error("This browser cannot share its location.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        update({ latitude: pos.coords.latitude.toFixed(6), longitude: pos.coords.longitude.toFixed(6) });
+        toast.success("Pin set to where you are now. Save settings to keep it.");
+      },
+      () => {
+        setLocating(false);
+        toast.error("Location permission was denied or unavailable.");
+      },
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
+  };
+
+  return (
+    <>
+      <FormField label="Google Maps link" hint={MAPS_LINK_HINT} className="sm:col-span-2">
+        {(id) => (
+          <Input
+            id={id}
+            type="url"
+            placeholder="https://maps.app.goo.gl/..."
+            value={form.maps_url}
+            onChange={(e) => update({ maps_url: e.target.value })}
+          />
+        )}
+      </FormField>
+      <FormField label="Latitude">
+        {(id) => (
+          <Input id={id} inputMode="decimal" placeholder="23.8103" value={form.latitude ?? ""} onChange={(e) => update({ latitude: e.target.value.trim() || null })} />
+        )}
+      </FormField>
+      <FormField label="Longitude">
+        {(id) => (
+          <Input id={id} inputMode="decimal" placeholder="90.4125" value={form.longitude ?? ""} onChange={(e) => update({ longitude: e.target.value.trim() || null })} />
+        )}
+      </FormField>
+      <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+        <Button type="button" variant="outline" size="sm" onClick={useCurrentLocation} disabled={locating}>
+          {locating ? <Loader2 className="animate-spin" /> : <Crosshair />} Use my current location
+        </Button>
+        {preview && (
+          <a href={preview} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline">
+            <MapPinned className="size-4" /> Check on Google Maps
+          </a>
+        )}
+        <p className="w-full text-xs text-muted-foreground">
+          {hasPin ? "Players near you will see this turf first, with its distance." : "Add a pin so players nearby can find your turf."}
+        </p>
+      </div>
+    </>
+  );
+}
+
 export function SettingsPage() {
   const qc = useQueryClient();
   const isOwner = useIsOwner();
@@ -417,7 +495,6 @@ export function SettingsPage() {
   const amenities = useAmenities();
   const settings = useQuery({ queryKey: ["ws", "settings"], queryFn: () => api<TurfSettings>("/workspace/settings/") });
   const [form, setForm] = useState<TurfSettings | null>(null);
-  const [pw, setPw] = useState({ current_password: "", new_password: "" });
   useEffect(() => {
     if (settings.data) setForm(settings.data);
   }, [settings.data]);
@@ -429,14 +506,6 @@ export function SettingsPage() {
       qc.setQueryData(["ws", "settings"], data);
       qc.invalidateQueries({ queryKey: ["ws", "dashboard"] });
       qc.invalidateQueries({ queryKey: ["auth"] });
-    },
-    onError: (e) => toast.error(errorText(e)),
-  });
-  const changePw = useMutation({
-    mutationFn: () => api<void>("/auth/change-password/", { method: "POST", json: pw }),
-    onSuccess: () => {
-      toast.success("Password changed");
-      setPw({ current_password: "", new_password: "" });
     },
     onError: (e) => toast.error(errorText(e)),
   });
@@ -514,9 +583,7 @@ export function SettingsPage() {
                 <FormField label="Address" className="sm:col-span-2">
                   {(id) => <Input id={id} required value={form.address} onChange={text("address")} />}
                 </FormField>
-                <FormField label="Google Maps link" className="sm:col-span-2">
-                  {(id) => <Input id={id} type="url" value={form.maps_url} onChange={text("maps_url")} />}
-                </FormField>
+                <MapLocationFields form={form} setForm={setForm} />
                 <FormField label="Type">
                   {(id) => (
                     <Select id={id} value={form.turf_type} onChange={text("turf_type")}>
@@ -599,30 +666,13 @@ export function SettingsPage() {
           )}
         </form>
       )}
-      <Card className="mt-6 max-w-xl">
-        <CardHeader>
-          <CardTitle>Change password</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form
-            className="flex flex-col gap-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              changePw.mutate();
-            }}
-          >
-            <FormField label="Current password">
-              {(id) => <Input id={id} type="password" autoComplete="current-password" required value={pw.current_password} onChange={(e) => setPw({ ...pw, current_password: e.target.value })} />}
-            </FormField>
-            <FormField label="New password" hint="At least 10 characters.">
-              {(id) => <Input id={id} type="password" autoComplete="new-password" minLength={10} required value={pw.new_password} onChange={(e) => setPw({ ...pw, new_password: e.target.value })} />}
-            </FormField>
-            <Button type="submit" variant="outline" disabled={changePw.isPending} className="self-start">
-              Update password
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      <p className="mt-6 text-sm text-muted-foreground">
+        To change your password, open{" "}
+        <Link to="/workspace/account" className="text-primary hover:underline">
+          My account
+        </Link>
+        .
+      </p>
     </>
   );
 }

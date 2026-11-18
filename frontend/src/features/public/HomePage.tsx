@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { CalendarCheck2, QrCode, Search, ShieldCheck, Store, Timer } from "lucide-react";
+import { CalendarCheck2, Crosshair, QrCode, Search, ShieldCheck, Store, Timer } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
@@ -7,16 +7,20 @@ import { Input, Select } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import type { Paginated, TurfCard } from "@/lib/types";
-import { TurfCardView, useLocations } from "./shared";
+import { TurfCardView, useLocations, usePlayerLocation } from "./shared";
 
 export function HomePage() {
   const navigate = useNavigate();
   const locations = useLocations();
   const [q, setQ] = useState("");
   const [district, setDistrict] = useState("");
+  const { geo, locate } = usePlayerLocation();
+  const near = geo.status === "ready";
+  const listQuery = near ? `sort=nearest&lat=${geo.lat}&lng=${geo.lng}&page_size=6` : "sort=featured&page_size=6";
   const featured = useQuery({
-    queryKey: ["public", "turfs", "featured"],
-    queryFn: () => api<Paginated<TurfCard>>("/public/turfs/?sort=featured&page_size=6"),
+    queryKey: ["public", "turfs", "home", listQuery],
+    queryFn: () => api<Paginated<TurfCard>>(`/public/turfs/?${listQuery}`),
+    enabled: geo.status !== "locating",
   });
   const stats = useQuery({
     queryKey: ["public", "stats"],
@@ -100,13 +104,22 @@ export function HomePage() {
 
       <section className="mx-auto max-w-6xl px-4 py-12">
         <div className="mb-6 flex items-end justify-between">
-          <h2 className="font-display text-3xl font-extrabold uppercase">Popular turfs</h2>
-          <Link to="/explore" className="text-sm font-semibold text-primary hover:underline">
-            See all
-          </Link>
+          <h2 className="font-display text-3xl font-extrabold uppercase">
+            {near ? "Turfs near you" : "Popular turfs"}
+          </h2>
+          <div className="flex items-center gap-3">
+            {(geo.status === "idle" || geo.status === "denied") && (
+              <Button variant="outline" size="sm" onClick={locate}>
+                <Crosshair /> Near me
+              </Button>
+            )}
+            <Link to="/explore" className="text-sm font-semibold text-primary hover:underline">
+              See all
+            </Link>
+          </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {featured.isPending &&
+          {(featured.isPending || geo.status === "locating") &&
             Array.from({ length: 3 }, (_, i) => <Skeleton key={i} className="h-72 rounded-xl" />)}
           {featured.data?.results.map((t) => <TurfCardView key={t.slug} turf={t} />)}
         </div>

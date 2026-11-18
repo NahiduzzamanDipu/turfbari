@@ -9,10 +9,10 @@ Django / DRF / MySQL-compatible database (XAMPP MariaDB or MySQL 8) backend, Rea
 
 | Area | Features |
 |---|---|
-| Public site | Home, Explore (search, district/area/type/amenity/price filters, sort, pagination), turf page with live slot availability and prices, booking request without an account, booking status lookup, QR code per turf, "List your turf" application |
-| Login | One login for Super Admin, owners and managers; server decides where you land; lockout after 5 failed attempts |
+| Public site | Home, Explore (search, district/area/type/amenity/price filters, sort, pagination), **near me**: the browser detects the player's location (with permission) and lists the closest turfs first with distance, Google Maps pin on every card and a Directions button on the turf page, turf page with live slot availability and prices, booking request without an account, booking status lookup, QR code per turf, "List your turf" application |
+| Login | One login for Super Admin, owners and managers; server decides where you land; lockout after 5 failed attempts; **My account** page (sidebar, bottom) where the Super Admin, owners and managers change their own password |
 | Super Admin (`/admin`) | Platform overview, application pipeline (contact / reject / approve → creates turf + owner login), turf list with suspend/archive, list and feature toggles, add turf manually |
-| Workspace (`/workspace`) | Dashboard with collections chart, bookings day board + searchable list, create / reschedule / confirm / cancel / no-show, payments and refunds with dues, customers, maintenance blocks, fields, opening hours (overnight supported), peak/weekend/special-date pricing, expenses, reports + Excel export, managers, public profile settings, change password |
+| Workspace (`/workspace`) | Dashboard with collections chart, bookings day board + searchable list, create / reschedule / confirm / cancel / no-show, payments and refunds with dues, customers, maintenance blocks, fields, opening hours (overnight supported), peak/weekend/special-date pricing, expenses, reports + Excel export, managers, public profile settings incl. Google Maps link and map pin (paste a full Maps link, type coordinates, or use the current location) |
 | Safety | No double bookings (row lock per field, proven by a concurrent test), tenant isolation (other turfs' IDs → 404), owner-only actions enforced in the API, suspended turfs are read-only, public serializers are whitelists |
 
 Not built yet (roadmap phases 14–16, 25–26): subscriptions/plans/invoices, email + Celery reminders, theme customization studio, gallery image uploads, MFA, audit log, Docker production images.

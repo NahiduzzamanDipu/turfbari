@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { SearchX, SlidersHorizontal } from "lucide-react";
+import { Crosshair, Loader2, LocateFixed, SearchX, SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import type { Paginated, TurfCard } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { TurfCardView, useAmenities, useLocations } from "./shared";
+import { TurfCardView, useAmenities, useLocations, usePlayerLocation } from "./shared";
 
 const PAGE_SIZE = 12;
 
@@ -18,9 +18,17 @@ export function ExplorePage() {
   const locations = useLocations();
   const amenities = useAmenities();
   const page = Number(params.get("page") ?? "1");
+  const { geo, locate, clear } = usePlayerLocation();
+  const near = geo.status === "ready";
 
   const query = new URLSearchParams(params);
   query.set("page_size", String(PAGE_SIZE));
+  if (near) {
+    query.set("lat", String(geo.lat));
+    query.set("lng", String(geo.lng));
+  } else if (query.get("sort") === "nearest") {
+    query.delete("sort");
+  }
   const turfs = useQuery({
     queryKey: ["public", "turfs", query.toString()],
     queryFn: () => api<Paginated<TurfCard>>(`/public/turfs/?${query}`),
@@ -140,7 +148,12 @@ export function ExplorePage() {
           <label htmlFor="sort" className="sr-only">
             Sort
           </label>
-          <Select id="sort" value={params.get("sort") ?? "featured"} onChange={(e) => update("sort", e.target.value)}>
+          <Select
+            id="sort"
+            value={params.get("sort") ?? (near ? "nearest" : "featured")}
+            onChange={(e) => update("sort", e.target.value)}
+          >
+            {near && <option value="nearest">Nearest first</option>}
             <option value="featured">Featured first</option>
             <option value="price_asc">Price: low to high</option>
             <option value="price_desc">Price: high to low</option>
@@ -153,7 +166,37 @@ export function ExplorePage() {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 md:grid-cols-[14rem_1fr]">
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm" aria-live="polite">
+        {geo.status === "locating" && (
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" /> Finding turfs near you...
+          </span>
+        )}
+        {near && (
+          <>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">
+              <LocateFixed className="size-4" /> Showing turfs nearest to you
+            </span>
+            <Button variant="ghost" size="sm" onClick={clear}>
+              <X /> Stop using my location
+            </Button>
+          </>
+        )}
+        {(geo.status === "idle" || geo.status === "denied") && (
+          <>
+            <Button variant="outline" size="sm" onClick={locate}>
+              <Crosshair /> Find turfs near me
+            </Button>
+            {geo.status === "denied" && (
+              <span className="text-xs text-muted-foreground">
+                Location is blocked. Allow it in your browser site settings, then try again.
+              </span>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="mt-4 grid gap-6 md:grid-cols-[14rem_1fr]">
         <aside className={cn("glass h-fit rounded-xl p-4 md:block", showFilters ? "block" : "hidden")}>{filters}</aside>
         <section aria-live="polite">
           {turfs.data && (

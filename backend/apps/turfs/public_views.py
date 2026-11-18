@@ -1,12 +1,14 @@
 """Public (no login) API: discovery, turf pages, availability, booking requests, applications."""
 
+import math
 import uuid
 from datetime import date, datetime, timedelta
 
 import segno
 from django.conf import settings
 from django.core.cache import cache
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, F, FloatField, Prefetch, Q
+from django.db.models.functions import Cast, Power, Sqrt
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -146,8 +148,37 @@ class PublicTurfListView(generics.ListAPIView):
                 pass
         if params.get("bookable") == "1":
             qs = qs.filter(public_booking_enabled=True)
-        order = self.SORTS.get(params.get("sort", "featured"), self.SORTS["featured"])
+
+        origin = self.origin()
+        sort = params.get("sort") or ("nearest" if origin else "featured")
+        if origin:
+            qs = qs.annotate(distance_km=self.distance_expr(*origin))
+            if radius := self.number("radius_km", 1, 500):
+                qs = qs.filter(distance_km__lte=radius)
+            if sort == "nearest":
+                return qs.order_by(F("distance_km").asc(nulls_last=True), "name").distinct()
+        order = self.SORTS.get(sort, self.SORTS["featured"])
         return qs.order_by(*order).distinct()
+
+    def number(self, name, low, high) -> float | None:
+        try:
+            value = float(self.request.query_params.get(name, ""))
+        except ValueError:
+            return None
+        return value if low <= value <= high and math.isfinite(value) else None
+
+    def origin(self) -> tuple[float, float] | None:
+        """The player's position, sent by the browser only after they allow location access."""
+        lat, lng = self.number("lat", -90, 90), self.number("lng", -180, 180)
+        return (lat, lng) if lat is not None and lng is not None else None
+
+    @staticmethod
+    def distance_expr(lat: float, lng: float):
+        # Equirectangular approximation: well under 1% error at city/country scale, and plain SQL.
+        km_per_degree = 111.32
+        dlat = (Cast("latitude", FloatField()) - lat) * km_per_degree
+        dlng = (Cast("longitude", FloatField()) - lng) * (km_per_degree * math.cos(math.radians(lat)))
+        return Sqrt(Power(dlat, 2) + Power(dlng, 2))
 
 
 class PublicTurfDetailView(PublicAPIView):

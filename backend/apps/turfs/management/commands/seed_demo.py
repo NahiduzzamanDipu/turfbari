@@ -29,6 +29,7 @@ from apps.bookings.services import (
 )
 from apps.expenses.models import Expense
 from apps.locations.models import Area, District
+from apps.turfs.geo import google_maps_link
 from apps.turfs.models import Amenity, PricingRule, TenantMembership, Turf, TurfField
 from apps.turfs.pricing import local_dt, recompute_min_price
 
@@ -41,6 +42,7 @@ MANAGER_PASSWORD = "TurfosManager#2026"
 TURFS = [
     {
         "name": "Green Arena Gulshan",
+        "coords": ("23.794600", "90.414300"),
         "district": "dhaka",
         "area": "gulshan-dhaka",
         "address": "Road 90, Gulshan 2, Dhaka 1212",
@@ -55,6 +57,7 @@ TURFS = [
     },
     {
         "name": "Mirpur Kickoff Zone",
+        "coords": ("23.806900", "90.368700"),
         "district": "dhaka",
         "area": "mirpur-dhaka",
         "address": "Section 10, Mirpur, Dhaka 1216",
@@ -69,6 +72,7 @@ TURFS = [
     },
     {
         "name": "Uttara Indoor Sports Hub",
+        "coords": ("23.865400", "90.398500"),
         "district": "dhaka",
         "area": "uttara-dhaka",
         "address": "Sector 7, Uttara, Dhaka 1230",
@@ -83,6 +87,7 @@ TURFS = [
     },
     {
         "name": "Port City Turf",
+        "coords": ("22.325700", "91.811300"),
         "district": "chattogram",
         "area": "agrabad-chattogram",
         "address": "Agrabad C/A, Chattogram 4100",
@@ -162,6 +167,8 @@ class Command(BaseCommand):
             owner.set_password(OWNER_PASSWORD)
             owner.save(update_fields=["password"])
             turf.is_listed = True
+            turf.latitude, turf.longitude = (Decimal(c) for c in spec["coords"])
+            turf.maps_url = google_maps_link(turf.latitude, turf.longitude)
             turf.is_featured = spec["featured"]
             turf.short_description = spec["short"]
             turf.description = (

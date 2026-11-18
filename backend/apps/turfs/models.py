@@ -52,6 +52,9 @@ class Turf(BaseModel):
     )
     address = models.CharField(max_length=255)
     maps_url = models.URLField(max_length=500, blank=True)
+    # WGS84 coordinates, used for "near me" search and the map pin. Optional.
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
     turf_type = models.CharField(max_length=10, choices=TurfType.choices, default=TurfType.OUTDOOR)
     surface = models.CharField(max_length=10, choices=Surface.choices, default=Surface.ARTIFICIAL)

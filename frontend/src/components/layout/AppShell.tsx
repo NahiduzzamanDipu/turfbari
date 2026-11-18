@@ -1,4 +1,4 @@
-import { ExternalLink, LogOut, Menu, X } from "lucide-react";
+import { ExternalLink, KeyRound, LogOut, Menu, X } from "lucide-react";
 import type * as React from "react";
 import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router";
@@ -90,10 +90,22 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
       <div className="border-t pt-3">
         <p className="truncate px-3 text-sm font-medium">{data?.user?.full_name || data?.user?.email}</p>
         <p className="truncate px-3 text-xs text-muted-foreground">{data?.user?.email}</p>
+        <NavLink
+          to={`/${area}/account`}
+          onClick={() => setOpen(false)}
+          className={({ isActive }) =>
+            cn(
+              "mt-2 flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground [&_svg]:size-4",
+              isActive && "bg-secondary text-foreground",
+            )
+          }
+        >
+          <KeyRound /> My account & password
+        </NavLink>
         <Button
           variant="ghost"
           size="sm"
-          className="mt-2 w-full justify-start"
+          className="w-full justify-start"
           onClick={() => logout.mutate()}
           disabled={logout.isPending}
         >
