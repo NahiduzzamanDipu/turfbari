@@ -103,26 +103,31 @@ TEMPLATES = [
 ]
 
 # ----------------------------------------------------------------------- database
-# MySQL 8 or MariaDB 10.6+ (XAMPP), InnoDB. DATABASE_URL format: mysql://user:password@host:3306/dbname
+# MySQL 8 / MariaDB 10.6+ (XAMPP, local) or PostgreSQL (free hosted tiers, e.g. Aiven).
+# DATABASE_URL: mysql://user:password@host:3306/dbname or postgres://user:password@host:5432/dbname
 DATABASES = {"default": env.db("DATABASE_URL")}
+_url_options = DATABASES["default"].get("OPTIONS", {})  # e.g. ?ssl_mode=REQUIRED / ?sslmode=require
 DATABASES["default"].update(
     {
         "ATOMIC_REQUESTS": False,
         "CONN_MAX_AGE": env.int("DB_CONN_MAX_AGE", default=60),
         "CONN_HEALTH_CHECKS": True,
-        "OPTIONS": {
-            "charset": "utf8mb4",  # full Unicode incl. Bangla and emoji
-            # Strict mode: reject truncated/invalid data instead of silently altering it.
-            "init_command": "SET sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,"
-            "ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'",
-            # READ COMMITTED + SELECT ... FOR UPDATE row locks guard booking overlaps.
-            "isolation_level": "read committed",
-            # Options from the URL query, e.g. ?ssl_mode=REQUIRED for hosted MySQL (Aiven, TiDB).
-            **DATABASES["default"].get("OPTIONS", {}),
-        },
-        "TEST": {"CHARSET": "utf8mb4", "COLLATION": "utf8mb4_unicode_ci"},
     }
 )
+if "mysql" in DATABASES["default"]["ENGINE"]:
+    DATABASES["default"]["OPTIONS"] = {
+        "charset": "utf8mb4",  # full Unicode incl. Bangla and emoji
+        # Strict mode: reject truncated/invalid data instead of silently altering it.
+        "init_command": "SET sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,"
+        "ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'",
+        # READ COMMITTED + SELECT ... FOR UPDATE row locks guard booking overlaps.
+        "isolation_level": "read committed",
+        **_url_options,
+    }
+    DATABASES["default"]["TEST"] = {"CHARSET": "utf8mb4", "COLLATION": "utf8mb4_unicode_ci"}
+else:
+    # PostgreSQL defaults to READ COMMITTED already; SELECT ... FOR UPDATE works the same.
+    DATABASES["default"]["OPTIONS"] = dict(_url_options)
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # -------------------------------------------------------------------------- cache
@@ -130,7 +135,7 @@ REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
 # Redis cache when CACHE_URL is set; otherwise a per-process memory cache (fine for local dev,
 # not for multi-worker production — prod must set CACHE_URL so throttles are shared).
 _cache_url = env("CACHE_URL", default="")
-# CACHE_URL=db://<table> uses a shared MySQL table instead (hosts without Redis; run createcachetable).
+# CACHE_URL=db://<table> uses a shared database table instead (hosts without Redis; run createcachetable).
 if _cache_url.startswith("db://"):
     _cache = {"BACKEND": "django.core.cache.backends.db.DatabaseCache", "LOCATION": _cache_url[5:]}
 elif _cache_url:
