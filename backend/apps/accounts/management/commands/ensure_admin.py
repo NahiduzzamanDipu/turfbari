@@ -34,6 +34,21 @@ class Command(BaseCommand):
                 )
             )
             return
+        if os.environ.get("TURFBARI_ADMIN_RESET_PASSWORD", "").lower() in {"1", "true", "yes"} and len(admins) == 1:
+            # Break-glass: new temporary password + clear login lockouts. Remove the env var afterwards,
+            # or every restart resets the password again.
+            from axes.utils import reset as reset_lockouts
+
+            password = secrets.token_urlsafe(12)
+            admins[0].set_password(password)
+            admins[0].save(update_fields=["password"])
+            reset_lockouts(username=admins[0].email)
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Reset Super Admin {admins[0].email} password. New temporary password: {password}  "
+                    "(remove TURFBARI_ADMIN_RESET_PASSWORD now, then sign in and change it)"
+                )
+            )
         if email and len(admins) == 1 and admins[0].email != email:
             if User.objects.filter(email=email).exists():
                 self.stdout.write(self.style.ERROR(f"Can't move the Super Admin to {email}: it's taken."))

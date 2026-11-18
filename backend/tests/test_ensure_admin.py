@@ -27,3 +27,14 @@ def test_ensure_admin_moves_the_only_admin_to_the_configured_email(capsys):
     assert admin.email == "new.boss@example.com"
     call_command("ensure_admin", email="new.boss@example.com")
     assert "nothing to do" in capsys.readouterr().out
+
+
+@pytest.mark.django_db
+def test_reset_password_flag_sets_a_new_temporary_password(capsys, monkeypatch):
+    call_command("ensure_admin", email="boss@example.com")
+    capsys.readouterr()
+    monkeypatch.setenv("TURFBARI_ADMIN_RESET_PASSWORD", "true")
+    call_command("ensure_admin", email="boss@example.com")
+    out = capsys.readouterr().out
+    password = out.split("New temporary password: ")[1].split()[0]
+    assert get_user_model().objects.get(email="boss@example.com").check_password(password)
