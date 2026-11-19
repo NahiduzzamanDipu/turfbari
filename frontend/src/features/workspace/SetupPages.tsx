@@ -146,7 +146,7 @@ export function FieldsPage() {
               )}
             </FormField>
             <FormField label="Standard hourly rate (৳)">
-              {(id) => <Input id={id} type="number" min={0} step={50} required value={editing.default_hourly_rate} onChange={(e) => setEditing({ ...editing, default_hourly_rate: e.target.value })} />}
+              {(id) => <Input id={id} type="number" min={0} step="0.01" required value={editing.default_hourly_rate} onChange={(e) => setEditing({ ...editing, default_hourly_rate: e.target.value })} />}
             </FormField>
             <FormField label="Slot length" hint="Shown to customers on the public booking page.">
               {(id) => (
@@ -363,7 +363,7 @@ export function PricingPage() {
               )}
             </FormField>
             <FormField label="Hourly rate (৳)">
-              {(id) => <Input id={id} type="number" min={0} step={50} required value={editing.hourly_rate} onChange={(e) => setEditing({ ...editing, hourly_rate: e.target.value })} />}
+              {(id) => <Input id={id} type="number" min={0} step="0.01" required value={editing.hourly_rate} onChange={(e) => setEditing({ ...editing, hourly_rate: e.target.value })} />}
             </FormField>
             <FormField label="From">
               {(id) => <Input id={id} type="time" required value={editing.start_time} onChange={(e) => setEditing({ ...editing, start_time: e.target.value })} />}

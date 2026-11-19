@@ -506,7 +506,7 @@ function BookingFormDialog({
           {(id) => <Input id={id} value={form.team_name} onChange={set("team_name")} />}
         </FormField>
         <FormField label="Discount (৳)">
-          {(id) => <Input id={id} type="number" min={0} step={10} value={form.discount} onChange={set("discount")} />}
+          {(id) => <Input id={id} type="number" min={0} step="0.01" value={form.discount} onChange={set("discount")} />}
         </FormField>
         {!booking && (
           <>
@@ -528,7 +528,7 @@ function BookingFormDialog({
               )}
             </FormField>
             <FormField label="Advance received (৳)">
-              {(id) => <Input id={id} type="number" min={0} step={50} placeholder="0" value={form.advance_amount} onChange={set("advance_amount")} />}
+              {(id) => <Input id={id} type="number" min={0} step="0.01" placeholder="0" value={form.advance_amount} onChange={set("advance_amount")} />}
             </FormField>
             <FormField label="Advance method">
               {(id) => (

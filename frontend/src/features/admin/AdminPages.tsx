@@ -253,7 +253,7 @@ export function AdminApplicationsPage() {
                   {(id) => <Textarea id={id} rows={2} value={note} onChange={(e) => setNote(e.target.value)} />}
                 </FormField>
                 <FormField label="Starting hourly rate (৳)" hint="Applied to every field; the owner can change it later.">
-                  {(id) => <Input id={id} type="number" min={0} step={50} value={rate} onChange={(e) => setRate(e.target.value)} />}
+                  {(id) => <Input id={id} type="number" min={0} step="0.01" value={rate} onChange={(e) => setRate(e.target.value)} />}
                 </FormField>
                 <PlanPicker value={plan} onChange={setPlan} />
                 <div className="flex flex-wrap justify-end gap-2">
@@ -532,7 +532,7 @@ export function AdminTurfsPage() {
             {(id) => <Input id={id} type="number" min={1} max={20} value={form.number_of_fields} onChange={set("number_of_fields")} />}
           </FormField>
           <FormField label="Hourly rate (৳)" error={errors?.hourly_rate}>
-            {(id) => <Input id={id} type="number" min={0} step={50} value={form.hourly_rate} onChange={set("hourly_rate")} />}
+            {(id) => <Input id={id} type="number" min={0} step="0.01" value={form.hourly_rate} onChange={set("hourly_rate")} />}
           </FormField>
           <PlanPicker
             value={{ plan: form.plan, payment_received: form.payment_received }}

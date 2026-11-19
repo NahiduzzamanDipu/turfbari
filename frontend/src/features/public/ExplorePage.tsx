@@ -90,7 +90,7 @@ export function ExplorePage() {
           id="f-price"
           type="number"
           min={0}
-          step={100}
+          step={1}
           placeholder="Any"
           defaultValue={params.get("max_price") ?? ""}
           onBlur={(e) => update("max_price", e.target.value)}

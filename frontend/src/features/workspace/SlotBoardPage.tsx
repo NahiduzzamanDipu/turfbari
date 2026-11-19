@@ -330,7 +330,7 @@ export function SlotBoardPage() {
                           type="number"
                           min={0}
                           max={form.discount_mode === "percent" ? 100 : subtotal}
-                          step={form.discount_mode === "percent" ? 1 : 50}
+                          step={form.discount_mode === "percent" ? 1 : "0.01"}
                           placeholder="0"
                           className="rounded-r-none"
                           value={form.discount_value}
@@ -381,7 +381,7 @@ export function SlotBoardPage() {
                 </FormField>
                 <FormField label="Advance received (৳)" error={advanceError ?? fieldErrors?.advance_amount} hint="Leave empty if nothing paid yet.">
                   {(id) => (
-                    <Input id={id} type="number" min={0} step={50} value={form.advance_amount} onChange={(e) => setForm({ ...form, advance_amount: e.target.value })} />
+                    <Input id={id} type="number" min={0} step="0.01" value={form.advance_amount} onChange={(e) => setForm({ ...form, advance_amount: e.target.value })} />
                   )}
                 </FormField>
                 <FormField label="Paid by">

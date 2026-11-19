@@ -318,7 +318,7 @@ function EditPlanDialog({ plan, onClose }: { plan: Plan | null; onClose: () => v
             {(id) => <Input id={id} required value={current.name} onChange={(e) => setForm({ ...current, name: e.target.value })} />}
           </FormField>
           <FormField label="Price (৳)">
-            {(id) => <Input id={id} required type="number" min={1} step={50} value={current.price} onChange={(e) => setForm({ ...current, price: e.target.value })} />}
+            {(id) => <Input id={id} required type="number" min={1} step="0.01" value={current.price} onChange={(e) => setForm({ ...current, price: e.target.value })} />}
           </FormField>
           <FormField label="Short description">
             {(id) => <Input id={id} maxLength={200} value={current.description} onChange={(e) => setForm({ ...current, description: e.target.value })} />}
