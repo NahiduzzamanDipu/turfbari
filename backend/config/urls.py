@@ -33,9 +33,7 @@ if settings.SERVE_MEDIA and not settings.DEBUG:
 
     urlpatterns += [
         # Uploads are re-encoded images; never serve anything else from MEDIA_ROOT.
-        re_path(
-            r"^media/(?P<path>.+\.(?:webp|png|jpe?g))$", serve, {"document_root": settings.MEDIA_ROOT}
-        ),
+        re_path(r"^media/(?P<path>.+\.(?:webp|png|jpe?g))$", serve, {"document_root": settings.MEDIA_ROOT}),
         re_path(r"^static/(?P<path>.+)$", serve, {"document_root": settings.STATIC_ROOT}),
     ]
 

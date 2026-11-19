@@ -171,7 +171,8 @@ class Command(BaseCommand):
                 plan=Plan.objects.get(period=spec["plan"]),
             )
             owner.set_password(OWNER_PASSWORD)
-            owner.save(update_fields=["password"])
+            owner.must_change_password, owner.temp_password_expires_at = False, None  # demo login
+            owner.save(update_fields=["password", "must_change_password", "temp_password_expires_at"])
             turf.is_listed = True
             turf.latitude, turf.longitude = (Decimal(c) for c in spec["coords"])
             turf.maps_url = google_maps_link(turf.latitude, turf.longitude)

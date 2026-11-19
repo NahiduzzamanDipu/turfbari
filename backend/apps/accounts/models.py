@@ -48,6 +48,11 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
 
     date_joined = models.DateTimeField(default=timezone.now)
 
+    # Set when someone else chose this user's password (new account, admin reset). Until the user
+    # picks their own, every API except sign-out and change-password answers 403.
+    must_change_password = models.BooleanField(default=False)
+    temp_password_expires_at = models.DateTimeField(null=True, blank=True)
+
     objects = UserManager()
 
     USERNAME_FIELD = "email"
@@ -84,3 +89,21 @@ class TwoFactorDevice(models.Model):
 
     def __str__(self) -> str:
         return f"2FA for {self.user}"
+
+
+class PasswordResetCode(models.Model):
+    """A 6-digit "forgot password" code. Only a keyed hash is stored; single use, short-lived."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reset_codes")
+    code_hash = models.CharField(max_length=64)
+    channel = models.CharField(max_length=10)  # email / sms
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["user", "created_at"])]
+
+    def __str__(self) -> str:
+        return f"Reset code for {self.user} ({self.channel})"

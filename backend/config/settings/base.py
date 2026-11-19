@@ -23,6 +23,8 @@ PLATFORM_NAME = "TurfBari"
 # hours after signing in. ADMIN_EMAIL_CODE=false is the break-glass switch if email is down.
 ADMIN_EMAIL_CODE = env.bool("ADMIN_EMAIL_CODE", default=True)
 ADMIN_SESSION_HOURS = env.int("ADMIN_SESSION_HOURS", default=24)
+# Temporary passwords (new accounts, admin resets) stop working after this many hours.
+TEMP_PASSWORD_HOURS = env.int("TEMP_PASSWORD_HOURS", default=72)
 # Resend (https://resend.com) HTTP API key; used by apps.common.email_backends.ResendEmailBackend.
 RESEND_API_KEY = env("RESEND_API_KEY", default="")
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:5173")
@@ -86,6 +88,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "apps.accounts.middleware.AdminSessionLimitMiddleware",
+    "apps.accounts.middleware.PasswordChangeRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Must be last: lockout after repeated failed logins.
@@ -182,6 +185,8 @@ AXES_FAILURE_LIMIT = 5
 AXES_COOLOFF_TIME = timedelta(minutes=15)
 AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
 AXES_RESET_ON_SUCCESS = True
+AXES_USERNAME_CALLABLE = "apps.accounts.backends.axes_username"
+AXES_LOCKOUT_CALLABLE = "apps.accounts.backends.axes_lockout_response"
 
 # ---------------------------------------------------------------- localization
 LANGUAGE_CODE = "en-us"
@@ -223,6 +228,7 @@ REST_FRAMEWORK = {
         "anon": "120/min",
         "user": "600/min",
         "login": "10/min",
+        "password_reset": "5/min",
         "two_factor": "10/min",
         "two_factor_resend": "3/min",
         "public_booking": "5/min",

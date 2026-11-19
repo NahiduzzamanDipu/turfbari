@@ -23,6 +23,7 @@ import { AppShell, type NavItem } from "@/components/layout/AppShell";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { RequireRole } from "@/features/auth/auth";
 import { LoginPage } from "@/features/auth/LoginPage";
+import { ForgotPasswordPage, SetPasswordPage } from "@/features/auth/PasswordPages";
 import { BookingStatusPage } from "@/features/public/BookingStatusPage";
 import { HomePage } from "@/features/public/HomePage";
 import { RegisterTurfPage } from "@/features/public/RegisterTurfPage";
@@ -68,6 +69,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/admin/turfs", label: "Turfs", icon: <Building2 /> },
   { to: "/admin/billing", label: "Plans & payments", icon: <CreditCard />, badge: "pending_payments" },
   { to: "/admin/promo-codes", label: "Promo codes", icon: <TicketPercent /> },
+  { to: "/admin/accounts", label: "Accounts", icon: <UserCog /> },
   { to: "/admin/audit", label: "Audit log", icon: <History /> },
 ];
 
@@ -103,6 +105,8 @@ export const router = createBrowserRouter([
     ],
   },
   { path: "/login", element: <LoginPage /> },
+  { path: "/forgot-password", element: <ForgotPasswordPage /> },
+  { path: "/set-password", element: <SetPasswordPage /> },
   {
     path: "/admin",
     element: (
@@ -116,6 +120,7 @@ export const router = createBrowserRouter([
       { path: "turfs", element: page(adminPages, "AdminTurfsPage") },
       { path: "billing", element: page(billingPages, "AdminBillingPage") },
       { path: "promo-codes", element: page(() => import("@/features/admin/PromoCodesPage"), "AdminPromoCodesPage") },
+      { path: "accounts", element: page(() => import("@/features/admin/AccountsPage"), "AdminAccountsPage") },
       { path: "audit", element: page(activityPages, "AdminAuditPage") },
       { path: "account", element: page(accountPage, "AccountPage") },
     ],

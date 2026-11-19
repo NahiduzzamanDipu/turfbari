@@ -1,6 +1,5 @@
 """Turn an approved application (or an admin form) into a live turf with an owner login."""
 
-import secrets
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -8,16 +7,13 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from apps.accounts.passwords import create_user_with_temporary_password
 from apps.subscriptions.models import Plan
 from apps.subscriptions.services import assign_plan
 from apps.turfs.models import TenantMembership, Turf
 from apps.turfs.services import provision_defaults, unique_slug
 
 from .models import TurfApplication
-
-
-def temporary_password() -> str:
-    return secrets.token_urlsafe(9)  # 12 chars, shown once to the admin
 
 
 @transaction.atomic
@@ -46,8 +42,9 @@ def create_turf_with_owner(
     owner = User.objects.filter(email=owner_email).first()
     password = None
     if owner is None:
-        password = temporary_password()
-        owner = User.objects.create_user(owner_email, password, full_name=owner_name, phone=owner_phone)
+        owner, password = create_user_with_temporary_password(
+            owner_email, full_name=owner_name, phone=owner_phone
+        )
     elif owner.is_platform_admin:
         raise ValidationError({"email": ["This email belongs to a platform administrator."]})
 

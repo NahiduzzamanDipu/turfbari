@@ -50,6 +50,8 @@ class IsTenantMember(BasePermission):
     - owner_only = True          -> every method requires the OWNER role
     - owner_only_writes = True   -> unsafe methods require the OWNER role
     - allow_inactive_subscription = True -> writes allowed even when the subscription has lapsed
+    - manager_permission = "x"   -> with owner_only_writes: managers holding permission "x" may write too
+    - required_permission = "x"  -> every method requires permission "x" (owners always have it)
     """
 
     message = "You don't have access to a turf workspace."
@@ -70,7 +72,13 @@ class IsTenantMember(BasePermission):
             self.message = "Only the turf owner can do this."
             return False
         if unsafe and getattr(view, "owner_only_writes", False) and not is_owner:
-            self.message = "Only the turf owner can change this."
+            granted = getattr(view, "manager_permission", None)
+            if not (granted and membership.can(granted)):
+                self.message = "Only the turf owner can change this."
+                return False
+        required = getattr(view, "required_permission", None)
+        if required and not membership.can(required):
+            self.message = "Your turf owner hasn't given you access to this."
             return False
         if unsafe and not membership.turf.is_operational:
             raise TurfSuspended()

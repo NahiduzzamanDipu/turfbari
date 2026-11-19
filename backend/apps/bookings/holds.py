@@ -89,9 +89,10 @@ def place_hold(*, turf, field, start: datetime, end: datetime, ip: str, token: s
                 code="hold_cooldown",
                 retry_at=retry,
             )
-        if overlapping_bookings(field.id, start, end).exists() or overlapping_maintenance(
-            field.id, start, end
-        ).exists():
+        if (
+            overlapping_bookings(field.id, start, end).exists()
+            or overlapping_maintenance(field.id, start, end).exists()
+        ):
             raise HoldRefused("That slot was just booked. Please choose another.", code="slot_taken")
         mine = find_hold(token, ip, now)
         others = active_holds(field.id, start, end, now).exclude(ip_hash=ip)

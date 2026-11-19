@@ -97,9 +97,12 @@ def test_switching_and_releasing_are_free(turf):
     assert states(b, turf)[0]["18"] == "free"
 
     second = SlotHold.objects.get(status=SlotHold.Status.ACTIVE).token
-    assert visitor("10.0.0.1").delete(
-        f"/api/public/turfs/{turf.slug}/hold/", HTTP_X_HOLD_TOKEN=second
-    ).status_code == 204
+    assert (
+        visitor("10.0.0.1")
+        .delete(f"/api/public/turfs/{turf.slug}/hold/", HTTP_X_HOLD_TOKEN=second)
+        .status_code
+        == 204
+    )
     assert states(b, turf)[0]["20"] == "free"
     assert hold(a, turf, 21).status_code == 201  # no cooldown after a release
 

@@ -28,6 +28,10 @@ export function LoginPage() {
     qc.setQueryData(meKey, data);
     const next = params.get("next");
     // Only follow same-app relative paths.
+    if (data.user?.must_change_password) {
+      navigate("/set-password", { replace: true });
+      return;
+    }
     navigate(next?.startsWith("/") && !next.startsWith("//") ? next : data.home, { replace: true });
   };
   const login = useMutation({
@@ -201,11 +205,16 @@ export function LoginPage() {
                   />
                 )}
               </FormField>
-              <Checkbox
-                label="Keep me signed in"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-              />
+              <div className="flex items-center justify-between gap-2">
+                <Checkbox
+                  label="Keep me signed in"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
+                <Link to="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               {login.error && !error?.fields && (
                 <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
                   {login.error.message}
@@ -222,7 +231,7 @@ export function LoginPage() {
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Own a turf?{" "}
           <Link to="/register-turf" className="font-semibold text-primary hover:underline">
-            List it on TurfBari
+            Register it on TurfBari
           </Link>
         </p>
       </div>

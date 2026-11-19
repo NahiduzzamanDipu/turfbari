@@ -36,6 +36,7 @@ def make_turf(name="Alpha Turf", email="alpha@example.com", listed=True):
         hourly_rate=Decimal("1000.00"),
     )
     owner.set_password(PASSWORD)
+    owner.must_change_password = False  # tests sign in as an owner who already chose a password
     owner.save()
     turf.is_listed = listed
     turf.save()

@@ -1,9 +1,8 @@
 """Workspace configuration: fields, hours, pricing, turf settings, managers."""
 
-import secrets
-
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.decorators import action
@@ -12,11 +11,12 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.passwords import create_user_with_temporary_password
 from apps.audit.services import Category, record
 from apps.common.tenancy import IsTenantMember, TenantViewSet
 
 from .images import process_gallery_photo, process_profile_picture
-from .models import OperatingHours, PricingRule, TenantMembership, TurfField, TurfPhoto
+from .models import MANAGER_PERMISSIONS, OperatingHours, PricingRule, TenantMembership, TurfField, TurfPhoto
 from .pricing import recompute_min_price
 from .serializers import (
     FieldSerializer,
@@ -31,6 +31,7 @@ class FieldViewSet(TenantViewSet):
     queryset = TurfField.objects.all()
     serializer_class = FieldSerializer
     owner_only_writes = True
+    manager_permission = "manage_slots"
     filter_backends = []
     pagination_class = None
     audit_noun = "field"
@@ -56,6 +57,7 @@ class PricingRuleViewSet(TenantViewSet):
     queryset = PricingRule.objects.select_related("field")
     serializer_class = PricingRuleSerializer
     owner_only_writes = True
+    manager_permission = "manage_slots"
     filter_backends = []
     pagination_class = None
     audit_noun = "price rule"
@@ -76,6 +78,7 @@ class PricingRuleViewSet(TenantViewSet):
 class HoursView(APIView):
     permission_classes = [IsTenantMember]
     owner_only_writes = True
+    manager_permission = "manage_slots"
 
     @extend_schema(tags=["workspace"], responses=HoursSerializer(many=True))
     def get(self, request):
@@ -174,7 +177,19 @@ def manager_row(m: TenantMembership) -> dict:
         "phone": m.user.phone,
         "role": m.role,
         "is_active": m.is_active,
+        "permissions": {key: m.can(key) for key in MANAGER_PERMISSIONS},
+        "must_change_password": m.user.must_change_password,
     }
+
+
+class ManagerPermissionsSerializer(serializers.Serializer):
+    permissions = serializers.DictField(child=serializers.BooleanField())
+
+    def validate_permissions(self, value):
+        unknown = set(value) - set(MANAGER_PERMISSIONS)
+        if unknown:
+            raise ValidationError(f"Unknown permission: {', '.join(sorted(unknown))}")
+        return value
 
 
 class ManagersView(APIView):
@@ -197,9 +212,8 @@ class ManagersView(APIView):
         user = User.objects.filter(email=email).first()
         password = None
         if user is None:
-            password = secrets.token_urlsafe(9)
-            user = User.objects.create_user(
-                email, password, full_name=v["full_name"], phone=v.get("phone", "")
+            user, password = create_user_with_temporary_password(
+                email, full_name=v["full_name"], phone=v.get("phone", "")
             )
         elif user.is_platform_admin:
             raise ValidationError({"email": ["This email can't be added as a manager."]})
@@ -225,6 +239,30 @@ class ManagersView(APIView):
 class ManagerDetailView(APIView):
     permission_classes = [IsTenantMember]
     owner_only = True
+
+    @extend_schema(tags=["workspace"], request=ManagerPermissionsSerializer)
+    def patch(self, request, pk):
+        membership = get_object_or_404(
+            TenantMembership.objects.select_related("user"),
+            turf=request.tenant,
+            pk=pk,
+            is_active=True,
+            role=TenantMembership.Role.MANAGER,
+        )
+        data = ManagerPermissionsSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        membership.permissions = {**(membership.permissions or {}), **data.validated_data["permissions"]}
+        membership.save(update_fields=["permissions", "updated_at"])
+        allowed = [MANAGER_PERMISSIONS[k].lower() for k in MANAGER_PERMISSIONS if membership.can(k)]
+        record(
+            "team.manager_permissions",
+            f"Changed access for {membership.user.full_name or membership.user.email}: "
+            + (", ".join(allowed) if allowed else "daily operations only"),
+            category=Category.TEAM,
+            request=request,
+            target=membership,
+        )
+        return Response(manager_row(membership))
 
     @extend_schema(tags=["workspace"], responses={204: None})
     def delete(self, request, pk):

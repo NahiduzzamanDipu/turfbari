@@ -3,6 +3,7 @@
 from django.urls import include, path
 from rest_framework.routers import SimpleRouter
 
+from apps.accounts import admin_views as accounts_admin
 from apps.accounts import two_factor
 from apps.accounts import views as auth
 from apps.applications.admin_views import AdminDashboardView, ApplicationAdminViewSet, TurfAdminViewSet
@@ -48,6 +49,8 @@ auth_urls = [
     path("me/", auth.MeView.as_view()),
     path("switch-turf/", auth.SwitchTurfView.as_view()),
     path("change-password/", auth.ChangePasswordView.as_view()),
+    path("password-reset/", auth.PasswordResetRequestView.as_view()),
+    path("password-reset/confirm/", auth.PasswordResetConfirmView.as_view()),
     path("2fa/", two_factor.TwoFactorStatusView.as_view()),
     path("2fa/setup/", two_factor.TwoFactorSetupView.as_view()),
     path("2fa/confirm/", two_factor.TwoFactorConfirmView.as_view()),
@@ -61,6 +64,11 @@ admin_urls = [
     path("dashboard/", AdminDashboardView.as_view()),
     path("turfs/<uuid:pk>/assign-plan/", subs.AssignPlanView.as_view()),
     path("audit/", audit.AdminAuditView.as_view()),
+    path("users/", accounts_admin.AccountListView.as_view()),
+    path("users/<uuid:pk>/", accounts_admin.AccountDetailView.as_view()),
+    path("users/<uuid:pk>/memberships/", accounts_admin.AccountMembershipsView.as_view()),
+    path("users/<uuid:pk>/<slug:action>/", accounts_admin.AccountActionView.as_view()),
+    path("memberships/<uuid:pk>/", accounts_admin.MembershipDetailView.as_view()),
     path("", include(admin_router.urls)),
 ]
 

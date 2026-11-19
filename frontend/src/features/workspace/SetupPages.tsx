@@ -23,7 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAmenities, useLocations } from "@/features/public/shared";
 import { api } from "@/lib/api";
 import { SURFACE_LABEL, WEEKDAYS, WEEKDAYS_SHORT, fmtClock, weekdayLabel } from "@/lib/format";
-import type { Field, Hours, Manager, PricingRule, TurfSettings } from "@/lib/types";
+import type { Field, Hours, Manager, ManagerPermissions, PricingRule, TurfSettings } from "@/lib/types";
 import { formatBDT } from "@/lib/utils";
 import { errorText, useFields, useIsOwner } from "./hooks";
 import { PicturesCard } from "./PicturesCard";
@@ -679,6 +679,12 @@ export function SettingsPage() {
 }
 
 // ------------------------------------------------------------------ managers
+const PERMISSION_LABELS: Record<keyof ManagerPermissions, string> = {
+  approve_payments: "Approve bKash payments",
+  manage_slots: "Edit fields, slots, hours & pricing",
+  view_sms: "See SMS messages",
+};
+
 export function ManagersPage() {
   const qc = useQueryClient();
   const team = useQuery({ queryKey: ["ws", "managers"], queryFn: () => api<Manager[]>("/workspace/managers/") });
@@ -695,6 +701,15 @@ export function ManagersPage() {
       qc.invalidateQueries({ queryKey: ["ws", "managers"] });
     },
   });
+  const grant = useMutation({
+    mutationFn: ({ id, key, value }: { id: string; key: keyof ManagerPermissions; value: boolean }) =>
+      api<Manager>(`/workspace/managers/${id}/`, { method: "PATCH", json: { permissions: { [key]: value } } }),
+    onSuccess: (m) => {
+      toast.success(`Access updated for ${m.full_name || m.email}`);
+      qc.invalidateQueries({ queryKey: ["ws", "managers"] });
+    },
+    onError: (e) => toast.error(errorText(e)),
+  });
   const remove = useMutation({
     mutationFn: (id: string) => api<void>(`/workspace/managers/${id}/`, { method: "DELETE" }),
     onSuccess: () => {
@@ -708,7 +723,7 @@ export function ManagersPage() {
     <>
       <PageHeader
         title="Team"
-        description="Managers can take bookings, record payments and manage customers. Only you can change prices, settings, expenses and reports."
+        description="Managers always handle bookings, customers and maintenance. Choose what else each manager may do — billing, settings, expenses and reports stay with you."
         actions={<Button onClick={() => setOpen(true)}><UserPlus /> Add manager</Button>}
       />
       {team.isPending && <Skeleton className="h-40" />}
@@ -722,6 +737,7 @@ export function ManagersPage() {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Role</th>
+                  <th>Can also</th>
                   <th />
                 </tr>
               </thead>
@@ -737,6 +753,26 @@ export function ManagersPage() {
                       <Badge tone={m.role === "owner" ? "lime" : "blue"} className="capitalize">
                         {m.role}
                       </Badge>
+                      {m.must_change_password && (
+                        <span className="mt-1 block text-xs text-muted-foreground">Hasn't signed in yet</span>
+                      )}
+                    </td>
+                    <td>
+                      {m.role === "owner" ? (
+                        <span className="text-sm text-muted-foreground">Everything</span>
+                      ) : (
+                        <div className="flex flex-col gap-1">
+                          {(Object.keys(PERMISSION_LABELS) as (keyof ManagerPermissions)[]).map((key) => (
+                            <Checkbox
+                              key={key}
+                              label={PERMISSION_LABELS[key]}
+                              checked={m.permissions[key]}
+                              disabled={grant.isPending}
+                              onChange={(e) => grant.mutate({ id: m.id, key, value: e.target.checked })}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="text-right">
                       {m.role === "manager" && (
@@ -775,7 +811,7 @@ export function ManagersPage() {
           </Button>
         </form>
       </Dialog>
-      <Dialog open={created !== null} onClose={() => setCreated(null)} title="Manager added" description="Share the login securely. The password is shown only once.">
+      <Dialog open={created !== null} onClose={() => setCreated(null)} title="Manager added" description="Share the login securely. The temporary password is shown only once; they must choose their own the first time they sign in.">
         {created && (
           <div className="flex flex-col gap-3 text-sm">
             <p>

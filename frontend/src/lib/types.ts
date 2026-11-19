@@ -17,11 +17,25 @@ export interface Membership {
   turf_name: string;
   turf_slug: string;
   role: "owner" | "manager";
+  permissions: ManagerPermissions;
+}
+
+export interface ManagerPermissions {
+  approve_payments: boolean;
+  manage_slots: boolean;
+  view_sms: boolean;
 }
 
 export interface Me {
   authenticated: boolean;
-  user: { id: string; email: string; full_name: string; phone: string; is_platform_admin: boolean } | null;
+  user: {
+    id: string;
+    email: string;
+    full_name: string;
+    phone: string;
+    is_platform_admin: boolean;
+    must_change_password: boolean;
+  } | null;
   memberships: Membership[];
   active_turf_id: string | null;
   home: string;
@@ -293,6 +307,8 @@ export interface Manager {
   phone: string;
   role: "owner" | "manager";
   is_active: boolean;
+  permissions: ManagerPermissions;
+  must_change_password: boolean;
   temporary_password?: string | null;
 }
 

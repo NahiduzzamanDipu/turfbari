@@ -3,7 +3,7 @@ import { Loader2 } from "lucide-react";
 import type * as React from "react";
 import { Navigate, useLocation } from "react-router";
 import { api } from "@/lib/api";
-import type { Me } from "@/lib/types";
+import type { ManagerPermissions, Me } from "@/lib/types";
 
 export const meKey = ["auth", "me"] as const;
 
@@ -20,6 +20,19 @@ export function useLogout() {
       window.location.assign("/login");
     },
   });
+}
+
+/** The active workspace membership (role + manager permissions), if any. */
+export function useActiveMembership() {
+  const me = useMe();
+  const data = me.data;
+  return data?.memberships.find((m) => m.turf_id === data.active_turf_id) ?? data?.memberships[0];
+}
+
+/** Owners can do everything; managers only what their owner switched on. UX only — the API enforces it. */
+export function useCan(permission: keyof ManagerPermissions) {
+  const membership = useActiveMembership();
+  return membership?.role === "owner" || Boolean(membership?.permissions?.[permission]);
 }
 
 export function useSwitchTurf() {
@@ -49,6 +62,7 @@ export function RequireRole({ role, children }: { role: "admin" | "workspace"; c
   if (!me.data?.authenticated) {
     return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />;
   }
+  if (me.data.user?.must_change_password) return <Navigate to="/set-password" replace />;
   const allowed =
     role === "admin" ? me.data.user?.is_platform_admin : me.data.memberships.length > 0;
   if (!allowed) return <Navigate to={me.data.home === location.pathname ? "/" : me.data.home} replace />;

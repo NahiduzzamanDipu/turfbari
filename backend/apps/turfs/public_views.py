@@ -41,6 +41,7 @@ BOOKING_HORIZON_DAYS = 60
 
 log = logging.getLogger(__name__)
 
+
 class PublicAPIView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -182,9 +183,7 @@ def _add_live_states(field, slots: list[dict], mine) -> None:
         elif any(s < end and e > start for s, e in blocks):
             state = "unavailable"
         elif any(s < end and e > start for s, e, _ in held):
-            mine_here = mine and any(
-                tok == mine.token and s < end and e > start for s, e, tok in held
-            )
+            mine_here = mine and any(tok == mine.token and s < end and e > start for s, e, tok in held)
             state = "yours" if mine_here else "held"
         else:
             state = "free"

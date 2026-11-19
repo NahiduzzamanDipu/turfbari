@@ -122,6 +122,19 @@ class Turf(BaseModel):
         return self.status == self.Status.ACTIVE
 
 
+# What an owner can let a manager do, beyond daily operations (bookings, customers, maintenance).
+MANAGER_PERMISSIONS = {
+    "approve_payments": "Approve or reject bKash payments",
+    "manage_slots": "Change fields, slots, opening hours and pricing",
+    "view_sms": "See SMS messages sent for this turf",
+}
+DEFAULT_MANAGER_PERMISSIONS = {"approve_payments": True, "manage_slots": False, "view_sms": False}
+
+
+def default_manager_permissions() -> dict:
+    return dict(DEFAULT_MANAGER_PERMISSIONS)
+
+
 class TenantMembership(BaseModel):
     class Role(models.TextChoices):
         OWNER = "owner", "Owner"
@@ -131,6 +144,8 @@ class TenantMembership(BaseModel):
     turf = models.ForeignKey(Turf, on_delete=models.CASCADE, related_name="memberships")
     role = models.CharField(max_length=10, choices=Role.choices)
     is_active = models.BooleanField(default=True)
+    # Manager-only switches (see MANAGER_PERMISSIONS). Owners can always do everything.
+    permissions = models.JSONField(default=default_manager_permissions, blank=True)
 
     class Meta:
         ordering = ["turf__name"]
@@ -138,6 +153,13 @@ class TenantMembership(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.user} @ {self.turf} ({self.role})"
+
+    def can(self, permission: str) -> bool:
+        if self.role == self.Role.OWNER:
+            return True
+        return bool(
+            (self.permissions or {}).get(permission, DEFAULT_MANAGER_PERMISSIONS.get(permission, False))
+        )
 
 
 class TurfPhoto(BaseModel):
