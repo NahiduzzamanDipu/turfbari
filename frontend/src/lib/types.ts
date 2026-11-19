@@ -414,12 +414,29 @@ export interface Invoice {
   id: string;
   number: string;
   amount: string;
+  list_amount: string;
+  discount: string;
+  promo_code: { code: string; percent_off: number } | null;
   status: "unpaid" | "pending_verification" | "paid" | "cancelled";
   status_label: string;
   paid_at: string | null;
   created_at: string;
   subscription: SubscriptionPeriod;
   transactions: PaymentTx[];
+}
+
+export interface PromoCode {
+  id: string;
+  code: string;
+  percent_off: number;
+  description: string;
+  is_active: boolean;
+  valid_from: string | null;
+  valid_until: string | null;
+  max_uses: number | null;
+  times_used: number;
+  is_running: boolean;
+  created_at: string;
 }
 
 export interface SubscriptionStanding {

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Clock, CreditCard, Loader2, ShieldCheck, Smartphone, XCircle } from "lucide-react";
+import { AlertTriangle, Clock, CreditCard, Loader2, ShieldCheck, Smartphone, TicketPercent, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
@@ -197,7 +197,14 @@ export function SubscriptionPage() {
                         ? `${fmtPlainDate(inv.subscription.starts_on)} – ${fmtPlainDate(inv.subscription.ends_on)}`
                         : "—"}
                     </td>
-                    <td className="tabular text-right">{formatBDT(inv.amount)}</td>
+                    <td className="tabular text-right">
+                      {formatBDT(inv.amount)}
+                      {inv.promo_code && (
+                        <span className="block text-xs text-primary">
+                          {inv.promo_code.code} · −{inv.promo_code.percent_off}%
+                        </span>
+                      )}
+                    </td>
                     <td>
                       <Badge tone={INVOICE_TONE[inv.status]}>{inv.status_label}</Badge>
                     </td>
@@ -258,7 +265,9 @@ function PayInvoice({
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center justify-between gap-2">
           <span>
-            Pay for {invoice.subscription.plan.name} · <span className="tabular">{formatBDT(invoice.amount)}</span>
+            Pay for {invoice.subscription.plan.name} ·{" "}
+            {invoice.promo_code && <s className="tabular font-normal text-muted-foreground">{formatBDT(invoice.list_amount)}</s>}{" "}
+            <span className="tabular">{formatBDT(invoice.amount)}</span>
           </span>
           <span className="font-mono text-xs font-normal text-muted-foreground">{invoice.number}</span>
         </CardTitle>
@@ -279,6 +288,7 @@ function PayInvoice({
           <p className="text-sm text-muted-foreground">Waiting for the turf owner to pay.</p>
         ) : (
           <>
+            <PromoBox invoice={invoice} onChange={refresh} />
             {lastRejected && (
               <p className="flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 <XCircle className="mt-0.5 size-4 shrink-0" />
@@ -370,5 +380,75 @@ function PayInvoice({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function PromoBox({ invoice, onChange }: { invoice: Invoice; onChange: () => void }) {
+  const [code, setCode] = useState("");
+  const apply = useMutation({
+    mutationFn: () => api<Invoice>(`/workspace/subscription/invoices/${invoice.id}/promo/`, { method: "POST", json: { code } }),
+    onSuccess: (inv) => {
+      setCode("");
+      toast.success(
+        inv.status === "paid"
+          ? `${inv.promo_code?.code} covers the full price. Your plan is active.`
+          : `Promo code applied: you save ${formatBDT(inv.discount)}.`,
+      );
+      onChange();
+    },
+  });
+  const remove = useMutation({
+    mutationFn: () => api<Invoice>(`/workspace/subscription/invoices/${invoice.id}/promo/`, { method: "DELETE" }),
+    onSuccess: () => {
+      apply.reset();
+      onChange();
+    },
+    onError: (e) => toast.error(errorText(e)),
+  });
+
+  if (invoice.promo_code) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3 text-sm">
+        <p className="flex items-center gap-2">
+          <TicketPercent className="size-4 text-primary" />
+          <span>
+            Promo code <span className="font-mono font-semibold">{invoice.promo_code.code}</span> applied ·{" "}
+            {invoice.promo_code.percent_off}% off ·{" "}
+            <span className="tabular font-semibold">
+              {formatBDT(invoice.list_amount)} − {formatBDT(invoice.discount)} = {formatBDT(invoice.amount)}
+            </span>
+          </span>
+        </p>
+        <button type="button" className="text-xs font-medium text-muted-foreground hover:text-foreground" onClick={() => remove.mutate()} disabled={remove.isPending}>
+          Remove
+        </button>
+      </div>
+    );
+  }
+  return (
+    <form
+      className="flex flex-col gap-2 rounded-xl border border-dashed px-4 py-3 sm:flex-row sm:items-end"
+      onSubmit={(e) => {
+        e.preventDefault();
+        apply.mutate();
+      }}
+    >
+      <FormField label="Have a promo code?" className="flex-1" error={apply.error ? errorText(apply.error) : undefined}>
+        {(id) => (
+          <Input
+            id={id}
+            required
+            maxLength={40}
+            placeholder="Enter code"
+            className="font-mono uppercase"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+          />
+        )}
+      </FormField>
+      <Button type="submit" variant="outline" disabled={apply.isPending || !code.trim()} className={apply.error ? "sm:mb-5" : undefined}>
+        {apply.isPending ? <Loader2 className="animate-spin" /> : <TicketPercent />} Apply
+      </Button>
+    </form>
   );
 }

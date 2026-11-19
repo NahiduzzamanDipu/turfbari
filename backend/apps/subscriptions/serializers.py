@@ -1,8 +1,8 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import Invoice, PaymentTransaction, Plan, Subscription
-from .services import standing
+from .models import Invoice, PaymentTransaction, Plan, PromoCode, Subscription
+from .services import normalize_code, promo_uses, standing
 
 
 class PlanSerializer(serializers.ModelSerializer):
@@ -58,8 +58,74 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         return "current" if obj.ends_on >= today else "ended"
 
 
+class PromoCodeSerializer(serializers.ModelSerializer):
+    """Super Admin: create / edit promo codes."""
+
+    code = serializers.RegexField(
+        r"^\s*[A-Za-z0-9_-]{3,30}\s*$",
+        error_messages={"invalid": "Use 3-30 letters, numbers, - or _ (no spaces)."},
+    )
+    percent_off = serializers.IntegerField(min_value=1, max_value=100)
+    max_uses = serializers.IntegerField(min_value=1, required=False, allow_null=True)
+    times_used = serializers.SerializerMethodField()
+    is_running = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PromoCode
+        fields = [
+            "id",
+            "code",
+            "percent_off",
+            "description",
+            "is_active",
+            "valid_from",
+            "valid_until",
+            "max_uses",
+            "times_used",
+            "is_running",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+    def get_times_used(self, obj) -> int:
+        return promo_uses(obj)
+
+    def get_is_running(self, obj) -> bool:
+        today = timezone.localdate()
+        return bool(
+            obj.is_active
+            and (obj.valid_from is None or obj.valid_from <= today)
+            and (obj.valid_until is None or obj.valid_until >= today)
+            and (obj.max_uses is None or promo_uses(obj) < obj.max_uses)
+        )
+
+    def validate_code(self, value):
+        code = normalize_code(value)
+        clash = PromoCode.objects.filter(code=code)
+        if self.instance:
+            clash = clash.exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise serializers.ValidationError("A promo code with this name already exists.")
+        return code
+
+    def validate(self, attrs):
+        start = attrs.get("valid_from", getattr(self.instance, "valid_from", None))
+        end = attrs.get("valid_until", getattr(self.instance, "valid_until", None))
+        if start and end and end < start:
+            raise serializers.ValidationError({"valid_until": ["The end date is before the start date."]})
+        return attrs
+
+
+class InvoicePromoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PromoCode
+        fields = ["code", "percent_off"]
+
+
 class InvoiceSerializer(serializers.ModelSerializer):
     subscription = SubscriptionSerializer(read_only=True)
+    promo_code = InvoicePromoSerializer(read_only=True)
+    list_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     transactions = TransactionSerializer(many=True, read_only=True)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
 
@@ -69,6 +135,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "id",
             "number",
             "amount",
+            "list_amount",
+            "discount",
+            "promo_code",
             "status",
             "status_label",
             "paid_at",

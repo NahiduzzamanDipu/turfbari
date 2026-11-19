@@ -20,16 +20,25 @@ from apps.common.tenancy import IsTenantMember
 from apps.turfs.models import Turf
 
 from . import gateway
-from .models import Invoice, PaymentTransaction, Plan
+from .models import Invoice, PaymentTransaction, Plan, PromoCode
 from .serializers import (
     AdminPaymentSerializer,
     InvoiceSerializer,
     PlanSerializer,
+    PromoCodeSerializer,
     SubscriptionSerializer,
     TransactionSerializer,
     standing_payload,
 )
-from .services import assign_plan, cancel_order, create_order, review_payment, submit_manual_payment
+from .services import (
+    apply_promo,
+    assign_plan,
+    cancel_order,
+    create_order,
+    remove_promo,
+    review_payment,
+    submit_manual_payment,
+)
 
 MANUAL_METHODS = {
     PaymentTransaction.Method.BKASH: "bKash",
@@ -172,6 +181,47 @@ class InvoiceCancelView(WorkspaceSubscriptionMixin, APIView):
         return Response(status=204)
 
 
+class PromoApplySerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=40)
+
+
+class InvoicePromoView(WorkspaceSubscriptionMixin, APIView):
+    """Apply (POST) or remove (DELETE) a promo code on the open, unpaid invoice."""
+
+    @extend_schema(request=PromoApplySerializer, tags=["workspace"])
+    def post(self, request, pk):
+        invoice = self.open_invoice(request, pk)
+        data = PromoApplySerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        invoice = apply_promo(invoice, data.validated_data["code"], user=request.user)
+        promo = invoice.promo_code
+        paid = " — fully covered, plan activated" if invoice.status == Invoice.Status.PAID else ""
+        record(
+            "subscription.promo_applied",
+            f"Applied promo code {promo.code} ({promo.percent_off}% off, −৳{invoice.discount}) to invoice "
+            f"{invoice.number}{paid}",
+            category=Category.SUBSCRIPTION,
+            request=request,
+            target=invoice,
+        )
+        return Response(InvoiceSerializer(invoice).data)
+
+    @extend_schema(tags=["workspace"])
+    def delete(self, request, pk):
+        invoice = self.open_invoice(request, pk)
+        code = invoice.promo_code.code if invoice.promo_code else None
+        invoice = remove_promo(invoice)
+        if code:
+            record(
+                "subscription.promo_removed",
+                f"Removed promo code {code} from invoice {invoice.number}",
+                category=Category.SUBSCRIPTION,
+                request=request,
+                target=invoice,
+            )
+        return Response(InvoiceSerializer(invoice).data)
+
+
 # ------------------------------------------------------------------ gateway callbacks
 @method_decorator(csrf_exempt, name="dispatch")
 class SSLCommerzCallbackView(APIView):
@@ -216,6 +266,40 @@ class PlanAdminViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.
             target=plan,
             data={"before": before},
         )
+
+
+class PromoCodeAdminViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsPlatformAdmin]
+    serializer_class = PromoCodeSerializer
+    queryset = PromoCode.objects.all()
+    pagination_class = None
+    filter_backends = []
+    http_method_names = ["get", "post", "patch", "delete"]
+
+    def _record(self, action, verb, promo, **extra):
+        state = "" if promo.is_active else ", switched off"
+        record(
+            action,
+            f"{verb} promo code {promo.code} ({promo.percent_off}% off{state})",
+            category=Category.PLATFORM,
+            request=self.request,
+            target=promo,
+            **extra,
+        )
+
+    def perform_create(self, serializer):
+        self._record("platform.promo_created", "Created", serializer.save(created_by=self.request.user))
+
+    def perform_update(self, serializer):
+        before = {k: str(getattr(serializer.instance, k)) for k in serializer.validated_data}
+        self._record("platform.promo_updated", "Updated", serializer.save(), data={"before": before})
+
+    def perform_destroy(self, instance):
+        if instance.invoices.exists():
+            msg = f"{instance.code} is already on invoices. Switch it off instead."
+            raise ValidationError({"code": [msg]})
+        self._record("platform.promo_deleted", "Deleted", instance)
+        instance.delete()
 
 
 class PaymentAdminViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):

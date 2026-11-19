@@ -19,6 +19,7 @@ admin_router.register("applications", ApplicationAdminViewSet, basename="admin-a
 admin_router.register("turfs", TurfAdminViewSet, basename="admin-turfs")
 admin_router.register("plans", subs.PlanAdminViewSet, basename="admin-plans")
 admin_router.register("payments", subs.PaymentAdminViewSet, basename="admin-payments")
+admin_router.register("promo-codes", subs.PromoCodeAdminViewSet, basename="admin-promo-codes")
 
 workspace_router = SimpleRouter()
 workspace_router.register("bookings", ws.BookingViewSet, basename="ws-bookings")
@@ -80,6 +81,7 @@ workspace_urls = [
     path("subscription/invoices/<uuid:pk>/manual-payment/", subs.InvoiceManualPaymentView.as_view()),
     path("subscription/invoices/<uuid:pk>/pay-online/", subs.InvoicePayOnlineView.as_view()),
     path("subscription/invoices/<uuid:pk>/cancel/", subs.InvoiceCancelView.as_view()),
+    path("subscription/invoices/<uuid:pk>/promo/", subs.InvoicePromoView.as_view()),
     path("reports/summary/", ws.ReportSummaryView.as_view()),
     path("reports/bookings.xlsx", ws.BookingsExportView.as_view()),
     path("", include(workspace_router.urls)),

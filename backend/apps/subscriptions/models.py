@@ -72,6 +72,31 @@ class Subscription(BaseModel):
         return f"{self.turf} · {self.plan} ({self.status})"
 
 
+class PromoCode(BaseModel):
+    """A TurfBari-issued discount code an owner can apply to an unpaid subscription invoice.
+
+    A use is counted while the invoice is open (reserved) or paid; cancelling the invoice releases it.
+    Each turf can pay with the same code only once.
+    """
+
+    code = models.CharField(max_length=30, unique=True)  # stored upper-case
+    percent_off = models.PositiveSmallIntegerField()  # 1-100
+    description = models.CharField(max_length=200, blank=True)
+    is_active = models.BooleanField(default=True)
+    valid_from = models.DateField(null=True, blank=True)
+    valid_until = models.DateField(null=True, blank=True)  # inclusive
+    max_uses = models.PositiveIntegerField(null=True, blank=True)  # blank = unlimited
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.code} ({self.percent_off}%)"
+
+
 class Invoice(BaseModel):
     class Status(models.TextChoices):
         UNPAID = "unpaid", "Unpaid"
@@ -84,7 +109,11 @@ class Invoice(BaseModel):
     number = models.CharField(max_length=20, unique=True, default=new_invoice_number)
     turf = models.ForeignKey("turfs.Turf", on_delete=models.CASCADE, related_name="invoices")
     subscription = models.OneToOneField(Subscription, on_delete=models.CASCADE, related_name="invoice")
-    amount = MoneyField()
+    amount = MoneyField()  # what the owner pays (after any promo discount)
+    discount = MoneyField()  # promo discount taken off the plan price
+    promo_code = models.ForeignKey(
+        PromoCode, on_delete=models.PROTECT, null=True, blank=True, related_name="invoices"
+    )
     status = models.CharField(max_length=24, choices=Status.choices, default=Status.UNPAID, db_index=True)
     paid_at = models.DateTimeField(null=True, blank=True)
 
@@ -93,6 +122,10 @@ class Invoice(BaseModel):
 
     def __str__(self) -> str:
         return self.number
+
+    @property
+    def list_amount(self):
+        return self.amount + self.discount
 
 
 class PaymentTransaction(BaseModel):
@@ -103,11 +136,13 @@ class PaymentTransaction(BaseModel):
         BANK = "bank", "Bank transfer"
         ONLINE = "online", "Card / mobile banking (online)"
         CASH = "cash", "Cash"
+        PROMO = "promo", "Promo code (100% off)"
 
     class Channel(models.TextChoices):
         MANUAL = "manual", "Sent manually, verified by TurfBari"
         GATEWAY = "gateway", "Online payment gateway"
         ADMIN = "admin", "Recorded by TurfBari admin"
+        PROMO = "promo", "Fully covered by a promo code"
 
     class Status(models.TextChoices):
         INITIATED = "initiated", "Started"

@@ -16,7 +16,9 @@ from django.db.models import Max
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from .models import Invoice, PaymentTransaction, Plan, Subscription
+from apps.common.money import to_money
+
+from .models import Invoice, PaymentTransaction, Plan, PromoCode, Subscription
 
 GRACE_DAYS = 3
 EXPIRY_WARNING_DAYS = 10
@@ -221,4 +223,72 @@ def assign_plan(turf, plan: Plan, *, paid: bool, by=None, method="cash", referen
         )
         mark_paid(invoice)
         invoice.refresh_from_db()
+    return invoice
+
+
+# ------------------------------------------------------------- promo codes
+def normalize_code(code: str) -> str:
+    return (code or "").strip().upper()
+
+
+def promo_uses(promo: PromoCode, exclude_invoice=None) -> int:
+    """Uses = invoices holding the code that are paid or still open (an open one reserves its use)."""
+    qs = Invoice.objects.filter(promo_code=promo, status__in=[Invoice.Status.PAID, *Invoice.OPEN])
+    if exclude_invoice is not None:
+        qs = qs.exclude(pk=exclude_invoice.pk)
+    return qs.count()
+
+
+def check_promo(code: str, turf, *, exclude_invoice=None, lock=False) -> PromoCode:
+    """Return the usable promo code for this turf, or raise a ValidationError the owner can read."""
+    code = normalize_code(code)
+    qs = PromoCode.objects.select_for_update() if lock else PromoCode.objects
+    promo = qs.filter(code=code).first() if code else None
+    if promo is None or not promo.is_active:
+        raise ValidationError({"code": ["This promo code is not valid."]})
+    today = timezone.localdate()
+    if promo.valid_from and today < promo.valid_from:
+        raise ValidationError({"code": [f"This promo code starts on {promo.valid_from:%d %b %Y}."]})
+    if promo.valid_until and today > promo.valid_until:
+        raise ValidationError({"code": ["This promo code has expired."]})
+    if Invoice.objects.filter(turf=turf, promo_code=promo, status=Invoice.Status.PAID).exists():
+        raise ValidationError({"code": ["Your turf has already used this promo code."]})
+    if promo.max_uses is not None and promo_uses(promo, exclude_invoice) >= promo.max_uses:
+        raise ValidationError({"code": ["This promo code has been fully used."]})
+    return promo
+
+
+def _reprice(invoice: Invoice, promo: PromoCode | None):
+    base = invoice.amount + invoice.discount  # the plan price on this order
+    discount = to_money(base * Decimal(promo.percent_off) / 100) if promo else Decimal("0.00")
+    invoice.discount, invoice.amount, invoice.promo_code = discount, base - discount, promo
+    invoice.save(update_fields=["discount", "amount", "promo_code", "updated_at"])
+    Subscription.objects.filter(pk=invoice.subscription_id).update(price=invoice.amount)
+
+
+@transaction.atomic
+def apply_promo(invoice: Invoice, code: str, *, user=None) -> Invoice:
+    invoice = _open_invoice(invoice)
+    promo = check_promo(code, invoice.turf, exclude_invoice=invoice, lock=True)
+    _reprice(invoice, promo)
+    if invoice.amount == 0:  # 100% off: nothing to pay, the period starts now
+        PaymentTransaction.objects.create(
+            invoice=invoice,
+            method=PaymentTransaction.Method.PROMO,
+            channel=PaymentTransaction.Channel.PROMO,
+            amount=Decimal("0.00"),
+            status=PaymentTransaction.Status.VERIFIED,
+            reference=promo.code,
+            submitted_by=user,
+            reviewed_at=timezone.now(),
+        )
+        mark_paid(invoice)
+    invoice.refresh_from_db()
+    return invoice
+
+
+@transaction.atomic
+def remove_promo(invoice: Invoice) -> Invoice:
+    invoice = _open_invoice(invoice)
+    _reprice(invoice, None)
     return invoice

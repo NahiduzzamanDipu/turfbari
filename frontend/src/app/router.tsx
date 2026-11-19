@@ -12,6 +12,7 @@ import {
   Receipt,
   Settings,
   Tags,
+  TicketPercent,
   UserCog,
   Users,
   Wrench,
@@ -61,6 +62,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/admin/applications", label: "Applications", icon: <Inbox />, badge: "pending_applications" },
   { to: "/admin/turfs", label: "Turfs", icon: <Building2 /> },
   { to: "/admin/billing", label: "Plans & payments", icon: <CreditCard />, badge: "pending_payments" },
+  { to: "/admin/promo-codes", label: "Promo codes", icon: <TicketPercent /> },
   { to: "/admin/audit", label: "Audit log", icon: <History /> },
 ];
 
@@ -106,6 +108,7 @@ export const router = createBrowserRouter([
       { path: "applications", element: page(adminPages, "AdminApplicationsPage") },
       { path: "turfs", element: page(adminPages, "AdminTurfsPage") },
       { path: "billing", element: page(billingPages, "AdminBillingPage") },
+      { path: "promo-codes", element: page(() => import("@/features/admin/PromoCodesPage"), "AdminPromoCodesPage") },
       { path: "audit", element: page(activityPages, "AdminAuditPage") },
       { path: "account", element: page(accountPage, "AccountPage") },
     ],
