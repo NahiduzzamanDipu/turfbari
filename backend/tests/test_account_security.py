@@ -83,8 +83,47 @@ def _code_from_mail() -> str:
     return re.search(r"\b(\d{6})\b", mail.outbox[-1].body).group(1)
 
 
-def test_forgot_password_by_email_is_single_use_and_signs_out_everywhere():
+def _code_from_sms() -> str:
+    from apps.notifications.providers import MemoryProvider
+
+    return re.search(r"\b(\d{6})\b", MemoryProvider.outbox[-1]["body"]).group(1)
+
+
+def _owner_without_phone():
     _, owner = make_turf()
+    owner.phone = ""
+    owner.save()
+    return owner
+
+
+def test_reset_code_goes_by_sms_when_the_account_has_a_phone_and_is_not_logged():
+    from apps.notifications.models import SmsMessage
+    from apps.notifications.providers import MemoryProvider
+
+    owner = _owner_without_phone()
+    owner.phone = "01712345678"
+    owner.save()
+    APIClient().post("/api/auth/password-reset/", {"identifier": "01712-345678"}, format="json")
+    assert mail.outbox == [] and MemoryProvider.outbox[0]["to"] == "8801712345678"
+    code = _code_from_sms()
+    log = SmsMessage.objects.get(kind="password_reset")
+    assert log.status == "sent" and code not in log.body  # the code is blanked in the stored log
+    assert PasswordResetCode.objects.get(user=owner).channel == "sms"
+
+
+def test_reset_falls_back_to_email_when_sms_fails():
+    from apps.notifications.providers import MemoryProvider
+
+    owner = _owner_without_phone()
+    owner.phone = "01712345678"
+    owner.save()
+    MemoryProvider.fail_with = "1007"  # out of SMS balance
+    APIClient().post("/api/auth/password-reset/", {"identifier": owner.email}, format="json")
+    assert len(mail.outbox) == 1 and PasswordResetCode.objects.get(user=owner).channel == "email"
+
+
+def test_forgot_password_by_email_is_single_use_and_signs_out_everywhere():
+    owner = _owner_without_phone()
     other_device, _ = sign_in(owner.email, PASSWORD)
     unknown = APIClient().post(
         "/api/auth/password-reset/", {"identifier": "nobody@example.com"}, format="json"
@@ -127,7 +166,7 @@ def test_forgot_password_by_email_is_single_use_and_signs_out_everywhere():
 def test_reset_code_dies_after_five_wrong_guesses():
     from apps.accounts.passwords import confirm_reset
 
-    _, owner = make_turf()
+    owner = _owner_without_phone()
     APIClient().post("/api/auth/password-reset/", {"identifier": owner.email}, format="json")
     code = _code_from_mail()
     wrong = "000000" if code != "000000" else "111111"

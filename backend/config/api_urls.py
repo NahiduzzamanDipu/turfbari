@@ -11,6 +11,7 @@ from apps.audit import views as audit
 from apps.bookings import workspace_views as ws
 from apps.common.live import LiveView
 from apps.expenses.views import ExpenseViewSet
+from apps.notifications import views as sms
 from apps.subscriptions import views as subs
 from apps.turfs import public_views as public
 from apps.turfs import workspace_views as setup
@@ -64,6 +65,12 @@ admin_urls = [
     path("dashboard/", AdminDashboardView.as_view()),
     path("turfs/<uuid:pk>/assign-plan/", subs.AssignPlanView.as_view()),
     path("audit/", audit.AdminAuditView.as_view()),
+    path("sms/", sms.AdminSmsOverviewView.as_view()),
+    path("sms/messages/", sms.AdminSmsMessagesView.as_view()),
+    path("sms/messages/<uuid:pk>/retry/", sms.AdminSmsRetryView.as_view()),
+    path("sms/test/", sms.AdminSmsTestView.as_view()),
+    path("sms/templates/", sms.AdminSmsTemplatesView.as_view()),
+    path("sms/templates/<slug:kind>/", sms.AdminSmsTemplatesView.as_view()),
     path("users/", accounts_admin.AccountListView.as_view()),
     path("users/<uuid:pk>/", accounts_admin.AccountDetailView.as_view()),
     path("users/<uuid:pk>/memberships/", accounts_admin.AccountMembershipsView.as_view()),
@@ -83,6 +90,8 @@ workspace_urls = [
     path("managers/", setup.ManagersView.as_view()),
     path("managers/<uuid:pk>/", setup.ManagerDetailView.as_view()),
     path("activity/", audit.WorkspaceActivityView.as_view()),
+    path("sms/", sms.WorkspaceSmsView.as_view()),
+    path("sms/settings/", sms.WorkspaceSmsSettingsView.as_view()),
     path("subscription/", subs.SubscriptionOverviewView.as_view()),
     path("subscription/order/", subs.SubscriptionOrderView.as_view()),
     path("subscription/invoices/<uuid:pk>/manual-payment/", subs.InvoiceManualPaymentView.as_view()),
@@ -103,6 +112,7 @@ payment_urls = [
 
 urlpatterns = [
     path("live/", LiveView.as_view()),
+    path("system/tick/", sms.TickView.as_view()),
     path("public/", include(public_urls)),
     path("payments/", include(payment_urls)),
     path("auth/", include(auth_urls)),

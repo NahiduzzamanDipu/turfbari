@@ -75,6 +75,7 @@ LOCAL_APPS = [
     "apps.expenses",
     "apps.subscriptions",
     "apps.audit",
+    "apps.notifications",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -256,11 +257,26 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 # Synced into django-celery-beat's tables when beat starts (editable later in Django admin).
 CELERY_BEAT_SCHEDULE = {
+    "tick": {
+        "task": "notifications.tick",
+        "schedule": 300.0,  # every 5 minutes when a Celery worker exists
+    },
     "plan-expiry-reminders": {
         "task": "subscriptions.send_expiry_reminders",
         "schedule": crontab(hour=9, minute=0),  # 9 AM Asia/Dhaka, daily
     },
 }
+
+# ------------------------------------------------------------------------ SMS
+# BulkSMSBD (https://bulksmsbd.net). The API key stays in the environment only — never in the DB/UI.
+BULKSMSBD_API_KEY = env("BULKSMSBD_API_KEY", default="")
+BULKSMSBD_SENDER_ID = env("BULKSMSBD_SENDER_ID", default="")
+BULKSMSBD_BASE_URL = env("BULKSMSBD_BASE_URL", default="https://bulksmsbd.net/api")
+# bulksmsbd (real, needs the API key) | console (log only, development) | disabled
+SMS_BACKEND = env("SMS_BACKEND", default="bulksmsbd")
+SMS_DISPATCH = env("SMS_DISPATCH", default="thread")  # thread | inline (after commit) | immediate (tests)
+# Shared secret for POST /api/system/tick/ (an external cron calls it). Blank = endpoint disabled.
+TICK_TOKEN = env("TICK_TOKEN", default="")
 
 # ----------------------------------------------------------------------- email
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")

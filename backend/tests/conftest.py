@@ -28,3 +28,15 @@ def _fresh_throttles():
     cache.clear()
     yield
     cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def _sms_outbox():
+    """Test SMS go to an in-memory outbox (SMS_BACKEND=memory); start each test empty and working."""
+    from apps.notifications.providers import MemoryProvider
+
+    MemoryProvider.outbox = []
+    MemoryProvider.fail_with = None
+    yield
+    MemoryProvider.outbox = []
+    MemoryProvider.fail_with = None

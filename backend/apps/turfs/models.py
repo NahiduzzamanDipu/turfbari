@@ -100,6 +100,9 @@ class Turf(BaseModel):
     show_pricing = models.BooleanField(default=True)
     min_public_price = MoneyField(null=True, blank=True, default=None)  # denormalised for sorting
 
+    # Customer SMS switches (see apps.notifications.services.TURF_SMS_DEFAULTS).
+    sms_settings = models.JSONField(default=dict, blank=True)
+
     # Python weekday numbers (Mon=0). Bangladesh weekend: Friday + Saturday.
     weekend_days = models.JSONField(default=list, blank=True)
 

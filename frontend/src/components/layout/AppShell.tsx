@@ -6,6 +6,7 @@ import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { useLogout, useMe, useSwitchTurf } from "@/features/auth/auth";
 import { type LiveState, useLiveSync } from "@/lib/live";
+import type { ManagerPermissions } from "@/lib/types";
 import { SubscriptionBanner } from "@/features/workspace/SubscriptionBanner";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,8 @@ export interface NavItem {
   icon: React.ReactNode;
   end?: boolean;
   ownerOnly?: boolean;
+  /** Managers see it only with this permission (owners always do). */
+  permission?: keyof ManagerPermissions;
   /** Live count shown as a badge (e.g. booking requests waiting). */
   badge?: keyof Pick<LiveState, "pending_requests" | "pending_applications" | "pending_payments">;
 }
@@ -29,7 +32,12 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
   const data = me.data;
   const active = data?.memberships.find((m) => m.turf_id === data.active_turf_id);
   const isOwner = active?.role === "owner";
-  const items = nav.filter((item) => !item.ownerOnly || area === "admin" || isOwner);
+  const items = nav.filter(
+    (item) =>
+      area === "admin" ||
+      isOwner ||
+      (!item.ownerOnly && (!item.permission || Boolean(active?.permissions?.[item.permission]))),
+  );
 
   const sidebar = (
     <div className="flex h-full flex-col gap-4 p-4">

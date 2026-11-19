@@ -9,6 +9,7 @@ import {
   History,
   Inbox,
   LayoutDashboard,
+  MessageSquareText,
   Receipt,
   Settings,
   Tags,
@@ -62,6 +63,7 @@ const activityPages = () => import("@/features/audit/ActivityLog");
 const accountPage = () => import("@/features/auth/AccountPage");
 const operationsPages = () => import("@/features/workspace/OperationsPages");
 const setupPages = () => import("@/features/workspace/SetupPages");
+const smsPages = () => import("@/features/sms/SmsPages");
 
 const ADMIN_NAV: NavItem[] = [
   { to: "/admin", label: "Overview", icon: <LayoutDashboard />, end: true },
@@ -70,6 +72,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/admin/billing", label: "Plans & payments", icon: <CreditCard />, badge: "pending_payments" },
   { to: "/admin/promo-codes", label: "Promo codes", icon: <TicketPercent /> },
   { to: "/admin/accounts", label: "Accounts", icon: <UserCog /> },
+  { to: "/admin/sms", label: "SMS", icon: <MessageSquareText /> },
   { to: "/admin/audit", label: "Audit log", icon: <History /> },
 ];
 
@@ -86,6 +89,7 @@ const WORKSPACE_NAV: NavItem[] = [
   { to: "/workspace/reports", label: "Reports", icon: <BarChart3 />, ownerOnly: true },
   { to: "/workspace/team", label: "Team", icon: <UserCog />, ownerOnly: true },
   { to: "/workspace/activity", label: "Activity", icon: <History />, ownerOnly: true },
+  { to: "/workspace/sms", label: "SMS", icon: <MessageSquareText />, permission: "view_sms" },
   { to: "/workspace/subscription", label: "Subscription", icon: <CreditCard /> },
   { to: "/workspace/settings", label: "Settings", icon: <Settings /> },
 ];
@@ -121,6 +125,7 @@ export const router = createBrowserRouter([
       { path: "billing", element: page(billingPages, "AdminBillingPage") },
       { path: "promo-codes", element: page(() => import("@/features/admin/PromoCodesPage"), "AdminPromoCodesPage") },
       { path: "accounts", element: page(() => import("@/features/admin/AccountsPage"), "AdminAccountsPage") },
+      { path: "sms", element: page(smsPages, "AdminSmsPage") },
       { path: "audit", element: page(activityPages, "AdminAuditPage") },
       { path: "account", element: page(accountPage, "AccountPage") },
     ],
@@ -146,6 +151,7 @@ export const router = createBrowserRouter([
       { path: "team", element: page(setupPages, "ManagersPage") },
       { path: "activity", element: page(activityPages, "WorkspaceActivityPage") },
       { path: "settings", element: page(setupPages, "SettingsPage") },
+      { path: "sms", element: page(smsPages, "WorkspaceSmsPage") },
       { path: "subscription", element: page(() => import("@/features/workspace/SubscriptionPage"), "SubscriptionPage") },
       { path: "account", element: page(accountPage, "AccountPage") },
     ],
