@@ -28,7 +28,6 @@ import type { Field, Hours, Manager, ManagerPermissions, PricingRule, TurfSettin
 import { formatBDT } from "@/lib/utils";
 import { errorText, useFields, useIsOwner } from "./hooks";
 import { PicturesCard } from "./PicturesCard";
-import { ThemeCard } from "./ThemeCard";
 
 // ------------------------------------------------------------------ fields
 const NEW_FIELD: Omit<Field, "id"> = {
@@ -681,7 +680,17 @@ export function SettingsPage() {
                 </fieldset>
               </CardContent>
             </Card>
-            <ThemeCard form={form} update={(patch) => setForm((f) => (f ? { ...f, ...patch } : f))} />
+            <Card>
+              <CardHeader>
+                <CardTitle>Page design &amp; video</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
+                Colours, fonts, button style and a YouTube video for your booking page — with a live preview before you publish.
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/workspace/design">Open Page design</Link>
+                </Button>
+              </CardContent>
+            </Card>
           </fieldset>
           {isOwner && (
             <div className="sticky bottom-4 flex justify-end xl:col-span-2">

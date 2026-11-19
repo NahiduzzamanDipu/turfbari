@@ -159,6 +159,7 @@ class PublicTurfDetailSerializer(PublicTurfCardSerializer):
             "theme",
             "payment",
             "price_categories",
+            "youtube_video_id",
         ]
 
     payment = serializers.SerializerMethodField()
@@ -182,7 +183,9 @@ class PublicTurfDetailSerializer(PublicTurfCardSerializer):
         }
 
     def get_theme(self, obj):
-        return {"preset": obj.theme_preset, "color": obj.theme_color or None}
+        from .design_views import published_theme
+
+        return published_theme(obj)
 
     def get_photos(self, obj):
         return [photo_payload(p) for p in obj.photos.all()]

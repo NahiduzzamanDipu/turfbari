@@ -10,6 +10,7 @@ import {
   History,
   Inbox,
   LayoutDashboard,
+  Palette,
   MessageSquareText,
   Receipt,
   Settings,
@@ -95,6 +96,7 @@ const WORKSPACE_NAV: NavItem[] = [
   { to: "/workspace/activity", label: "Activity", icon: <History />, ownerOnly: true },
   { to: "/workspace/sms", label: "SMS", icon: <MessageSquareText />, permission: "view_sms" },
   { to: "/workspace/subscription", label: "Subscription", icon: <CreditCard /> },
+  { to: "/workspace/design", label: "Page design", icon: <Palette /> },
   { to: "/workspace/settings", label: "Settings", icon: <Settings /> },
 ];
 
@@ -157,6 +159,7 @@ export const router = createBrowserRouter([
       { path: "team", element: page(setupPages, "ManagersPage") },
       { path: "activity", element: page(activityPages, "WorkspaceActivityPage") },
       { path: "settings", element: page(setupPages, "SettingsPage") },
+      { path: "design", element: page(() => import("@/features/workspace/DesignPage"), "DesignPage") },
       { path: "sms", element: page(smsPages, "WorkspaceSmsPage") },
       { path: "subscription", element: page(() => import("@/features/workspace/SubscriptionPage"), "SubscriptionPage") },
       { path: "account", element: page(accountPage, "AccountPage") },

@@ -152,19 +152,15 @@ def test_pictures_are_owner_only_and_tenant_scoped(media_root):
 def test_public_page_theme_preset_and_custom_colour():
     turf, owner = make_turf()
     client = client_for(owner)
-    assert APIClient().get(f"/api/public/turfs/{turf.slug}/").json()["theme"] == {
-        "preset": "turfbari",
-        "color": None,
-    }
+    theme = APIClient().get(f"/api/public/turfs/{turf.slug}/").json()["theme"]
+    assert theme["preset"] == "turfbari" and theme["color"] is None
 
     ok = client.patch(
         "/api/workspace/settings/", {"theme_preset": "ocean", "theme_color": "#1D4ED8"}, format="json"
     )
     assert ok.status_code == 200 and ok.json()["theme_color"] == "#1d4ed8"
-    assert APIClient().get(f"/api/public/turfs/{turf.slug}/").json()["theme"] == {
-        "preset": "ocean",
-        "color": "#1d4ed8",
-    }
+    theme = APIClient().get(f"/api/public/turfs/{turf.slug}/").json()["theme"]
+    assert theme["preset"] == "ocean" and theme["color"] == "#1d4ed8"
 
     for bad in ("blue", "#12345", "#ggggggg", "url(x)"):
         assert (

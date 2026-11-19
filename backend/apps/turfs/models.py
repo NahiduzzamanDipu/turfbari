@@ -75,6 +75,11 @@ class Turf(BaseModel):
     # Public turf page look. Only the turf's own page uses it; the rest of TurfBari keeps its brand.
     theme_preset = models.CharField(max_length=16, choices=ThemePreset.choices, default=ThemePreset.TURFBARI)
     theme_color = models.CharField(max_length=7, blank=True)  # optional "#rrggbb" override of the preset
+    theme_settings = models.JSONField(
+        default=dict, blank=True
+    )  # published: secondary, surface, buttons, font
+    theme_draft = models.JSONField(null=True, blank=True)  # saved but not yet published (preview only)
+    youtube_video_id = models.CharField(max_length=11, blank=True)  # validated 11-char ID, never a raw URL
     # WGS84 coordinates, used for "near me" search and the map pin. Optional.
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)

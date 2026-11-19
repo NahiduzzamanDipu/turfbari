@@ -129,3 +129,11 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Button shape chosen in a turf's page design (public turf page and its preview only). */
+[data-buttons="pill"] [data-slot="button"] {
+  border-radius: 9999px;
+}
+[data-buttons="square"] [data-slot="button"] {
+  border-radius: 0.25rem;
+}

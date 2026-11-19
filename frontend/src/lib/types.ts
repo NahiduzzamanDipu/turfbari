@@ -1,5 +1,7 @@
 // Shapes returned by the TurfBari API. Money is always a decimal string.
 
+import type { PageTheme } from "./themes";
+
 export interface Paginated<T> {
   count: number;
   next: string | null;
@@ -91,7 +93,8 @@ export interface PublicPhoto {
 
 export interface TurfDetail extends TurfCard {
   photos: PublicPhoto[];
-  theme: { preset: string; color: string | null };
+  theme: PageTheme;
+  youtube_video_id: string | null;
   description: string;
   maps_url: string;
   public_phone: string;

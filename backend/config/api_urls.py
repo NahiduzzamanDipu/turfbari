@@ -14,6 +14,7 @@ from apps.common.live import LiveView
 from apps.expenses.views import ExpenseViewSet
 from apps.notifications import views as sms
 from apps.subscriptions import views as subs
+from apps.turfs import design_views as design
 from apps.turfs import public_views as public
 from apps.turfs import slot_views as slots
 from apps.turfs import workspace_views as setup
@@ -91,6 +92,9 @@ workspace_urls = [
     path("quote/", ws.QuoteView.as_view()),
     path("hours/", setup.HoursView.as_view()),
     path("price-categories/", slots.PriceCategoriesView.as_view()),
+    path("design/", design.DesignView.as_view()),
+    path("design/publish/", design.DesignPublishView.as_view()),
+    path("design/video/", design.DesignVideoView.as_view()),
     path("settings/", setup.SettingsView.as_view()),
     path("profile-picture/", setup.ProfilePictureView.as_view()),
     path("booking-page/qr.<str:kind>", setup.BookingQRView.as_view()),
