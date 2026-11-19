@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 TITLE = "TurfBari — বাংলাদেশে ফুটবল টার্ফ খুঁজুন ও বুক করুন | Turf Booking & Turf Management Software"
 KEYWORDS = [
-    "TurfBari", "turfbari.com", "টার্ফবাড়ি", "টার্ফ বুকিং", "অনলাইন টার্ফ বুকিং", "ফুটবল টার্ফ", "ফুটবল মাঠ ভাড়া",
+    "TurfBari", "turfbari.onrender.com", "টার্ফবাড়ি", "টার্ফ বুকিং", "অনলাইন টার্ফ বুকিং", "ফুটবল টার্ফ", "ফুটবল মাঠ ভাড়া",
     "কাছের টার্ফ", "ঢাকার টার্ফ", "টার্ফ ম্যানেজমেন্ট সফটওয়্যার", "টার্ফ মালিক", "টার্ফ ম্যানেজার", "বুকিং রিকোয়েস্ট",
     "QR কোড বুকিং", "বিকাশ নগদ পেমেন্ট", "turf booking Bangladesh", "football turf Dhaka", "turf near me",
     "online turf booking", "futsal booking Bangladesh", "turf management software", "turf booking app",
@@ -30,7 +30,7 @@ DESCRIPTION = (
     "বুকিং, পেমেন্ট (ক্যাশ, বিকাশ, নগদ), ডিসকাউন্ট, কাস্টমার, রিপোর্ট আর এক্সেল এক্সপোর্ট — এক ড্যাশবোর্ডে। "
     "TurfBari is a football turf discovery, online booking and turf management platform for Bangladesh: find turfs "
     "near you in Dhaka, Chattogram and Sylhet, book with a QR code, and run your turf business with an owner and "
-    "manager dashboard. turfbari.com"
+    "manager dashboard. turfbari.onrender.com"
 )
 CHAPTERS = [
     (0.0, "মাঠ কোথায়? — Finding a turf"),
@@ -73,7 +73,7 @@ def main(src: str, out: str):
         "-metadata", "album=TurfBari — প্রতিটি টার্ফের ঠিকানা",
         "-metadata", "genre=Sports Technology / Football",
         "-metadata", "date=2026",
-        "-metadata", "copyright=© 2026 TurfBari — turfbari.com",
+        "-metadata", "copyright=© 2026 TurfBari — turfbari.onrender.com",
         "-metadata", f"comment={DESCRIPTION} | Keywords: {kw}",
         "-metadata", f"description={DESCRIPTION}",
         "-metadata", f"synopsis={DESCRIPTION}",

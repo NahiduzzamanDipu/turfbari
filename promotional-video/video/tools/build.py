@@ -331,7 +331,7 @@ class Scene:
         sid = s["id"]
         self.open_shot(s)
         self.html.append(f'<div id="{sid}-cam" class="cam" data-motion-blur="off"><div class="win" style="height:{ih + CHROME}px">')
-        self.html.append('<div class="chrome" data-layout-ignore><i></i><i></i><i></i><span>turfbari.com</span></div>')
+        self.html.append('<div class="chrome" data-layout-ignore><i></i><i></i><i></i><span>turfbari.onrender.com</span></div>')
         self.html.append(f'<img class="shotimg" src="assets/shots/{img}.png" alt="">')
         if "scan" in s:
             _, _, x, y, w, h = s["scan"]
@@ -464,7 +464,7 @@ class Scene:
         sid = s["id"]
         self.open_shot(s)
         self.html.append(f'<div id="{sid}-ph" class="phone left small"><div class="screen"><img class="pscreen" style="opacity:1" src="assets/shots/{s["phone"]}.png" alt=""></div></div>')
-        self.html.append(f'<div id="{sid}-win" class="miniwin"><div class="chrome" data-layout-ignore><i></i><i></i><i></i><span>turfbari.com</span></div><img src="assets/shots/{s["win"]}.png" alt=""></div>')
+        self.html.append(f'<div id="{sid}-win" class="miniwin"><div class="chrome" data-layout-ignore><i></i><i></i><i></i><span>turfbari.onrender.com</span></div><img src="assets/shots/{s["win"]}.png" alt=""></div>')
         self.html.append("</div>")
         (t1, l1), (t2, l2) = s["labels"]
         self.html.append(f'<div id="{sid}-l1" class="label l1">{rich(l1)}</div><div id="{sid}-l2" class="label l2">{rich(l2)}</div>')
@@ -520,7 +520,7 @@ class Scene:
             f'<div id="{sid}-tag" class="big under2">{rich("প্রতিটি টার্ফের *ঠিকানা*")}</div>'
             f'<div id="{sid}-sub" class="sub">{rich("খেলা হোক আরও সহজে")}</div>'
             f'<div id="{sid}-ctas" class="ctas"><span class="btn solid">টার্ফ খুঁজুন</span><span class="btn ghost">আপনার টার্ফ যুক্ত করুন</span></div>'
-            f'<div id="{sid}-url" class="url">turfbari.com</div>'
+            f'<div id="{sid}-url" class="url">turfbari.onrender.com</div>'
         )
         self.html.append("</div>")
         self.tw(f'tl.fromTo("#{sid}-mark", {{scale: 0.3, rotation: -12, opacity: 0}}, {{scale: 1, rotation: 0, opacity: 1, duration: 0.7, ease: "back.out(1.6)"}}, {f(self.lt(165.15))});')

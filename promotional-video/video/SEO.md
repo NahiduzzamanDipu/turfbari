@@ -23,8 +23,8 @@ TurfBari — কাছের ফুটবল টার্ফ খুঁজুন 
 কাস্টমার, রিপোর্ট আর এক ক্লিকে এক্সেল — এক ড্যাশবোর্ডে।
 
 TurfBari is a football turf discovery, online booking and turf management platform for Bangladesh.
-👉 Find a turf: https://turfbari.com/explore
-👉 List your turf: https://turfbari.com/register-turf
+👉 Find a turf: https://turfbari.onrender.com/explore
+👉 List your turf: https://turfbari.onrender.com/register-turf
 
 00:00 মাঠ কোথায়?
 00:15 টার্ফবাড়ি

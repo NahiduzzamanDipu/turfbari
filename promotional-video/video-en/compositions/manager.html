@@ -1,0 +1,273 @@
+<template>
+<style>
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-Medium.ttf"); font-weight: 500; }
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-SemiBold.ttf"); font-weight: 600; }
+@font-face { font-family: "Hind Siliguri"; src: url("assets/fonts/HindSiliguri-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "Barlow Condensed"; src: url("assets/fonts/BarlowCondensed-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "Barlow Condensed"; src: url("assets/fonts/BarlowCondensed-ExtraBold.ttf"); font-weight: 800; }
+#root { position: absolute; inset: 0; overflow: hidden; background: #07120D; font-family: "Hind Siliguri", sans-serif; }
+#root .ground { position: absolute; inset: 0; background: url("assets/illus/brand.png") center/cover; }
+#root .shot { position: absolute; inset: 0; }
+#root .enter { position: absolute; inset: 0; transform-origin: 50% 50%; }
+#root .cam { position: absolute; left: 0; top: 0; width: 1920px; transform-origin: 0 0; }
+#root .win { position: relative; width: 1920px; border-radius: 22px; overflow: hidden; background: #F7FBF8;
+  box-shadow: 0 50px 120px rgba(0,0,0,.5); }
+#root .chrome { height: 44px; background: #E3ECE6; display: flex; align-items: center; gap: 10px; padding-left: 22px; }
+#root .chrome i { width: 13px; height: 13px; border-radius: 50%; background: #B9C7BE; }
+#root .chrome span { margin-left: 22px; background: #fff; border-radius: 9px; padding: 3px 18px; font: 500 19px Inter, sans-serif; color: #33473C; }
+#root .shotimg { display: block; width: 1920px; }
+#root .scan { position: absolute; height: 6px; background: #B6F259; border-radius: 3px; }
+#root .tag { position: absolute; left: 200px; top: 122px; background: #B6F259; color: #10280B; font-weight: 700; font-size: 54px;
+  line-height: 1.3; padding: 8px 30px 12px; border-radius: 16px; box-shadow: 0 18px 40px rgba(0,0,0,.28); white-space: nowrap; }
+#root .tag .hl { color: #006040; }
+#root .w { display: inline-block; }
+#root .big { position: absolute; color: #fff; font-weight: 700; font-size: 96px; line-height: 1.28; text-shadow: 0 6px 30px rgba(0,0,0,.45); }
+#root .big .hl { color: #B6F259; }
+#root .big.hero { left: 200px; top: 300px; width: 1300px; }
+#root .big.hero.high { top: 118px; }
+#root .big.top { left: 200px; top: 150px; width: 1520px; font-size: 72px; }
+#root .big.center { left: 0; right: 0; top: 360px; text-align: center; font-size: 110px; }
+#root .big.side-right { left: 200px; top: 330px; width: 900px; font-size: 84px; }
+#root .big.side-left { right: 200px; top: 330px; width: 900px; font-size: 84px; }
+#root .big.under { left: 0; right: 0; top: 640px; text-align: center; font-size: 72px; }
+#root .chips { position: absolute; left: 1180px; top: 300px; display: flex; flex-direction: column; gap: 26px; align-items: flex-start; }
+#root .chip { background: rgba(7,18,13,.82); color: #fff; font-weight: 600; font-size: 50px; padding: 10px 30px 14px; border-radius: 14px;
+  border-left: 8px solid #B6F259; }
+#root .illus { position: absolute; inset: 0; transform-origin: 50% 55%; }
+#root .illus img { width: 1920px; height: 1080px; display: block; }
+#root .shade { position: absolute; inset: 0; background: #020806; opacity: 0; }
+#root .flood { position: absolute; inset: 0; background: #B6F259; opacity: 0; }
+#root .dip { position: absolute; inset: 0; background: #000; opacity: 0; }
+#root .paperground { position: absolute; inset: 0; background: #0A1611 url("assets/illus/brand.png") center/cover; opacity: 1; }
+#root .card { position: absolute; height: 300px; background: #FAF6EA; border-radius: 10px; box-shadow: 0 30px 70px rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; color: #1B1B1B; font-weight: 700; font-size: 104px; }
+#root .strike { position: absolute; left: 40px; right: 40px; top: 50%; height: 16px; margin-top: -2px; background: #DF2225; border-radius: 8px;
+  transform-origin: 0 50%; }
+#root .phone { position: absolute; top: 40px; width: 457px; height: 956px; border-radius: 64px; background: #0B0F0D; padding: 14px;
+  box-shadow: 0 50px 120px rgba(0,0,0,.55); }
+#root .phone.right { left: 1330px; }
+#root .phone.left { left: 210px; }
+#root .phone .screen { position: relative; width: 429px; height: 928px; border-radius: 50px; overflow: hidden; background: #F7FBF8; }
+#root .pscreen { position: absolute; left: 0; top: 0; width: 429px; height: 928px; opacity: 0; }
+#root .phone.small { top: 175px; width: 340px; height: 708px; padding: 12px; border-radius: 50px; }
+#root .phone.small .screen { width: 316px; height: 684px; border-radius: 40px; }
+#root .phone.small .pscreen { width: 316px; height: 684px; }
+#root .miniwin { position: absolute; left: 700px; top: 200px; width: 1060px; border-radius: 16px; overflow: hidden; background: #F7FBF8;
+  box-shadow: 0 50px 120px rgba(0,0,0,.5); }
+#root .miniwin img { display: block; width: 1060px; }
+#root .miniwin .chrome { height: 36px; }
+#root .label { position: absolute; color: #fff; font-weight: 700; font-size: 52px; text-shadow: 0 4px 20px rgba(0,0,0,.4); }
+#root .label .hl { color: #B6F259; }
+#root .label.l1 { left: 200px; top: 70px; }
+#root .label.l2 { left: 700px; top: 110px; }
+#root .lockup { position: absolute; left: 0; right: 0; top: 330px; display: flex; align-items: center; justify-content: center; gap: 34px; }
+#root .lockup .mark { width: 200px; height: 200px; border-radius: 44px; }
+#root .wordmark { font-family: "Barlow Condensed", sans-serif; font-weight: 800; font-size: 210px; color: #fff; line-height: 1; letter-spacing: 1px; }
+#root .wordmark b { color: #B6F259; font-weight: 800; }
+#root .lockup.end { top: 210px; }
+#root .big.under2 { left: 0; right: 0; top: 470px; text-align: center; font-size: 84px; }
+#root .sub { position: absolute; left: 0; right: 0; top: 600px; text-align: center; color: rgba(255,255,255,.85); font-size: 52px; font-weight: 600; }
+#root .ctas { position: absolute; left: 0; right: 0; top: 712px; display: flex; justify-content: center; gap: 28px; }
+#root .btn { font-size: 46px; font-weight: 700; padding: 12px 40px 16px; border-radius: 16px; }
+#root .btn.solid { background: #B6F259; color: #10280B; }
+#root .btn.ghost { color: #fff; border: 3px solid rgba(255,255,255,.85); }
+#root .url { position: absolute; left: 0; right: 0; top: 830px; text-align: center; color: #fff; font: 700 58px "Barlow Condensed", sans-serif; letter-spacing: 3px; }
+#root .cursor { position: absolute; left: 0; top: 0; width: 62px; height: 62px; fill: #fff; stroke: #0B1D13; stroke-width: 1.5px; z-index: 50;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+#root .sb { position: absolute; top: 262px; width: 560px; background: #F7FBF8; border-radius: 22px; overflow: hidden;
+  box-shadow: 0 40px 100px rgba(0,0,0,.45); padding-bottom: 10px; }
+#root .sb.owner { left: 330px; }
+#root .sb.manager { left: 1030px; }
+#root .sbhead { height: 74px; background: #006040; color: #fff; font-size: 42px; font-weight: 700; text-align: center; line-height: 74px; margin-bottom: 8px; }
+#root .navrow { position: relative; height: 36px; line-height: 36px; padding: 0 28px; font: 500 28px Inter, sans-serif; color: #24362C; }
+#root .navrow.own { color: #0B1D13; font-weight: 700; }
+#root .lock { position: absolute; right: 26px; top: 5px; width: 26px; height: 26px; fill: #006040; stroke: #006040; stroke-width: 2.2; }
+#root .viewonly { margin-left: 14px; font: 600 28px "Hind Siliguri", sans-serif; background: #FFF1C9; color: #7A4B00; padding: 0 10px 2px; border-radius: 8px; }
+
+#root .viewport { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #F7FBF8; }
+#root .page { position: absolute; left: 0; top: 0; width: 1920px; opacity: 0; }
+#root .page.first { opacity: 1; }
+#root .urlbox { position: relative; display: inline-block; margin-left: 22px; width: 760px; height: 30px; background: #fff;
+  border-radius: 9px; }
+#root .urlt { position: absolute; left: 18px; top: 3px; font: 500 19px Inter, sans-serif; color: #33473C; opacity: 0; white-space: nowrap; }
+#root .urlt.on { opacity: 1; }
+#root .chrome span.urlbox { padding: 0; }
+#root .tag2 { position: absolute; left: 200px; top: 118px; display: flex; align-items: stretch; filter: drop-shadow(0 16px 34px rgba(0,0,0,.35)); }
+#root .tag2 .bar { width: 10px; background: #B6F259; border-radius: 6px 0 0 6px; transform-origin: 50% 0; }
+#root .tag2 .tx { background: rgba(7,18,13,.94); color: #fff; font-weight: 700; font-size: 52px; line-height: 1.3;
+  padding: 8px 30px 12px 24px; border-radius: 0 14px 14px 0; white-space: nowrap; }
+#root .tag2 .hl { color: #B6F259; }
+#root .chpanel { position: absolute; inset: 0; background: #B6F259; display: flex; flex-direction: column; justify-content: center;
+  padding-left: 200px; }
+#root .kicker { font: 700 40px "Barlow Condensed", sans-serif; letter-spacing: 6px; color: #006040; margin-bottom: 6px; }
+#root .chtitle { font-weight: 700; font-size: 128px; line-height: 1.2; color: #10280B; }
+#root .chtitle .hl { color: #006040; }
+#root .cursor { width: 54px; height: 54px; fill: #fff; stroke: #0B1D13; stroke-width: 1.6px; stroke-linejoin: round;
+  filter: drop-shadow(0 5px 8px rgba(0,0,0,.35)); transform-origin: 18% 12%; }
+
+#root { font-family: Inter, sans-serif; }
+#root .big { font-weight: 900; letter-spacing: -0.02em; line-height: 1.08; }
+#root .big.hero { width: 1100px; font-size: 104px; }
+#root .big.top { font-size: 70px; }
+#root .big.center { font-size: 118px; line-height: 1.05; }
+#root .big.side-right, #root .big.side-left { font-size: 88px; width: 960px; }
+#root .big.under { font-size: 64px; letter-spacing: -0.01em; }
+#root .big.under2 { font-size: 76px; }
+#root .tag2 .tx { font-weight: 800; font-size: 50px; letter-spacing: -0.01em; padding: 12px 30px 14px 24px; }
+#root .tag { font-weight: 800; }
+#root .chip { font-weight: 700; font-size: 46px; }
+#root .card { font-weight: 900; font-size: 70px; letter-spacing: -0.02em; }
+#root .label { font-weight: 800; font-size: 50px; letter-spacing: -0.01em; }
+#root .chtitle { font-weight: 900; font-size: 140px; letter-spacing: -0.03em; line-height: 1.02; }
+#root .sub { font-weight: 700; font-size: 48px; }
+#root .btn { font-weight: 800; font-size: 42px; padding: 14px 40px 16px; }
+#root .sbhead { font-weight: 800; font-size: 40px; }
+#root .viewonly { font: 700 28px Inter, sans-serif; }
+</style>
+<div id="root" data-composition-id="manager" data-width="1920" data-height="1080" data-layout-allow-overlap>
+<div class="ground"></div>
+<div id="m1" class="clip shot" data-start="0" data-duration="1.551" data-track-index="1" style="z-index:2"><div id="m1-in" class="enter">
+</div>
+<div id="m1-t" class="big center"><span class="w">And</span> <span class="w hl">managers?</span></div>
+</div>
+<div id="mw" class="clip shot" data-start="1.551" data-duration="11.325" data-track-index="1" style="z-index:3"><div id="mw-in" class="enter">
+<div id="mw-cam" class="cam" data-motion-blur="off"><div class="win" style="height:1124px">
+<div class="chrome" data-layout-ignore><i></i><i></i><i></i><span class="urlbox">
+<b id="mw-url0" class="urlt on">turfbari.onrender.com/workspace/team</b>
+<b id="mw-url1" class="urlt">turfbari.onrender.com/login</b>
+<b id="mw-url2" class="urlt">turfbari.onrender.com/workspace</b>
+<b id="mw-url3" class="urlt">turfbari.onrender.com/workspace/bookings?status=pending</b>
+<b id="mw-url4" class="urlt">turfbari.onrender.com/workspace/customers</b>
+</span></div><div class="viewport">
+<img id="mw-pg0" class="page first" src="assets/shots/team.png" alt="">
+<img id="mw-pg1" class="page" src="assets/shots/m_login.png" alt="">
+<img id="mw-pg2" class="page" src="assets/shots/m_dash.png" alt="">
+<img id="mw-pg3" class="page" src="assets/shots/m_pending.png" alt="">
+<img id="mw-pg4" class="page" src="assets/shots/m_pay.png" alt="">
+<img id="mw-pg5" class="page" src="assets/shots/m_customers.png" alt="">
+</div></div></div>
+</div>
+<svg id="mw-cur" class="cursor" viewBox="0 0 28 28"><path d="M5 3l15.5 10.6-6.6 1.3 3.9 8.3-3.3 1.5-3.9-8.4L5 21.6z"/></svg>
+<div id="mw-tag0" class="tag2"><i class="bar"></i><span class="tx"><span class="w">Add</span> <span class="w">managers</span> <span class="w">from</span> <span class="w hl">Team</span></span></div>
+<div id="mw-tag1" class="tag2"><i class="bar"></i><span class="tx"><span class="w">Their</span> <span class="w">own</span> <span class="w hl">login</span></span></div>
+<div id="mw-tag2" class="tag2"><i class="bar"></i><span class="tx"><span class="w">Daily</span> <span class="w hl">bookings</span></span></div>
+<div id="mw-tag3" class="tag2"><i class="bar"></i><span class="tx"><span class="w hl">Confirm</span> <span class="w">requests</span></span></div>
+<div id="mw-tag4" class="tag2"><i class="bar"></i><span class="tx"><span class="w">Record</span> <span class="w hl">payments</span></span></div>
+<div id="mw-tag5" class="tag2"><i class="bar"></i><span class="tx"><span class="w">Manage</span> <span class="w hl">customers</span></span></div>
+</div>
+<div id="m7" class="clip shot" data-start="12.875" data-duration="8.916" data-track-index="1" style="z-index:4"><div id="m7-in" class="enter">
+<div class="sb owner" id="m7-own"><div class="sbhead">Owner</div><div id="m7-o-Dashboard" class="navrow">Dashboard</div><div id="m7-o-Bookaslot" class="navrow">Book a slot</div><div id="m7-o-Bookings" class="navrow">Bookings</div><div id="m7-o-Customers" class="navrow">Customers</div><div id="m7-o-Maintenance" class="navrow">Maintenance</div><div id="m7-o-Fields" class="navrow">Fields</div><div id="m7-o-Openinghours" class="navrow">Opening hours</div><div id="m7-o-Pricing" class="navrow">Pricing</div><div id="m7-o-Expenses" class="navrow own">Expenses<svg id="m7-lock0" class="lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none"/></svg></div><div id="m7-o-Reports" class="navrow own">Reports<svg id="m7-lock1" class="lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none"/></svg></div><div id="m7-o-Team" class="navrow own">Team<svg id="m7-lock2" class="lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none"/></svg></div><div id="m7-o-Activity" class="navrow own">Activity<svg id="m7-lock3" class="lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none"/></svg></div><div id="m7-o-Subscription" class="navrow">Subscription</div><div id="m7-o-Settings" class="navrow">Settings</div></div><div class="sb manager" id="m7-man"><div class="sbhead">Manager</div><div class="navrow">Dashboard</div><div class="navrow">Book a slot</div><div class="navrow">Bookings</div><div class="navrow">Customers</div><div class="navrow">Maintenance</div><div class="navrow">Fields</div><div class="navrow">Opening hours</div><div class="navrow">Pricing<span id="m7-viewonly" class="viewonly">View only</span></div><div class="navrow">Subscription</div><div class="navrow">Settings</div></div>
+</div>
+<div id="m7-ti0" class="big top"><span class="w">Prices</span> <span class="w">•</span> <span class="w">expenses</span> <span class="w">•</span> <span class="w">reports</span> <span class="w">•</span> <span class="w">team</span></div>
+<div id="m7-ti1" class="big top"><span class="w">Stay</span> <span class="w">with</span> <span class="w">the</span> <span class="w hl">owner</span></div>
+</div>
+<div id="m8" class="clip shot" data-start="21.791" data-duration="4.066" data-track-index="1" style="z-index:5"><div id="m8-in" class="enter">
+</div>
+<div id="m8-t" class="big center"><span class="w">Responsibilities</span> <span class="w">shared,</span> <br><span class="w hl">control</span> <span class="w">stays</span> <span class="w">with</span> <span class="w">you</span></div>
+</div>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+tl.fromTo("#m1-t .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 0.083);
+tl.fromTo("#m1-in", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out"}, 0);
+tl.fromTo("#mw-pg1", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 4.541);
+tl.set("#mw-url1", {opacity: 1}, 4.541);
+tl.set("#mw-url0", {opacity: 0}, 4.541);
+tl.set("#mw-url2", {opacity: 0}, 4.541);
+tl.set("#mw-url3", {opacity: 0}, 4.541);
+tl.set("#mw-url4", {opacity: 0}, 4.541);
+tl.set("#mw-pg0", {opacity: 0}, 4.871);
+tl.fromTo("#mw-pg2", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 6.687);
+tl.set("#mw-url2", {opacity: 1}, 6.687);
+tl.set("#mw-url0", {opacity: 0}, 6.687);
+tl.set("#mw-url1", {opacity: 0}, 6.687);
+tl.set("#mw-url3", {opacity: 0}, 6.687);
+tl.set("#mw-url4", {opacity: 0}, 6.687);
+tl.set("#mw-pg0", {opacity: 0}, 7.017);
+tl.set("#mw-pg1", {opacity: 0}, 7.017);
+tl.fromTo("#mw-pg3", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 7.513);
+tl.set("#mw-url3", {opacity: 1}, 7.513);
+tl.set("#mw-url0", {opacity: 0}, 7.513);
+tl.set("#mw-url1", {opacity: 0}, 7.513);
+tl.set("#mw-url2", {opacity: 0}, 7.513);
+tl.set("#mw-url4", {opacity: 0}, 7.513);
+tl.set("#mw-pg0", {opacity: 0}, 7.843);
+tl.set("#mw-pg1", {opacity: 0}, 7.843);
+tl.set("#mw-pg2", {opacity: 0}, 7.843);
+tl.fromTo("#mw-pg4", {opacity: 0}, {opacity: 1, duration: 0.22, ease: "power2.out"}, 9.785);
+tl.set("#mw-url3", {opacity: 1}, 9.785);
+tl.set("#mw-url0", {opacity: 0}, 9.785);
+tl.set("#mw-url1", {opacity: 0}, 9.785);
+tl.set("#mw-url2", {opacity: 0}, 9.785);
+tl.set("#mw-url4", {opacity: 0}, 9.785);
+tl.set("#mw-pg0", {opacity: 0}, 10.115);
+tl.set("#mw-pg1", {opacity: 0}, 10.115);
+tl.set("#mw-pg2", {opacity: 0}, 10.115);
+tl.set("#mw-pg3", {opacity: 0}, 10.115);
+tl.fromTo("#mw-pg5", {opacity: 0, y: 14}, {opacity: 1, y: 0, duration: 0.32, ease: "power3.out"}, 11.817);
+tl.set("#mw-url4", {opacity: 1}, 11.817);
+tl.set("#mw-url0", {opacity: 0}, 11.817);
+tl.set("#mw-url1", {opacity: 0}, 11.817);
+tl.set("#mw-url2", {opacity: 0}, 11.817);
+tl.set("#mw-url3", {opacity: 0}, 11.817);
+tl.set("#mw-pg0", {opacity: 0}, 12.147);
+tl.set("#mw-pg1", {opacity: 0}, 12.147);
+tl.set("#mw-pg2", {opacity: 0}, 12.147);
+tl.set("#mw-pg3", {opacity: 0}, 12.147);
+tl.set("#mw-pg4", {opacity: 0}, 12.147);
+tl.set("#mw-cam", {x: 0.0, y: -44.0, scale: 1.0}, 1.551);
+tl.to("#mw-cam", {x: -1056.0, y: 0.0, scale: 1.55, duration: 0.8, ease: "power2.inOut"}, 2.037);
+tl.to("#mw-cam", {x: -240.0, y: -215.0, scale: 1.25, duration: 0.5, ease: "power2.inOut"}, 4.183);
+tl.to("#mw-cam", {x: 0.0, y: -44.0, scale: 1.0, duration: 0.45, ease: "power2.inOut"}, 6.865);
+tl.to("#mw-cam", {x: -390.0, y: 0.0, scale: 1.35, duration: 0.7, ease: "power2.inOut"}, 7.673);
+tl.to("#mw-cam", {x: -768.0, y: -619.2, scale: 1.8, duration: 0.7, ease: "power2.inOut"}, 9.867);
+tl.to("#mw-cam", {x: 0.0, y: -44.0, scale: 1.0, duration: 0.45, ease: "power2.inOut"}, 11.225);
+tl.fromTo("#mw-cur", {x: 1980, y: 778, opacity: 1}, {x: 1815.0, y: 68.0, duration: 1, ease: "power3.out"}, 1.739);
+tl.to("#mw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 3.348);
+tl.to("#mw-cur", {x: 960.0, y: 692.5, opacity: 1, duration: 0.8, ease: "power3.inOut"}, 5.196);
+tl.to("#mw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 6.508);
+tl.to("#mw-cur", {x: -127.5, y: 161.2, opacity: 1, duration: 0.45, ease: "power3.inOut"}, 6.806);
+tl.to("#mw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 7.385);
+tl.to("#mw-cur", {x: 1070.7, y: 359.1, opacity: 1, duration: 0.7, ease: "power3.inOut"}, 8.794);
+tl.to("#mw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 9.662);
+tl.to("#mw-cur", {x: 1446.0, y: 757.8, opacity: 1, duration: 0.55, ease: "power3.inOut"}, 10.31);
+tl.to("#mw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 11.01);
+tl.to("#mw-cur", {x: 92.0, y: 295.0, opacity: 1, duration: 0.4, ease: "power3.inOut"}, 11.279);
+tl.to("#mw-cur", {scale: 0.8, duration: 0.08, ease: "power2.in", yoyo: true, repeat: 1}, 11.731);
+tl.to("#mw-cur", {x: 2028.8, y: -75.0, duration: 0.5, ease: "power2.inOut"}, 4.183);
+tl.to("#mw-cur", {x: -268.5, y: 406.4, duration: 0.7, ease: "power2.inOut"}, 7.673);
+tl.fromTo("#mw-tag0 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 1.799);
+tl.fromTo("#mw-tag0 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 1.879);
+tl.to("#mw-tag0", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 4.556);
+tl.fromTo("#mw-tag1 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 4.719);
+tl.fromTo("#mw-tag1 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 4.799);
+tl.to("#mw-tag1", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 7.459);
+tl.fromTo("#mw-tag2 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 7.62);
+tl.fromTo("#mw-tag2 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 7.7);
+tl.to("#mw-tag2", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 8.473);
+tl.fromTo("#mw-tag3 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 8.634);
+tl.fromTo("#mw-tag3 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 8.714);
+tl.to("#mw-tag3", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 10.041);
+tl.fromTo("#mw-tag4 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 10.202);
+tl.fromTo("#mw-tag4 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 10.282);
+tl.to("#mw-tag4", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 11.71);
+tl.fromTo("#mw-tag5 .bar", {scaleY: 0}, {scaleY: 1, duration: 0.25, ease: "expo.out"}, 11.871);
+tl.fromTo("#mw-tag5 .tx", {clipPath: "inset(0% 100% 0% 0%)", x: -16}, {clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.45, ease: "expo.out"}, 11.951);
+tl.to("#mw-tag5", {opacity: 0, x: -20, duration: 0.14, ease: "power3.in"}, 12.696);
+tl.fromTo("#mw-in", {x: 260, opacity: 0, filter: "blur(20px)"}, {x: 0, opacity: 1, filter: "blur(0px)", duration: 0.3, ease: "expo.out"}, 1.551);
+tl.fromTo("#m7-ti0 .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 13.072);
+tl.to("#m7-ti0", {opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power3.in"}, 18.373);
+tl.fromTo("#m7-ti1 .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 18.768);
+tl.fromTo(["#m7-own", "#m7-man"], {y: 80, opacity: 0}, {y: 0, opacity: 1, duration: 0.55, ease: "expo.out", stagger: 0.12}, 12.875);
+tl.fromTo("#m7-viewonly", {scale: 1.6, opacity: 0}, {scale: 1, opacity: 1, duration: 0.35, ease: "back.out(2)"}, 13.17);
+tl.fromTo("#m7-in", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out"}, 12.875);
+tl.fromTo("#m7-lock0", {scale: 2, opacity: 0}, {scale: 1, opacity: 1, duration: 0.35, ease: "back.out(2)"}, 14.641);
+tl.fromTo("#m7-lock1", {scale: 2, opacity: 0}, {scale: 1, opacity: 1, duration: 0.35, ease: "back.out(2)"}, 16.588);
+tl.fromTo("#m7-lock2", {scale: 2, opacity: 0}, {scale: 1, opacity: 1, duration: 0.35, ease: "back.out(2)"}, 17.5);
+tl.fromTo("#m7-lock3", {scale: 2, opacity: 0}, {scale: 1, opacity: 1, duration: 0.35, ease: "back.out(2)"}, 17.851);
+tl.fromTo("#m8-t .w", {opacity: 0, filter: "blur(6px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.07}, 21.873);
+tl.fromTo("#m8-in", {opacity: 0, filter: "blur(8px)"}, {opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out"}, 21.791);
+tl.to("#m8-in", {x: -300, opacity: 0, filter: "blur(20px)", duration: 0.28, ease: "power3.in"}, 25.577);
+window.__timelines["manager"] = tl;
+</script>
+</template>

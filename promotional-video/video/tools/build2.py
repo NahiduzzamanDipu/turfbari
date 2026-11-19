@@ -243,14 +243,14 @@ EXPLORE_NAV = (862, 31)
 PUBLIC = dict(
     id="pw", kind="world", t0=31.17, t1=66.05, enter="settle",
     pages=[
-        (31.17, "home", "turfbari.com", "route"),
-        (34.45, "explore", "turfbari.com/explore", "route"),
-        (40.7, "district_dhaka", "turfbari.com/explore?district=dhaka", "route"),
-        (41.85, "district", "turfbari.com/explore?district=dhaka&area=mirpur", "route"),
-        (42.9, "search", "turfbari.com/explore?q=uttara", "route"),
-        (44.85, "explore", "turfbari.com/explore", "route"),
-        (53.4, "turf_full", "turfbari.com/turfs/green-arena-gulshan", "route"),
-        (63.55, "turf_qr", "turfbari.com/turfs/green-arena-gulshan", "modal"),
+        (31.17, "home", "turfbari.onrender.com", "route"),
+        (34.45, "explore", "turfbari.onrender.com/explore", "route"),
+        (40.7, "district_dhaka", "turfbari.onrender.com/explore?district=dhaka", "route"),
+        (41.85, "district", "turfbari.onrender.com/explore?district=dhaka&area=mirpur", "route"),
+        (42.9, "search", "turfbari.onrender.com/explore?q=uttara", "route"),
+        (44.85, "explore", "turfbari.onrender.com/explore", "route"),
+        (53.4, "turf_full", "turfbari.onrender.com/turfs/green-arena-gulshan", "route"),
+        (63.55, "turf_qr", "turfbari.onrender.com/turfs/green-arena-gulshan", "modal"),
     ],
     cam=[
         (31.17, 0.8, 960, 540, 0),
@@ -311,14 +311,14 @@ PHONE = dict(
 OWNER = dict(
     id="ow", kind="world", t0=81.16, t1=105.05, enter="settle",
     pages=[
-        (81.16, "login", "turfbari.com/login", "route"),
-        (82.25, "dash", "turfbari.com/workspace", "route"),
-        (89.05, "slots", "turfbari.com/workspace/book", "route"),
-        (94.85, "discount", "turfbari.com/workspace/book", "route"),
-        (99.8, "fields", "turfbari.com/workspace/fields", "route"),
-        (100.65, "hours", "turfbari.com/workspace/hours", "route"),
-        (101.6, "pricing", "turfbari.com/workspace/pricing", "route"),
-        (103.45, "customers", "turfbari.com/workspace/customers", "route"),
+        (81.16, "login", "turfbari.onrender.com/login", "route"),
+        (82.25, "dash", "turfbari.onrender.com/workspace", "route"),
+        (89.05, "slots", "turfbari.onrender.com/workspace/book", "route"),
+        (94.85, "discount", "turfbari.onrender.com/workspace/book", "route"),
+        (99.8, "fields", "turfbari.onrender.com/workspace/fields", "route"),
+        (100.65, "hours", "turfbari.onrender.com/workspace/hours", "route"),
+        (101.6, "pricing", "turfbari.onrender.com/workspace/pricing", "route"),
+        (103.45, "customers", "turfbari.onrender.com/workspace/customers", "route"),
     ],
     cam=[
         (81.16, 1.0, 960, 560, 0),
@@ -360,12 +360,12 @@ OWNER = dict(
 MANAGER = dict(
     id="mw", kind="world", t0=108.55, t1=118.95, enter="whip",
     pages=[
-        (108.55, "team", "turfbari.com/workspace/team", "route"),
-        (111.05, "m_login", "turfbari.com/login", "route"),
-        (112.85, "m_dash", "turfbari.com/workspace", "route"),
-        (113.6, "m_pending", "turfbari.com/workspace/bookings?status=pending", "route"),
-        (116.0, "m_pay", "turfbari.com/workspace/bookings?status=pending", "modal"),
-        (118.0, "m_customers", "turfbari.com/workspace/customers", "route"),
+        (108.55, "team", "turfbari.onrender.com/workspace/team", "route"),
+        (111.05, "m_login", "turfbari.onrender.com/login", "route"),
+        (112.85, "m_dash", "turfbari.onrender.com/workspace", "route"),
+        (113.6, "m_pending", "turfbari.onrender.com/workspace/bookings?status=pending", "route"),
+        (116.0, "m_pay", "turfbari.onrender.com/workspace/bookings?status=pending", "modal"),
+        (118.0, "m_customers", "turfbari.onrender.com/workspace/customers", "route"),
     ],
     cam=[
         (108.55, 1.0, 960, 540, 0),
@@ -399,9 +399,9 @@ MANAGER = dict(
 MONEY = dict(
     id="rw", kind="world", t0=126.76, t1=146.04, enter="whip", exit="zoom",
     pages=[
-        (126.76, "bookings", "turfbari.com/workspace/bookings", "route"),
-        (127.45, "payments", "turfbari.com/workspace/bookings", "modal"),
-        (136.6, "reports", "turfbari.com/workspace/reports", "route"),
+        (126.76, "bookings", "turfbari.onrender.com/workspace/bookings", "route"),
+        (127.45, "payments", "turfbari.onrender.com/workspace/bookings", "modal"),
+        (136.6, "reports", "turfbari.onrender.com/workspace/reports", "route"),
     ],
     cam=[
         (126.76, 1.0, 960, 540, 0),

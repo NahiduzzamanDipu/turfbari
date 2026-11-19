@@ -31,3 +31,7 @@ The original voiceover is kept as assets/voiceover-original.mp3.
 - check: 0 errors. Loudness measured -14.2 LUFS, peak -1.6 dB. 170.0 s, 1080p30, H.264/AAC.
 - SEO: MP4 metadata (title, keywords, description, genre, language, copyright) + 9 named chapters (tools/finalize.py).
   Subtitles ship as TurfBari_Promo_Bengali.bn.srt (an embedded MP4 subtitle track is always switched on in players).
+
+## v2 domain update (2026-11-19)
+- Every on-screen URL (browser bars, mini windows, end card) and the MP4 metadata now use turfbari.onrender.com;
+  the official domain no longer appears anywhere in the video. SEO.md links updated to match.

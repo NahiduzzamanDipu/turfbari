@@ -29,3 +29,9 @@ Thumbs.db
 
 # Rendered promo videos (large binaries; keep outside git)
 promotional-video/*.mp4
+
+# Video tool caches and render outputs (large, regenerated)
+promotional-video/**/renders/
+promotional-video/**/.hyperframes/
+promotional-video/**/.thumbnails/
+promotional-video/**/.waveform-cache/

@@ -1,0 +1,74 @@
+TurfBari — LinkedIn post copy (developer story)
+For: TurfBari_Promo_English_1080p.mp4
+=====================================================================
+Upload tips
+- Upload the MP4 directly to LinkedIn (native video autoplays; YouTube links don't).
+- LinkedIn plays videos muted at first: the captions are burned into the video, so it reads without sound.
+- Optional: add TurfBari_Promo_English.en.srt as the caption file when uploading.
+- Thumbnail: the frame at 0:05 ("But where's the field?") or the end card near 3:32.
+- LinkedIn shows ~3 lines before "...see more", so the first lines are the hook.
+- Up to 3,000 characters per post: the DETAILED post fits.
+
+
+---------------------------------------------------------------------
+SHORT POST
+---------------------------------------------------------------------
+I designed and built TurfBari, a full-stack web platform for booking football turfs in Bangladesh. ⚽
+
+Players find nearby turfs and send booking requests without an account. Turf owners and managers run bookings, payments and reports from one dashboard.
+
+🛠️ Python · Django 5.2 · Django REST Framework · React 19 · TypeScript · Tailwind CSS 4 · PostgreSQL / MySQL · Celery + Redis · Docker
+
+🎥 3-minute walkthrough of the real app below.
+🔗 Live demo: https://turfbari.onrender.com
+
+#Django #React #TypeScript #Python #FullStackDevelopment #WebDevelopment
+
+
+---------------------------------------------------------------------
+DETAILED POST
+---------------------------------------------------------------------
+I designed and developed TurfBari, a full-stack turf booking and management platform for football in Bangladesh. ⚽
+
+The problem: players call turf after turf asking for a free slot, and owners track bookings and dues in notebooks. TurfBari puts both sides on one platform. Here's how I built it 👇
+
+🧱 Tech stack
+• Backend: Python 3, Django 5.2, Django REST Framework (OpenAPI docs with drf-spectacular)
+• Frontend: React 19 + TypeScript, Vite, Tailwind CSS 4, shadcn/ui, TanStack Query, React Hook Form + Zod, Recharts
+• Database: PostgreSQL in production, MySQL/MariaDB for local development
+• Background jobs: Celery + Redis + celery-beat (plan-expiry reminder emails)
+• Deployment: Docker (multi-stage build), Gunicorn, Nginx; live on Render with managed PostgreSQL and S3-compatible storage for photos
+
+⚙️ Engineering highlights
+• No double bookings: availability checks run inside database transactions with row locks (select_for_update)
+• 10-minute slot holds when a player picks a slot, with a cooldown after a hold lapses
+• "Turfs near me": browser geolocation + Haversine distance on the server
+• Multi-tenant design: every turf's data is isolated; owner and manager roles with separate permissions
+• Live dashboard updates without reloading (auto-refreshing queries)
+• Per-turf QR codes (segno) that open the turf's booking page
+• Reports with one-click Excel export (openpyxl)
+• Online subscription payments via an SSLCommerz checkout integration (cards, bKash, Nagad)
+
+🔐 Security
+• Session auth with CSRF protection (SPA and API on one origin, no tokens stored in the browser)
+• Argon2 password hashing, login lockout (django-axes), Content Security Policy
+• TOTP two-factor authentication with recovery codes for admins
+• Audit log of important actions
+
+✅ Quality
+• 120 backend tests (pytest + factory_boy), including cross-tenant isolation checks
+• Frontend tests with Vitest + Testing Library
+• Ruff linting and TypeScript type checks
+
+📱 What users get
+Players: nearest turfs first, district/area search, photos, facilities, opening hours, slot prices, map directions, booking requests without an account, and status tracking by reference number.
+Owners & managers: dashboard, live "Book a Slot" board, discounts and advance payments, cash/bKash/Nagad records, customers, peak-hour and weekend pricing, reports.
+
+The video walks through the real app screen by screen.
+
+🔗 Live demo: https://turfbari.onrender.com
+(It runs on a free server, so the first load can take up to a minute.)
+
+It's still under active development. Feedback from developers and turf owners is very welcome! 👇
+
+#Django #Python #React #TypeScript #TailwindCSS #PostgreSQL #Celery #Docker #FullStackDevelopment #WebDevelopment #SoftwareEngineering #SaaS #Bangladesh #BuildInPublic
