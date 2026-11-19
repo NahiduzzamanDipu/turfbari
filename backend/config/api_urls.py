@@ -8,6 +8,7 @@ from apps.accounts import two_factor
 from apps.accounts import views as auth
 from apps.applications.admin_views import AdminDashboardView, ApplicationAdminViewSet, TurfAdminViewSet
 from apps.audit import views as audit
+from apps.bookings import verification_views as verify
 from apps.bookings import workspace_views as ws
 from apps.common.live import LiveView
 from apps.expenses.views import ExpenseViewSet
@@ -82,6 +83,9 @@ admin_urls = [
 workspace_urls = [
     path("dashboard/", ws.DashboardView.as_view()),
     path("availability/", ws.AvailabilityView.as_view()),
+    path("payment-verifications/", verify.PaymentVerificationListView.as_view()),
+    path("payment-verifications/<uuid:pk>/approve/", verify.PaymentApproveView.as_view()),
+    path("payment-verifications/<uuid:pk>/reject/", verify.PaymentRejectView.as_view()),
     path("quote/", ws.QuoteView.as_view()),
     path("hours/", setup.HoursView.as_view()),
     path("settings/", setup.SettingsView.as_view()),

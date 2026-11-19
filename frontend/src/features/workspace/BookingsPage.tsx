@@ -48,6 +48,7 @@ const STATUS_ACTIONS: Record<BookingStatus, { to: BookingStatus; label: string; 
   completed: [],
   cancelled: [],
   rejected: [],
+  expired: [],
 };
 
 export function BookingsPage() {
@@ -250,7 +251,8 @@ function BookingList({
         </form>
         <Select aria-label="Status" value={params.get("status") ?? ""} onChange={(e) => setParam("status", e.target.value || null)}>
           <option value="">All statuses</option>
-          <option value="pending">Pending requests</option>
+          <option value="pending">Awaiting verification</option>
+          <option value="expired">Expired requests</option>
           <option value="confirmed">Confirmed</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>

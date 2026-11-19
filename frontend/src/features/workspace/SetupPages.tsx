@@ -546,6 +546,34 @@ export function SettingsPage() {
             </Card>
             <Card>
               <CardHeader>
+                <CardTitle>bKash payments for online bookings</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-3">
+                <p className="text-sm text-muted-foreground sm:col-span-3">
+                  Players send an advance to this number with bKash <strong>Send Money</strong> and enter the TrxID. You verify it under
+                  Payment verification before the booking is confirmed. Without a bKash number your page shows slots but takes no online bookings.
+                </p>
+                <FormField label="bKash number (personal)">
+                  {(id) => <Input id={id} type="tel" inputMode="tel" placeholder="01XXXXXXXXX" value={form.bkash_number} onChange={text("bkash_number")} />}
+                </FormField>
+                <FormField label="Advance (৳)" hint="Minimum ৳500. Cheaper slots pay the full price.">
+                  {(id) => <Input id={id} type="number" min={500} step="0.01" value={form.advance_amount} onChange={text("advance_amount")} />}
+                </FormField>
+                <FormField label="Keep the slot while you verify" hint="After this the request expires and the slot reopens.">
+                  {(id) => (
+                    <Select id={id} value={form.payment_hold_minutes} onChange={(e) => set("payment_hold_minutes", Number(e.target.value))}>
+                      {[15, 30, 60, 120, 180, 360, 720, 1440].map((m) => (
+                        <option key={m} value={m}>
+                          {m < 60 ? `${m} minutes` : `${m / 60} hour${m === 60 ? "" : "s"}`}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </FormField>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
                 <CardTitle>Location</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">

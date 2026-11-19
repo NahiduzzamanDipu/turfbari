@@ -10,6 +10,8 @@ export interface LiveState {
   scope: "workspace" | "admin" | "none";
   turf_id?: string;
   pending_requests?: number;
+  pending_payments_to_verify?: number;
+  pending_bookings?: number;
   latest_request?: {
     id: string;
     reference: string;
@@ -66,7 +68,7 @@ export function useLiveSync(area: "admin" | "workspace") {
         toast.info(`New booking request from ${req.name}`, {
           description: `${req.field} · ${slotTime.format(new Date(req.start))} · ${req.reference}`,
           duration: 15_000,
-          action: { label: "Review", onClick: () => navigate("/workspace/bookings?status=pending") },
+          action: { label: "Review", onClick: () => navigate("/workspace/payments") },
         });
       }
     } else {

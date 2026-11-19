@@ -7,6 +7,7 @@ import io
 import logging
 import uuid
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 
 import segno
 from django.conf import settings
@@ -26,7 +27,7 @@ from rest_framework.views import APIView
 
 from apps.applications.models import TurfApplication
 from apps.audit.services import Category, booking_label, record
-from apps.bookings import holds
+from apps.bookings import holds, payments
 from apps.bookings.models import Booking, MaintenanceBlock
 from apps.bookings.phone import normalize_bd_phone
 from apps.bookings.services import availability, get_or_create_customer, opening_window, reserve_slot
@@ -162,9 +163,9 @@ def _add_live_states(field, slots: list[dict], mine) -> None:
     first = datetime.fromisoformat(slots[0]["start"])
     last = datetime.fromisoformat(slots[-1]["end"])
     bookings = list(
-        Booking.objects.filter(
-            field=field, status__in=Booking.BLOCKING, start__lt=last, end__gt=first
-        ).values_list("start", "end", "status")
+        Booking.objects.blocking()
+        .filter(field=field, start__lt=last, end__gt=first)
+        .values_list("start", "end", "status")
     )
     blocks = list(
         MaintenanceBlock.objects.filter(field=field, start__lt=last, end__gt=first).values_list(
@@ -253,6 +254,10 @@ class BookingRequestSerializer(serializers.Serializer):
     notes = serializers.CharField(max_length=500, required=False, allow_blank=True)
     website = serializers.CharField(required=False, allow_blank=True)  # honeypot: humans leave it empty
     hold_token = serializers.CharField(max_length=64, required=False, allow_blank=True)
+    # The bKash advance the customer already sent (verified by a person before anything is confirmed).
+    payment_amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("1"))
+    bkash_sender = serializers.CharField(max_length=20)
+    trx_id = serializers.CharField(max_length=30)
 
 
 class PublicBookingRequestView(PublicAPIView):
@@ -262,8 +267,8 @@ class PublicBookingRequestView(PublicAPIView):
     @extend_schema(tags=["public"], request=BookingRequestSerializer)
     def post(self, request, slug):
         turf = listed_turf(slug)
-        if not turf.public_booking_enabled:
-            raise PermissionDenied("This turf is not taking online booking requests.")
+        if not turf.public_booking_enabled or not turf.bkash_number:
+            raise PermissionDenied("This turf is not taking online bookings. Call the turf to book.")
         data = BookingRequestSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         v = data.validated_data
@@ -303,13 +308,22 @@ class PublicBookingRequestView(PublicAPIView):
                 team_name=v.get("team_name", ""),
                 notes=v.get("notes", ""),
             )
+            payment = payments.validate_payment(
+                turf,
+                total=booking.total,
+                amount=v["payment_amount"],
+                sender_number=v["bkash_sender"],
+                trx_id=v["trx_id"],
+            )
+            payments.attach_submission(booking, payment)
             # Every hold of this visitor is done with: the request went through.
             holds.SlotHold.objects.filter(ip_hash=ip, status=holds.SlotHold.Status.ACTIVE).update(
                 status=holds.SlotHold.Status.CONVERTED, updated_at=timezone.now()
             )
         record(
             "booking.requested",
-            f"Online request {booking_label(booking)} — waiting for confirmation",
+            f"Online request {booking_label(booking)} — bKash ৳{payment['amount']:,.0f} "
+            f"(TrxID {payment['trx_id']}) waiting for verification",
             category=Category.BOOKING,
             request=request,
             turf=turf,
@@ -339,15 +353,40 @@ def _ensure_within_hours(turf: Turf, start: datetime, end: datetime) -> None:
 
 
 def _public_booking(booking: Booking) -> dict:
+    status = booking.status
+    if (
+        status == Booking.Status.PENDING
+        and booking.hold_expires_at
+        and booking.hold_expires_at <= timezone.now()
+    ):
+        status = Booking.Status.EXPIRED  # the tick hasn't caught up yet; tell the truth anyway
+    submission = getattr(booking, "payment_submission", None)
     return {
         "reference": booking.reference,
-        "status": booking.status,
-        "status_label": booking.get_status_display(),
+        "status": status,
+        "status_label": Booking.Status(status).label,
         "turf": booking.turf.name,
+        "turf_slug": booking.turf.slug,
+        "turf_phone": booking.turf.public_phone or None,
         "field": booking.field.name,
         "start": timezone.localtime(booking.start).isoformat(),
         "end": timezone.localtime(booking.end).isoformat(),
-        "total": str(booking.total) if booking.turf.show_pricing else None,
+        "total": str(booking.total),
+        "amount_paid": str(booking.amount_paid),
+        "hold_expires_at": timezone.localtime(booking.hold_expires_at).isoformat()
+        if status == Booking.Status.PENDING and booking.hold_expires_at
+        else None,
+        "payment": {
+            "amount": str(submission.amount),
+            "trx_id": submission.trx_id,
+            "status": submission.status,
+            "rejection_reason": submission.rejection_reason or None,
+        }
+        if submission
+        else None,
+        "message_bn": payments.ACCEPTED_MESSAGE_BN
+        if status == Booking.Status.PENDING and submission
+        else None,
     }
 
 
@@ -360,7 +399,7 @@ class PublicBookingLookupView(PublicAPIView):
         reference = request.query_params.get("reference", "").strip().upper()
         phone = normalize_bd_phone(request.query_params.get("phone", ""))
         booking = (
-            Booking.objects.select_related("turf", "field")
+            Booking.objects.select_related("turf", "field", "payment_submission")
             .filter(reference=reference, customer__phone=phone)
             .first()
         )

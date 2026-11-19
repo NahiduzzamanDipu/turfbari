@@ -11,7 +11,7 @@ from apps.audit.services import record
 from apps.subscriptions.models import Plan
 from apps.turfs.models import TenantMembership
 
-from .test_core import PASSWORD, booking_payload, client_for, make_turf, tomorrow_at
+from .test_core import PASSWORD, bkash, booking_payload, client_for, make_turf, tomorrow_at
 
 pytestmark = pytest.mark.django_db
 
@@ -50,11 +50,12 @@ def test_public_request_has_no_actor():
             "end": tomorrow_at(19).isoformat(),
             "name": "Rafi",
             "phone": "01812345678",
+            **bkash(),
         },
         format="json",
     )
     event = AuditEvent.objects.get(action="booking.requested")
-    assert event.actor is None and event.turf == turf and "waiting for confirmation" in event.summary
+    assert event.actor is None and event.turf == turf and "waiting for verification" in event.summary
 
 
 def test_setup_settings_team_and_auto_crud_events():

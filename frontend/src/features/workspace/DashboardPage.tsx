@@ -38,13 +38,13 @@ export function DashboardPage() {
       />
       {d.pending_requests > 0 && (
         <Link
-          to="/workspace/bookings?status=pending"
+          to="/workspace/payments"
           className="mb-4 flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
         >
           <AlertCircle className="size-5 shrink-0" />
           <span>
-            <strong>{d.pending_requests}</strong> booking request{d.pending_requests === 1 ? "" : "s"} waiting for
-            confirmation. Review now →
+            <strong>{d.pending_requests}</strong> bKash payment{d.pending_requests === 1 ? "" : "s"} waiting for
+            verification. Review now →
           </span>
         </Link>
       )}

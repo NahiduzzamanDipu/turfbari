@@ -4,7 +4,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-from .test_core import PASSWORD, client_for, make_turf, tomorrow_at
+from .test_core import PASSWORD, bkash, client_for, make_turf, tomorrow_at
 
 pytestmark = pytest.mark.django_db
 
@@ -16,6 +16,7 @@ def request_slot(turf, hour):
         "end": tomorrow_at(hour + 1).isoformat(),
         "name": "Online Player",
         "phone": "+880 1912-345678",
+        **bkash(),
     }
     r = APIClient().post(f"/api/public/turfs/{turf.slug}/book/", payload, format="json")
     assert r.status_code == 201, r.json()

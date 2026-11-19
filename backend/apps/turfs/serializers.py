@@ -157,7 +157,22 @@ class PublicTurfDetailSerializer(PublicTurfCardSerializer):
             "base_rates",
             "photos",
             "theme",
+            "payment",
         ]
+
+    payment = serializers.SerializerMethodField()
+
+    def get_payment(self, obj):
+        """bKash details for the booking form. Online booking needs a bKash number to pay to."""
+        from apps.bookings.payments import MIN_ADVANCE
+
+        return {
+            "accepts_online": bool(obj.public_booking_enabled and obj.bkash_number),
+            "bkash_number": obj.bkash_number or None,
+            "advance_amount": str(max(obj.advance_amount or MIN_ADVANCE, MIN_ADVANCE)),
+            "min_advance": str(MIN_ADVANCE),
+            "hold_minutes": obj.payment_hold_minutes,
+        }
 
     def get_theme(self, obj):
         return {"preset": obj.theme_preset, "color": obj.theme_color or None}
@@ -297,8 +312,34 @@ class TurfSettingsSerializer(serializers.ModelSerializer):
             "profile_image_url",
             "theme_preset",
             "theme_color",
+            "bkash_number",
+            "advance_amount",
+            "payment_hold_minutes",
         ]
         read_only_fields = ["slug", "status"]
+
+    def validate_bkash_number(self, value):
+        from apps.bookings.phone import normalize_bd_phone
+
+        value = (value or "").strip()
+        if not value:
+            return ""
+        try:
+            return "0" + normalize_bd_phone(value)[4:]  # stored the way customers type it: 01XXXXXXXXX
+        except serializers.ValidationError:
+            raise serializers.ValidationError("Enter your bKash number, e.g. 01712345678.") from None
+
+    def validate_advance_amount(self, value):
+        from apps.bookings.payments import MIN_ADVANCE
+
+        if value < MIN_ADVANCE:
+            raise serializers.ValidationError(f"The advance must be at least ৳{MIN_ADVANCE:,.0f}.")
+        return value
+
+    def validate_payment_hold_minutes(self, value):
+        if not 15 <= value <= 24 * 60:
+            raise serializers.ValidationError("Hold a request between 15 minutes and 24 hours.")
+        return value
 
     def validate_theme_color(self, value):
         value = (value or "").strip().lower()

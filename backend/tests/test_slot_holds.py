@@ -8,7 +8,7 @@ from rest_framework.test import APIClient
 
 from apps.bookings.models import Booking, SlotHold
 
-from .test_core import make_turf, tomorrow_at
+from .test_core import bkash, make_turf, tomorrow_at
 
 pytestmark = pytest.mark.django_db
 
@@ -47,7 +47,7 @@ def states(client, turf, token=None):
 
 
 def request_booking(client, turf, hour, token=None):
-    body = slot(turf, hour) | {"name": "Player", "phone": "01912345678"}
+    body = slot(turf, hour) | {"name": "Player", "phone": "01912345678"} | bkash()
     if token:
         body["hold_token"] = token
     return client.post(f"/api/public/turfs/{turf.slug}/book/", body, format="json")

@@ -1,5 +1,7 @@
 """Turf = the tenant. Everything a turf owns carries a `turf` FK and is filtered by it server-side."""
 
+from decimal import Decimal
+
 from django.conf import settings
 from django.db import models
 
@@ -99,6 +101,12 @@ class Turf(BaseModel):
     public_booking_enabled = models.BooleanField(default=True)
     show_pricing = models.BooleanField(default=True)
     min_public_price = MoneyField(null=True, blank=True, default=None)  # denormalised for sorting
+
+    # Online booking payments: customers send an advance by bKash "Send Money" to this number and
+    # submit the transaction ID; an owner/manager verifies it before the booking is confirmed.
+    bkash_number = models.CharField(max_length=20, blank=True)
+    advance_amount = MoneyField(default=Decimal("500.00"))  # at least MIN_ADVANCE (platform rule)
+    payment_hold_minutes = models.PositiveSmallIntegerField(default=60)
 
     # Customer SMS switches (see apps.notifications.services.TURF_SMS_DEFAULTS).
     sms_settings = models.JSONField(default=dict, blank=True)

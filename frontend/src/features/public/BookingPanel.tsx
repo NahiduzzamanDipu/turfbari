@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Hourglass, Loader2, Send, TimerOff } from "lucide-react";
+import { CheckCircle2, Copy, Hourglass, Loader2, Send, TimerOff } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
   const [day, setDay] = useState(todayISO());
   const [token, setToken] = useState<string | null>(() => readToken(turf.slug));
   const [form, setForm] = useState({ name: "", phone: "", email: "", team_name: "", notes: "", website: "" });
+  const [pay, setPay] = useState({ payment_amount: "", bkash_sender: "", trx_id: "" });
   const [done, setDone] = useState<PublicBooking | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(todayISO(), i)), []);
@@ -115,6 +116,10 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
   }, [heldHere, list]);
   const chosen = range ? list.slice(range.from, range.to + 1) : [];
   const total = chosen.reduce((sum, s) => sum + Number(s.price ?? 0), 0);
+  const payment = turf.payment;
+  const advanceSetting = Math.max(Number(payment.advance_amount), Number(payment.min_advance));
+  // The least to send now (the server checks the same rule): the advance, or the whole price if lower.
+  const advance = total > 0 ? Math.min(total, advanceSetting) : advanceSetting;
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["public", "availability", turf.slug] });
 
@@ -148,10 +153,20 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
     mutationFn: () =>
       api<PublicBooking>(`/public/turfs/${turf.slug}/book/`, {
         method: "POST",
-        json: { field: fieldId, start: chosen[0]?.start, end: chosen.at(-1)?.end, hold_token: token ?? "", ...form },
+        json: {
+          field: fieldId,
+          start: chosen[0]?.start,
+          end: chosen.at(-1)?.end,
+          hold_token: token ?? "",
+          ...form,
+          payment_amount: pay.payment_amount || String(advance),
+          bkash_sender: pay.bkash_sender || form.phone,
+          trx_id: pay.trx_id,
+        },
       }),
     onSuccess: (b) => {
       setDone(b);
+      setPay({ payment_amount: "", bkash_sender: "", trx_id: "" });
       saveToken(null);
       void refresh();
     },
@@ -185,16 +200,26 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
         <CardContent>
           <div className="flex flex-col items-center gap-3 py-4 text-center" role="status">
             <CheckCircle2 className="size-12 text-primary" />
-            <p className="text-lg font-semibold">Request sent!</p>
+            <p className="text-lg font-semibold">বুকিং অনুরোধ পাঠানো হয়েছে</p>
+            {done.message_bn && (
+              <p lang="bn" className="max-w-md rounded-lg bg-primary/10 px-4 py-3 text-sm leading-relaxed">
+                {done.message_bn}
+              </p>
+            )}
             <p className="text-sm text-muted-foreground">
               {done.field}, {fmtDay(done.start)} · {fmtRange(done.start, done.end)}
               {done.total && <> · {formatBDT(done.total)}</>}
             </p>
+            {done.payment && (
+              <p className="text-sm text-muted-foreground">
+                bKash {formatBDT(done.payment.amount)} · TrxID <span className="font-mono">{done.payment.trx_id}</span>
+              </p>
+            )}
             <p className="text-sm">
-              Your reference: <span className="font-mono text-base font-bold">{done.reference}</span>
+              Booking ID: <span className="font-mono text-base font-bold">{done.reference}</span>
             </p>
             <p className="max-w-sm text-sm text-muted-foreground">
-              The turf will call you to confirm. Track it any time on the{" "}
+              Not confirmed yet — the turf checks the payment first. Track it on the{" "}
               <Link to={`/booking-status?reference=${done.reference}`} className="font-semibold text-primary hover:underline">
                 booking status page
               </Link>
@@ -330,7 +355,23 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
           </>
         )}
 
-        {chosen.length > 0 && (
+        {chosen.length > 0 && !payment.accepts_online && (
+          <p className="rounded-md border px-3 py-3 text-sm">
+            This turf isn't taking online bookings right now.
+            {turf.public_phone && (
+              <>
+                {" "}
+                Call{" "}
+                <a className="font-semibold text-primary hover:underline" href={`tel:${turf.public_phone}`}>
+                  {turf.public_phone}
+                </a>{" "}
+                to book.
+              </>
+            )}
+          </p>
+        )}
+
+        {chosen.length > 0 && payment.accepts_online && (
           <form
             className="mt-2 flex flex-col gap-3 border-t pt-4"
             onSubmit={(e) => {
@@ -351,7 +392,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
               <FormField label="Your name" error={fieldErrors?.name}>
                 {(id) => <Input id={id} required autoComplete="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />}
               </FormField>
-              <FormField label="Mobile number" error={fieldErrors?.phone} hint="We'll call this number to confirm.">
+              <FormField label="Mobile number" error={fieldErrors?.phone} hint="The confirmation SMS comes to this number.">
                 {(id) => <Input id={id} required type="tel" inputMode="tel" autoComplete="tel" placeholder="01XXXXXXXXX" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />}
               </FormField>
               <FormField label="Email (optional)" error={fieldErrors?.email}>
@@ -364,6 +405,52 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
             <FormField label="Notes (optional)">
               {(id) => <Textarea id={id} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />}
             </FormField>
+            <BkashBox number={payment.bkash_number ?? ""} total={total} advance={advance} holdMinutes={payment.hold_minutes} />
+            <div className="grid gap-3 sm:grid-cols-3">
+              <FormField label="Amount sent (৳)" error={fieldErrors?.payment_amount} hint={`At least ${formatBDT(advance)}`}>
+                {(id) => (
+                  <Input
+                    id={id}
+                    required
+                    type="number"
+                    inputMode="decimal"
+                    min={advance}
+                    max={total > 0 ? total : undefined}
+                    step="0.01"
+                    placeholder={String(advance)}
+                    value={pay.payment_amount}
+                    onChange={(e) => setPay({ ...pay, payment_amount: e.target.value })}
+                  />
+                )}
+              </FormField>
+              <FormField label="bKash number you sent from" error={fieldErrors?.bkash_sender}>
+                {(id) => (
+                  <Input
+                    id={id}
+                    type="tel"
+                    inputMode="tel"
+                    placeholder={form.phone || "01XXXXXXXXX"}
+                    value={pay.bkash_sender}
+                    onChange={(e) => setPay({ ...pay, bkash_sender: e.target.value })}
+                  />
+                )}
+              </FormField>
+              <FormField label="Transaction ID (TrxID)" error={fieldErrors?.trx_id} hint="From the bKash SMS">
+                {(id) => (
+                  <Input
+                    id={id}
+                    required
+                    autoCapitalize="characters"
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder="e.g. 9C7A6B5D4E"
+                    className="font-mono uppercase"
+                    value={pay.trx_id}
+                    onChange={(e) => setPay({ ...pay, trx_id: e.target.value.toUpperCase().replace(/\s/g, "") })}
+                  />
+                )}
+              </FormField>
+            </div>
             {/* Honeypot: hidden from people, filled by bots. */}
             <input
               type="text"
@@ -377,16 +464,78 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
             />
             {submit.error && (
               <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {fieldErrors?.start?.[0] ?? fieldErrors?.non_field_errors?.[0] ?? submit.error.message}
+                {fieldErrors?.start?.[0] ??
+                  fieldErrors?.non_field_errors?.[0] ??
+                  (fieldErrors ? "Please fix the highlighted fields." : submit.error.message)}
               </p>
             )}
             <Button type="submit" size="lg" disabled={submit.isPending || secondsLeft === 0}>
               {submit.isPending ? <Loader2 className="animate-spin" /> : <Send />}
-              Send booking request
+              Submit payment &amp; request booking
             </Button>
           </form>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/** How to pay: bKash "Send Money" to the turf's number, then type the TrxID from the bKash SMS. */
+function BkashBox({ number, total, advance, holdMinutes }: { number: string; total: number; advance: number; holdMinutes: number }) {
+  const [copied, setCopied] = useState(false);
+  const hours = holdMinutes >= 60 ? `${Math.round(holdMinutes / 6) / 10} hour${holdMinutes === 60 ? "" : "s"}` : `${holdMinutes} minutes`;
+  return (
+    <section aria-labelledby="bkash-title" className="rounded-xl border-2 border-[#e2136e]/30 bg-[#e2136e]/5 p-4">
+      <h3 id="bkash-title" className="flex items-center gap-2 font-semibold">
+        <span className="rounded bg-[#e2136e] px-1.5 py-0.5 text-xs font-bold text-white">bKash</span>
+        Pay the advance to book
+      </h3>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">Send Money to</span>
+        <span className="tabular font-mono text-xl font-bold tracking-wide">{number}</span>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() =>
+            navigator.clipboard.writeText(number).then(
+              () => {
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 2000);
+              },
+              () => undefined,
+            )
+          }
+        >
+          <Copy /> {copied ? "Copied" : "Copy"}
+        </Button>
+      </div>
+      <dl className="mt-3 grid grid-cols-3 gap-2 text-sm">
+        {total > 0 && (
+          <div>
+            <dt className="text-muted-foreground">Slot price</dt>
+            <dd className="tabular font-semibold">{formatBDT(total)}</dd>
+          </div>
+        )}
+        <div>
+          <dt className="text-muted-foreground">Advance now</dt>
+          <dd className="tabular font-semibold text-[#c2105e] dark:text-pink-300">{formatBDT(advance)}+</dd>
+        </div>
+        {total > 0 && (
+          <div>
+            <dt className="text-muted-foreground">Pay at the turf</dt>
+            <dd className="tabular font-semibold">{formatBDT(Math.max(total - advance, 0))}</dd>
+          </div>
+        )}
+      </dl>
+      <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+        <li>Open the bKash app and choose <strong className="text-foreground">Send Money</strong> (not Payment or Cash Out).</li>
+        <li>Send at least {formatBDT(advance)} to {number}.</li>
+        <li>Copy the <strong className="text-foreground">TrxID</strong> from the bKash confirmation SMS and enter it below.</li>
+      </ol>
+      <p className="mt-2 text-xs text-muted-foreground">
+        The turf checks your payment and confirms by SMS. Your slot is kept for {hours} while they check. It is not confirmed until then.
+      </p>
+    </section>
   );
 }

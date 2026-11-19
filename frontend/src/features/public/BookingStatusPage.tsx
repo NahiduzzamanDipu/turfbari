@@ -63,7 +63,35 @@ export function BookingStatusPage() {
               <p className="text-sm text-muted-foreground">
                 {fmtDay(lookup.data.start)}, {fmtRange(lookup.data.start, lookup.data.end)}
               </p>
-              {lookup.data.total && <p className="tabular text-sm">Total: {formatBDT(lookup.data.total)}</p>}
+              {lookup.data.total && (
+                <p className="tabular text-sm">
+                  Total: {formatBDT(lookup.data.total)}
+                  {Number(lookup.data.amount_paid) > 0 && <> · Paid: {formatBDT(lookup.data.amount_paid)}</>}
+                </p>
+              )}
+              {lookup.data.payment && (
+                <p className="text-sm text-muted-foreground">
+                  bKash {formatBDT(lookup.data.payment.amount)} · TrxID <span className="font-mono">{lookup.data.payment.trx_id}</span>
+                </p>
+              )}
+              {lookup.data.message_bn && (
+                <p lang="bn" className="rounded-lg bg-primary/10 px-3 py-2 text-sm">
+                  {lookup.data.message_bn}
+                </p>
+              )}
+              {lookup.data.status === "rejected" && (
+                <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  The turf couldn't verify your payment, so this booking isn't confirmed
+                  {lookup.data.payment?.rejection_reason ? `: ${lookup.data.payment.rejection_reason}` : "."}
+                  {lookup.data.turf_phone && <> Call {lookup.data.turf_phone} if you think this is a mistake.</>}
+                </p>
+              )}
+              {lookup.data.status === "expired" && (
+                <p className="rounded-lg bg-secondary px-3 py-2 text-sm">
+                  The turf didn't verify the payment in time, so the slot was released.
+                  {lookup.data.turf_phone && <> Call {lookup.data.turf_phone} about your payment.</>}
+                </p>
+              )}
             </div>
           )}
         </CardContent>

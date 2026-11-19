@@ -26,7 +26,7 @@ class SlotUnavailable(ValidationError):
 
 
 def overlapping_bookings(field_id, start: datetime, end: datetime, exclude_id=None):
-    qs = Booking.objects.filter(field_id=field_id, status__in=Booking.BLOCKING, start__lt=end, end__gt=start)
+    qs = Booking.objects.blocking().filter(field_id=field_id, start__lt=end, end__gt=start)
     if exclude_id:
         qs = qs.exclude(pk=exclude_id)
     return qs
@@ -122,6 +122,7 @@ ALLOWED_TRANSITIONS = {
     Booking.Status.CANCELLED: set(),
     Booking.Status.REJECTED: set(),
     Booking.Status.NO_SHOW: {Booking.Status.COMPLETED},
+    Booking.Status.EXPIRED: set(),  # an expired online request can still be approved via verification
 }
 
 

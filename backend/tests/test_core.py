@@ -1,5 +1,6 @@
 """Core behaviour: pricing, booking overlap safety, tenant isolation, roles, public API, onboarding."""
 
+import itertools
 import threading
 from datetime import time, timedelta
 from decimal import Decimal
@@ -20,6 +21,12 @@ from apps.turfs.pricing import local_dt, quote
 
 pytestmark = pytest.mark.django_db
 PASSWORD = "a-strong-pass-123"
+_trx = itertools.count(1)
+
+
+def bkash(amount="500", sender="01712345678") -> dict:
+    """The bKash advance fields every public booking request now carries (unique TrxID each call)."""
+    return {"payment_amount": amount, "bkash_sender": sender, "trx_id": f"TEST{next(_trx):06d}"}
 
 
 def make_turf(name="Alpha Turf", email="alpha@example.com", listed=True):
@@ -39,6 +46,7 @@ def make_turf(name="Alpha Turf", email="alpha@example.com", listed=True):
     owner.must_change_password = False  # tests sign in as an owner who already chose a password
     owner.save()
     turf.is_listed = listed
+    turf.bkash_number = "01711000000"
     turf.save()
     return turf, owner
 
@@ -291,13 +299,15 @@ def test_public_booking_request_flow(alpha):
         "end": tomorrow_at(19).isoformat(),
         "name": "Online Player",
         "phone": "+880 1912-345678",
+        **bkash(),
     }
     client = APIClient()
     created = client.post("/api/public/turfs/alpha-turf/book/", payload, format="json")
     assert created.status_code == 201, created.json()
     assert created.json()["status"] == "pending"
     # Slot is now held.
-    assert client.post("/api/public/turfs/alpha-turf/book/", payload, format="json").status_code == 400
+    again = {**payload, **bkash()}
+    assert client.post("/api/public/turfs/alpha-turf/book/", again, format="json").status_code == 400
     slots = client.get(
         f"/api/public/turfs/alpha-turf/availability/?field={field.id}&date={tomorrow_at(0).date()}"
     ).json()["slots"]
@@ -312,7 +322,7 @@ def test_public_booking_request_flow(alpha):
 def test_public_booking_honeypot_and_closed_hours(alpha):
     turf, _ = alpha
     field = turf.fields.first()
-    base = {"field": str(field.id), "name": "Bot", "phone": "01912345678"}
+    base = {"field": str(field.id), "name": "Bot", "phone": "01912345678", **bkash()}
     bot = {**base, "start": tomorrow_at(18).isoformat(), "end": tomorrow_at(19).isoformat(), "website": "x"}
     assert APIClient().post("/api/public/turfs/alpha-turf/book/", bot, format="json").status_code == 400
     closed = {**base, "start": tomorrow_at(3).isoformat(), "end": tomorrow_at(4).isoformat()}

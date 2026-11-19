@@ -50,13 +50,16 @@ def _workspace_state(turf) -> dict:
         )
     ]
     scoped += [PaymentTransaction.objects.filter(invoice__turf=turf), Turf.objects.filter(pk=turf.pk)]
-    pending = Booking.objects.filter(turf=turf, status=Booking.Status.PENDING)
+    pending = Booking.objects.awaiting_review().filter(turf=turf)
     newest = pending.select_related("customer", "field").order_by("-created_at").first()
     return {
         "version": _fingerprint(scoped),
         "scope": "workspace",
         "turf_id": str(turf.pk),
         "pending_requests": pending.count(),
+        # Pending bookings with a bKash submission (Payment verification) vs. without (e.g. made by staff).
+        "pending_payments_to_verify": pending.filter(payment_submission__isnull=False).count(),
+        "pending_bookings": pending.filter(payment_submission__isnull=True).count(),
         "latest_request": (
             {
                 "id": str(newest.pk),

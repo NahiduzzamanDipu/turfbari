@@ -19,7 +19,10 @@ export interface NavItem {
   /** Managers see it only with this permission (owners always do). */
   permission?: keyof ManagerPermissions;
   /** Live count shown as a badge (e.g. booking requests waiting). */
-  badge?: keyof Pick<LiveState, "pending_requests" | "pending_applications" | "pending_payments">;
+  badge?: keyof Pick<
+    LiveState,
+    "pending_requests" | "pending_payments_to_verify" | "pending_bookings" | "pending_applications" | "pending_payments"
+  >;
 }
 
 /** Sidebar shell shared by the Super Admin console and the turf workspace. */

@@ -35,14 +35,31 @@ class Customer(BaseModel):
         return f"{self.name} ({self.phone})"
 
 
+class BookingQuerySet(models.QuerySet):
+    def blocking(self, now=None):
+        """Bookings that occupy their slot right now: confirmed/completed, plus pending ones whose
+        payment hold hasn't run out (staff-made pending bookings have no hold and always block)."""
+        now = now or timezone.now()
+        return self.filter(
+            models.Q(status__in=[Booking.Status.CONFIRMED, Booking.Status.COMPLETED])
+            | models.Q(status=Booking.Status.PENDING)
+            & (models.Q(hold_expires_at__isnull=True) | models.Q(hold_expires_at__gt=now))
+        )
+
+    def awaiting_review(self, now=None):
+        """Pending bookings an owner/manager still has to act on."""
+        return self.blocking(now).filter(status=Booking.Status.PENDING)
+
+
 class Booking(BaseModel):
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
+        PENDING = "pending", "Awaiting verification"
         CONFIRMED = "confirmed", "Confirmed"
         COMPLETED = "completed", "Completed"
         CANCELLED = "cancelled", "Cancelled"
         REJECTED = "rejected", "Rejected"
         NO_SHOW = "no_show", "No-show"
+        EXPIRED = "expired", "Expired"
 
     class Source(models.TextChoices):
         WALK_IN = "walk_in", "Walk-in"
@@ -50,7 +67,7 @@ class Booking(BaseModel):
         ONLINE = "online", "Online request"
         STAFF = "staff", "Staff"
 
-    # Statuses that hold the slot.
+    # Statuses that can hold the slot (PENDING only until hold_expires_at; see BookingQuerySet.blocking).
     BLOCKING = (Status.PENDING, Status.CONFIRMED, Status.COMPLETED)
 
     turf = models.ForeignKey("turfs.Turf", on_delete=models.CASCADE, related_name="bookings")
@@ -74,6 +91,10 @@ class Booking(BaseModel):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
     confirmed_at = models.DateTimeField(null=True, blank=True)
+    # Online requests keep the slot only until the owner verifies the bKash payment or this passes.
+    hold_expires_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    objects = BookingQuerySet.as_manager()
 
     class Meta:
         ordering = ["-start"]
@@ -164,3 +185,37 @@ class SlotHold(BaseModel):
 
     def __str__(self) -> str:
         return f"Hold {self.field_id} {self.start:%Y-%m-%d %H:%M} ({self.status})"
+
+
+class PaymentSubmission(BaseModel):
+    """What a customer says they paid by bKash Send Money. Never trusted until a person verifies it in
+    the bKash account and approves; approval records a real Payment and confirms the booking."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Awaiting verification"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+        EXPIRED = "expired", "Expired"
+
+    turf = models.ForeignKey("turfs.Turf", on_delete=models.CASCADE, related_name="payment_submissions")
+    booking = models.OneToOneField(Booking, on_delete=models.CASCADE, related_name="payment_submission")
+    amount = MoneyField()
+    sender_number = models.CharField(max_length=20)  # the bKash account the money came from
+    trx_id = models.CharField(max_length=20)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING, db_index=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            # One bKash transaction can pay for one booking only.
+            models.UniqueConstraint(fields=["turf", "trx_id"], name="uniq_bkash_trx_per_turf"),
+        ]
+        indexes = [models.Index(fields=["turf", "status", "created_at"])]
+
+    def __str__(self) -> str:
+        return f"{self.trx_id} ৳{self.amount} for {self.booking_id}"

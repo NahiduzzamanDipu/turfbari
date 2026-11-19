@@ -13,7 +13,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font
 from rest_framework import serializers
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -24,7 +24,8 @@ from apps.turfs.models import TurfField
 from apps.turfs.pricing import quote
 from apps.turfs.serializers import TenantScopedPK
 
-from .models import Booking, Customer, MaintenanceBlock, Payment
+from . import payments
+from .models import Booking, Customer, MaintenanceBlock, Payment, PaymentSubmission
 from .phone import normalize_bd_phone
 from .services import (
     availability,
@@ -274,7 +275,28 @@ class BookingViewSet(TenantViewSet):
         data.is_valid(raise_exception=True)
         before = self.get_object()
         old_status = before.get_status_display()
-        booking = change_status(before, data.validated_data["status"])
+        target = data.validated_data["status"]
+        submission = PaymentSubmission.objects.filter(
+            booking=before, status__in=[PaymentSubmission.Status.PENDING, PaymentSubmission.Status.EXPIRED]
+        ).first()
+        if submission and target in (Booking.Status.CONFIRMED, Booking.Status.REJECTED):
+            # Online bookings with a bKash submission are confirmed/rejected only through verification.
+            if not request.membership.can("approve_payments"):
+                raise PermissionDenied("Your turf owner hasn't allowed you to approve or reject payments.")
+            if target == Booking.Status.CONFIRMED:
+                booking = payments.approve(submission, user=request.user)
+            else:
+                booking = payments.reject(submission, user=request.user)
+        else:
+            booking = change_status(before, target)
+            if submission and booking.status == Booking.Status.CANCELLED:
+                submission.status = PaymentSubmission.Status.REJECTED
+                submission.rejection_reason = "Booking cancelled by the turf"
+                submission.reviewed_by, submission.reviewed_at = request.user, timezone.now()
+                submission.save(
+                    update_fields=["status", "rejection_reason", "reviewed_by", "reviewed_at", "updated_at"]
+                )
+            payments.notify_cancelled(booking, before.status)
         record(
             "booking.status",
             f"{old_status} → {booking.get_status_display()}: {booking_label(booking)}",
@@ -526,7 +548,7 @@ class DashboardView(APIView):
         t0, t1 = day_bounds(today)
         m0 = day_bounds(today.replace(day=1))[0]
         active = Booking.objects.filter(turf=turf).exclude(
-            status__in=[Booking.Status.CANCELLED, Booking.Status.REJECTED]
+            status__in=[Booking.Status.CANCELLED, Booking.Status.REJECTED, Booking.Status.EXPIRED]
         )
         today_bookings = active.filter(start__gte=t0, start__lt=t1)
         upcoming = (
@@ -569,7 +591,9 @@ class DashboardView(APIView):
                     ),
                     "revenue": str(revenue_between(turf, t0, t1)),
                 },
-                "pending_requests": active.filter(status=Booking.Status.PENDING).count(),
+                "pending_requests": Booking.objects.awaiting_review()
+                .filter(turf=turf, payment_submission__isnull=False)
+                .count(),
                 "month": {
                     "bookings": active.filter(start__gte=m0, start__lt=t1).count(),
                     "revenue": str(month_revenue),

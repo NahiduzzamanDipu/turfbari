@@ -123,6 +123,8 @@ def queue_sms(
         status, reason = SmsMessage.Status.SKIPPED, "Not a Bangladeshi mobile number"
     elif not config.enabled:
         status, reason = SmsMessage.Status.SKIPPED, "SMS is switched off by the platform admin"
+    elif get_provider().name == "disabled":
+        status, reason = SmsMessage.Status.SKIPPED, "SMS isn't connected yet (no BulkSMSBD API key)"
     elif (
         turf is not None
         and config.per_turf_monthly_limit

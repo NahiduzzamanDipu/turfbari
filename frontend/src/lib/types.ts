@@ -119,6 +119,7 @@ export interface TurfDetail extends TurfCard {
     field_name: string | null;
   }[];
   base_rates: { field: string; hourly_rate: string }[];
+  payment: TurfPaymentInfo;
 }
 
 /** free | yours (held by this visitor) | held (someone else is booking) | requested | booked | unavailable | past */
@@ -157,13 +158,28 @@ export interface PublicBooking {
   status: string;
   status_label: string;
   turf: string;
+  turf_slug: string;
+  turf_phone: string | null;
   field: string;
   start: string;
   end: string;
   total: string | null;
+  amount_paid: string;
+  hold_expires_at: string | null;
+  payment: { amount: string; trx_id: string; status: string; rejection_reason: string | null } | null;
+  /** Bengali "request received, owner will verify and confirm by SMS" notice. */
+  message_bn: string | null;
 }
 
-export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled" | "rejected" | "no_show";
+export interface TurfPaymentInfo {
+  accepts_online: boolean;
+  bkash_number: string | null;
+  advance_amount: string;
+  min_advance: string;
+  hold_minutes: number;
+}
+
+export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled" | "rejected" | "no_show" | "expired";
 
 export interface Payment {
   id: string;
@@ -298,6 +314,9 @@ export interface TurfSettings {
   public_booking_enabled: boolean;
   show_pricing: boolean;
   weekend_days: number[];
+  bkash_number: string;
+  advance_amount: string;
+  payment_hold_minutes: number;
 }
 
 export interface Manager {

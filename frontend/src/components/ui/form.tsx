@@ -95,6 +95,7 @@ export const STATUS_TONE: Record<string, BadgeTone> = {
   cancelled: "neutral",
   rejected: "red",
   no_show: "red",
+  expired: "neutral",
   paid: "green",
   partial: "amber",
   unpaid: "red",
