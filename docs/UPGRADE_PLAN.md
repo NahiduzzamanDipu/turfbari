@@ -1,5 +1,7 @@
 # TurfBari platform upgrade — audit and plan
 
+> Status: all phases implemented, tested and pushed. See [UPGRADE_GUIDE.md](UPGRADE_GUIDE.md) for setup, endpoints, usage and limits.
+
 ## Phase 1 — Audit (what exists today)
 
 | Area | What is already there | Gap against the brief |

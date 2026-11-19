@@ -13,6 +13,7 @@ from apps.bookings import workspace_views as ws
 from apps.common.live import LiveView
 from apps.expenses.views import ExpenseViewSet
 from apps.notifications import views as sms
+from apps.subscriptions import admin_tools as subs_admin
 from apps.subscriptions import views as subs
 from apps.turfs import design_views as design
 from apps.turfs import public_views as public
@@ -68,6 +69,11 @@ auth_urls = [
 admin_urls = [
     path("dashboard/", AdminDashboardView.as_view()),
     path("turfs/<uuid:pk>/assign-plan/", subs.AssignPlanView.as_view()),
+    path("turfs/<uuid:pk>/subscription-history/", subs_admin.AdminTurfSubscriptionHistoryView.as_view()),
+    path("turfs/<uuid:pk>/extend-subscription/", subs_admin.AdminExtendSubscriptionView.as_view()),
+    path("turfs/<uuid:pk>/end-subscription/", subs_admin.AdminEndSubscriptionView.as_view()),
+    path("subscriptions/", subs_admin.AdminSubscriptionsView.as_view()),
+    path("health/", subs_admin.AdminHealthView.as_view()),
     path("audit/", audit.AdminAuditView.as_view()),
     path("sms/", sms.AdminSmsOverviewView.as_view()),
     path("sms/messages/", sms.AdminSmsMessagesView.as_view()),

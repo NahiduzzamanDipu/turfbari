@@ -120,7 +120,7 @@ class AdminSmsOverviewView(APIView):
     def get(self, request):
         provider = get_provider()
         balance = None
-        if provider.name != "disabled":
+        if provider.name in ("bulksmsbd", "memory"):  # dev/console providers have no balance
             balance = cache.get("sms:balance")
             if balance is None or request.query_params.get("refresh") == "1":
                 value = provider.balance()

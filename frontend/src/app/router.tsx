@@ -1,12 +1,14 @@
 import {
   BarChart3,
   Building2,
+  CalendarClock,
   CalendarDays,
   CalendarPlus,
   CalendarRange,
   CreditCard,
   Clock,
   Grid2x2,
+  HeartPulse,
   History,
   Inbox,
   LayoutDashboard,
@@ -66,6 +68,7 @@ const activityPages = () => import("@/features/audit/ActivityLog");
 const accountPage = () => import("@/features/auth/AccountPage");
 const operationsPages = () => import("@/features/workspace/OperationsPages");
 const setupPages = () => import("@/features/workspace/SetupPages");
+const platformPages = () => import("@/features/admin/PlatformPages");
 const smsPages = () => import("@/features/sms/SmsPages");
 
 const ADMIN_NAV: NavItem[] = [
@@ -73,9 +76,11 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/admin/applications", label: "Applications", icon: <Inbox />, badge: "pending_applications" },
   { to: "/admin/turfs", label: "Turfs", icon: <Building2 /> },
   { to: "/admin/billing", label: "Plans & payments", icon: <CreditCard />, badge: "pending_payments" },
+  { to: "/admin/subscriptions", label: "Subscriptions", icon: <CalendarClock /> },
   { to: "/admin/promo-codes", label: "Promo codes", icon: <TicketPercent /> },
   { to: "/admin/accounts", label: "Accounts", icon: <UserCog /> },
   { to: "/admin/sms", label: "SMS", icon: <MessageSquareText /> },
+  { to: "/admin/health", label: "Health", icon: <HeartPulse /> },
   { to: "/admin/audit", label: "Audit log", icon: <History /> },
 ];
 
@@ -132,6 +137,8 @@ export const router = createBrowserRouter([
       { path: "promo-codes", element: page(() => import("@/features/admin/PromoCodesPage"), "AdminPromoCodesPage") },
       { path: "accounts", element: page(() => import("@/features/admin/AccountsPage"), "AdminAccountsPage") },
       { path: "sms", element: page(smsPages, "AdminSmsPage") },
+      { path: "subscriptions", element: page(platformPages, "AdminSubscriptionsPage") },
+      { path: "health", element: page(platformPages, "AdminHealthPage") },
       { path: "audit", element: page(activityPages, "AdminAuditPage") },
       { path: "account", element: page(accountPage, "AccountPage") },
     ],
