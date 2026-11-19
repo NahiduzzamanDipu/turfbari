@@ -38,8 +38,7 @@ def set_period(turf, start, end):
 
 
 def is_public(turf):
-    names = [t["name"] for t in APIClient().get("/api/public/turfs/").json()["results"]]
-    return turf.name in names
+    return APIClient().get(f"/api/public/turfs/{turf.slug}/").status_code == 200
 
 
 # ------------------------------------------------------------------ basics

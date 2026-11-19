@@ -249,14 +249,29 @@ def test_reports_and_export(alpha):
 
 
 # ------------------------------------------------------------------ public
-def test_public_list_shows_only_listed_active(alpha, beta):
+def test_no_public_directory_only_published_active_turf_pages(alpha, beta):
     make_turf("Hidden Turf", "hidden@example.com", listed=False)
     turf_b, _ = beta
     turf_b.status = Turf.Status.SUSPENDED
     turf_b.save()
-    names = [t["name"] for t in APIClient().get("/api/public/turfs/").json()["results"]]
-    assert names == ["Alpha Turf"]
+    assert APIClient().get("/api/public/turfs/").status_code == 404  # the marketplace list is gone
+    assert APIClient().get("/api/public/stats/").status_code == 404
+    assert APIClient().get("/api/public/turfs/alpha-turf/").status_code == 200
+    assert APIClient().get(f"/api/public/turfs/{turf_b.slug}/").status_code == 404
     assert APIClient().get("/api/public/turfs/hidden-turf/").status_code == 404
+
+
+def test_owner_and_manager_download_their_own_qr(alpha):
+    turf, owner = alpha
+    client = client_for(owner)
+    png = client.get("/api/workspace/booking-page/qr.png?download=1")
+    assert png.status_code == 200 and png["Content-Type"] == "image/png"
+    assert png.content[1:4] == b"PNG"
+    assert "attachment" in png["Content-Disposition"]
+    svg = client.get("/api/workspace/booking-page/qr.svg")
+    assert svg.status_code == 200 and b"<svg" in svg.content
+    assert client.get("/api/workspace/booking-page/qr.gif").status_code == 404
+    assert APIClient().get("/api/workspace/booking-page/qr.png").status_code in (401, 403)
 
 
 def test_public_detail_never_leaks_private_fields(alpha):

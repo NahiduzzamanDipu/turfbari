@@ -98,34 +98,6 @@ def test_manager_cannot_move_the_pin():
 
 
 # ------------------------------------------------------------------ near me
-def test_public_list_sorted_by_distance_with_map_link():
-    near, _ = make_turf("Near Turf", "near@example.com")
-    far, _ = make_turf("Far Turf", "far@example.com")
-    nowhere, _ = make_turf("No Pin Turf", "nopin@example.com")
-    place(near, MIRPUR)
-    place(far, CHATTOGRAM)
-
-    body = APIClient().get("/api/public/turfs/", {"lat": "23.81", "lng": "90.37"}).json()
-    names = [t["name"] for t in body["results"]]
-    assert names == ["Near Turf", "Far Turf", "No Pin Turf"]  # unpinned turfs last
-    first = body["results"][0]
-    assert first["distance_km"] < 1
-    assert first["map_link"] == "https://www.google.com/maps/search/?api=1&query=23.806900,90.368700"
-    assert body["results"][2]["distance_km"] is None and body["results"][2]["map_link"] is None
-
-    within = APIClient().get("/api/public/turfs/", {"lat": "23.81", "lng": "90.37", "radius_km": "20"}).json()
-    assert [t["name"] for t in within["results"]] == ["Near Turf"]
-    assert nowhere.latitude is None
-
-
-def test_public_list_ignores_bad_coordinates():
-    make_turf()
-    for params in ({"lat": "abc", "lng": "90"}, {"lat": "200", "lng": "90"}, {"lat": "nan", "lng": "90"}):
-        response = APIClient().get("/api/public/turfs/", params)
-        assert response.status_code == 200
-        assert response.json()["results"][0]["distance_km"] is None
-
-
 def test_owner_map_link_is_public():
     turf, _ = make_turf()
     turf.maps_url = "https://maps.app.goo.gl/AbC"

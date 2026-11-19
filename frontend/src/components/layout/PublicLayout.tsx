@@ -7,9 +7,8 @@ import { useMe } from "@/features/auth/auth";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { to: "/explore", label: "Explore turfs" },
   { to: "/booking-status", label: "Check booking" },
-  { to: "/register-turf", label: "List your turf" },
+  { to: "/register-turf", label: "Register your turf" },
 ];
 
 export function PublicLayout() {
@@ -85,7 +84,7 @@ export function PublicLayout() {
       <footer className="border-t">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <Logo className="[&_span]:text-lg" />
-          <p>Find a turf, book your slot, play. Made for football in Bangladesh.</p>
+          <p>Turf management and booking pages for football turfs in Bangladesh.</p>
           <p>© {new Date().getFullYear()} TurfBari</p>
         </div>
       </footer>

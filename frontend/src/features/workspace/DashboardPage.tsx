@@ -50,7 +50,7 @@ export function DashboardPage() {
       )}
       {!d.turf.is_listed && d.role === "owner" && (
         <Link to="/workspace/settings" className="mb-4 block rounded-xl border p-4 text-sm hover:bg-secondary">
-          Your turf isn't visible on the public site yet. <strong className="text-primary">Turn on listing in Settings →</strong>
+          Your booking page isn't published yet, so its link and QR code don't open. <strong className="text-primary">Publish it in Settings →</strong>
         </Link>
       )}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

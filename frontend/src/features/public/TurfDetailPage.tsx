@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowLeft,
   Clock,
   Mail,
   MapPin,
@@ -50,9 +49,9 @@ export function TurfDetailPage() {
         {turf.error instanceof ApiError && turf.error.status === 404 ? (
           <div className="text-center">
             <h1 className="text-2xl font-semibold">Turf not found</h1>
-            <p className="mt-2 text-muted-foreground">It may have been unlisted.</p>
+            <p className="mt-2 text-muted-foreground">Check the link or QR code you used, or ask the turf for its booking page.</p>
             <Button asChild className="mt-6">
-              <Link to="/explore">Browse turfs</Link>
+              <Link to="/booking-status">Check a booking</Link>
             </Button>
           </div>
         ) : (
@@ -67,10 +66,7 @@ export function TurfDetailPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6" style={themeStyle(t.theme)}>
-      <Link to="/explore" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="size-4" /> All turfs
-      </Link>
-      <div className="relative mt-3 overflow-hidden rounded-2xl">
+      <div className="relative overflow-hidden rounded-2xl">
         {t.photos[0] ? (
           <img src={t.photos[0].url} alt="" className="h-56 w-full object-cover sm:h-80" />
         ) : (

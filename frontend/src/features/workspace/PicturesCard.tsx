@@ -191,7 +191,7 @@ function Gallery({ canEdit, slug }: { canEdit: boolean; slug: string }) {
         </a>
       </div>
       <p className="text-xs text-muted-foreground">
-        The first photo is the cover on Explore and your page. JPG, PNG or WebP up to {MAX_MB} MB; we resize them and remove
+        The first photo is the cover of your booking page. JPG, PNG or WebP up to {MAX_MB} MB; we resize them and remove
         camera and location data.
       </p>
 

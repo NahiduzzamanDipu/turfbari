@@ -91,8 +91,6 @@ def test_gallery_upload_resizes_strips_metadata_and_goes_public(media_root):
 
     detail = APIClient().get(f"/api/public/turfs/{turf.slug}/").json()
     assert [p["url"] for p in detail["photos"]] == [p["url"] for p in photos]
-    card = APIClient().get("/api/public/turfs/").json()["results"][0]
-    assert card["cover_url"] == photos[0]["thumbnail_url"]
 
 
 def test_gallery_rejects_non_images_and_respects_limit(media_root):

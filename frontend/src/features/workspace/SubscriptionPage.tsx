@@ -103,7 +103,7 @@ export function SubscriptionPage() {
                 <AlertTriangle className="mt-0.5 size-5 shrink-0" />
                 <p>
                   {standing.state === "grace"
-                    ? `Your plan ended on ${fmtPlainDate(standing.paid_until)}. You can keep working until ${fmtPlainDate(standing.grace_until)}; renew before then to stay on TurfBari Explore.`
+                    ? `Your plan ended on ${fmtPlainDate(standing.paid_until)}. You can keep working until ${fmtPlainDate(standing.grace_until)}; renew before then to keep your booking page open.`
                     : "You have no active plan. Your turf is hidden from players and new bookings are paused until you pay for a plan."}
                 </p>
               </div>

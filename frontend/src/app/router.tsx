@@ -18,13 +18,12 @@ import {
   Wrench,
 } from "lucide-react";
 import { type ComponentType, lazy, Suspense } from "react";
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate, useParams } from "react-router";
 import { AppShell, type NavItem } from "@/components/layout/AppShell";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { RequireRole } from "@/features/auth/auth";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { BookingStatusPage } from "@/features/public/BookingStatusPage";
-import { ExplorePage } from "@/features/public/ExplorePage";
 import { HomePage } from "@/features/public/HomePage";
 import { RegisterTurfPage } from "@/features/public/RegisterTurfPage";
 import { TurfDetailPage } from "@/features/public/TurfDetailPage";
@@ -48,6 +47,12 @@ function page<M extends Record<string, unknown>>(load: () => Promise<M>, name: k
       <Component />
     </Suspense>
   );
+}
+
+/** /turf/<slug> (singular) is accepted as a short form of /turfs/<slug>. */
+function TurfAlias() {
+  const { slug = "" } = useParams();
+  return <Navigate to={`/turfs/${slug}`} replace />;
 }
 
 const adminPages = () => import("@/features/admin/AdminPages");
@@ -88,7 +93,9 @@ export const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { path: "/", element: <HomePage /> },
-      { path: "/explore", element: <ExplorePage /> },
+      // The public turf directory was retired: old links land on the home page.
+      { path: "/explore", element: <Navigate to="/" replace /> },
+      { path: "/turf/:slug", element: <TurfAlias /> },
       { path: "/turfs/:slug", element: <TurfDetailPage /> },
       { path: "/register-turf", element: <RegisterTurfPage /> },
       { path: "/booking-status", element: <BookingStatusPage /> },

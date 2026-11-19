@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Crosshair, Loader2, MapPinned, Pencil, Plus, Trash2, UserPlus } from "lucide-react";
+import { Copy, Crosshair, Download, Loader2, MapPinned, Pencil, Plus, Trash2, UserPlus } from "lucide-react";
 import { Link } from "react-router";
 import type * as React from "react";
 import { useEffect, useState } from "react";
@@ -535,22 +535,13 @@ export function SettingsPage() {
           <fieldset disabled={!isOwner} className="contents">
             <Card>
               <CardHeader>
-                <CardTitle>Public listing</CardTitle>
+                <CardTitle>Booking page &amp; QR code</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
-                <Checkbox label="Show my turf on TurfBari Explore" checked={form.is_listed} onChange={(e) => set("is_listed", e.target.checked)} />
+                <Checkbox label="Publish my booking page (its link and QR code open for players)" checked={form.is_listed} onChange={(e) => set("is_listed", e.target.checked)} />
                 <Checkbox label="Accept online booking requests" checked={form.public_booking_enabled} onChange={(e) => set("public_booking_enabled", e.target.checked)} />
                 <Checkbox label="Show prices publicly" checked={form.show_pricing} onChange={(e) => set("show_pricing", e.target.checked)} />
-                <p className="text-sm text-muted-foreground">
-                  Public page:{" "}
-                  <a className="text-primary hover:underline" href={`/turfs/${form.slug}`} target="_blank" rel="noreferrer">
-                    /turfs/{form.slug}
-                  </a>
-                </p>
-                <div className="flex items-center gap-4">
-                  <img src={`/api/public/turfs/${form.slug}/qr.svg`} alt="Booking page QR code" className="size-28 rounded bg-white p-1" onError={(e) => (e.currentTarget.style.display = "none")} />
-                  <p className="text-sm text-muted-foreground">Print this QR at your counter so players can book directly. (Visible once the turf is listed.)</p>
-                </div>
+                <BookingPageQR slug={form.slug} published={form.is_listed} />
               </CardContent>
             </Card>
             <Card>
@@ -805,5 +796,45 @@ export function ManagersPage() {
         )}
       </Dialog>
     </>
+  );
+}
+
+/** The turf's own booking link and QR code. Owners and managers can download it to print or share. */
+export function BookingPageQR({ slug, published }: { slug: string; published: boolean }) {
+  const url = `${window.location.origin}/turfs/${slug}`;
+  return (
+    <div className="flex flex-col gap-4 rounded-lg border p-3 sm:flex-row sm:items-center">
+      <img src="/api/workspace/booking-page/qr.svg" alt="Booking page QR code" className="size-32 shrink-0 rounded bg-white p-1" />
+      <div className="min-w-0 space-y-2 text-sm">
+        <a className="block truncate font-medium text-primary hover:underline" href={url} target="_blank" rel="noreferrer">
+          {url.replace(/^https?:\/\//, "")}
+        </a>
+        <p className="text-muted-foreground">
+          {published
+            ? "Print the QR at your counter or share the link on Facebook — players book straight from it."
+            : "Publish the page above first; until then the link and QR show “not found” to players."}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm" variant="outline">
+            <a href="/api/workspace/booking-page/qr.png?download=1">
+              <Download /> PNG
+            </a>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <a href="/api/workspace/booking-page/qr.svg?download=1">
+              <Download /> SVG (print)
+            </a>
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => navigator.clipboard.writeText(url).then(() => toast.success("Link copied"), () => toast.error("Couldn't copy the link"))}
+          >
+            <Copy /> Copy link
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

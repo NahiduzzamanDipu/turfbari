@@ -1,32 +1,41 @@
-import { useQuery } from "@tanstack/react-query";
-import { CalendarCheck2, Crosshair, QrCode, Search, ShieldCheck, Store, Timer } from "lucide-react";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import {
+  BarChart3,
+  CalendarCheck2,
+  CalendarClock,
+  MessageSquareText,
+  QrCode,
+  ShieldCheck,
+  Smartphone,
+  Tags,
+  Users,
+  Wallet,
+} from "lucide-react";
+import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
-import { Input, Select } from "@/components/ui/form";
-import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/lib/api";
-import type { Paginated, TurfCard } from "@/lib/types";
-import { TurfCardView, useLocations, usePlayerLocation } from "./shared";
+import { useMe } from "@/features/auth/auth";
+
+/**
+ * TurfBari's own site is about the product for turf owners. There is no public directory of turfs:
+ * players reach a turf through that turf's own link or QR code (/turfs/<slug>).
+ */
+const FEATURES = [
+  { icon: <QrCode />, title: "Your own booking page", text: "Every turf gets its own link and QR code. Players scan, pick a slot and book — no app, no account." },
+  { icon: <Wallet />, title: "bKash advance, verified by you", text: "Players send the advance by bKash and submit the transaction ID. You approve or reject it in one tap." },
+  { icon: <ShieldCheck />, title: "No double bookings", text: "A slot is held while a player pays and locked once you approve, so two teams never get the same hour." },
+  { icon: <MessageSquareText />, title: "SMS confirmations", text: "Players get a Bengali SMS when you confirm, and owners get reminders before the plan ends." },
+  { icon: <Tags />, title: "Morning to midnight pricing", text: "Set Morning, Evening, Night and Midnight prices, special-date rates and your own slot times." },
+  { icon: <BarChart3 />, title: "Money and reports", text: "Advances, dues, expenses and monthly revenue from your real bookings, exportable to Excel." },
+];
+
+const STEPS = [
+  { icon: <Smartphone />, title: "Player opens your page", text: "From your QR code at the counter, Facebook or a shared link." },
+  { icon: <CalendarClock />, title: "Picks a slot and pays", text: "Sends the advance to your bKash number and submits the transaction ID." },
+  { icon: <CalendarCheck2 />, title: "You approve, they get an SMS", text: "Check your bKash, tap Approve — the booking is confirmed." },
+];
 
 export function HomePage() {
-  const navigate = useNavigate();
-  const locations = useLocations();
-  const [q, setQ] = useState("");
-  const [district, setDistrict] = useState("");
-  const { geo, locate } = usePlayerLocation();
-  const near = geo.status === "ready";
-  const listQuery = near ? `sort=nearest&lat=${geo.lat}&lng=${geo.lng}&page_size=6` : "sort=featured&page_size=6";
-  const featured = useQuery({
-    queryKey: ["public", "turfs", "home", listQuery],
-    queryFn: () => api<Paginated<TurfCard>>(`/public/turfs/?${listQuery}`),
-    enabled: geo.status !== "locating",
-  });
-  const stats = useQuery({
-    queryKey: ["public", "stats"],
-    queryFn: () => api<{ turfs: number; districts: number; fields: number }>("/public/stats/"),
-  });
-  const districts = (locations.data ?? []).flatMap((d) => d.districts).sort((a, b) => a.name.localeCompare(b.name));
+  const me = useMe();
+  const signedIn = me.data?.authenticated;
 
   return (
     <>
@@ -37,130 +46,95 @@ export function HomePage() {
         />
         <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-14 sm:pt-24">
           <p className="mb-3 inline-flex rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent-foreground">
-            Football turfs across Bangladesh
+            টার্ফ ম্যানেজমেন্ট সফটওয়্যার · For turf owners in Bangladesh
           </p>
           <h1 className="max-w-3xl font-display text-5xl font-extrabold uppercase leading-[0.95] tracking-tight sm:text-7xl">
-            Find a turf. Book a slot. Play tonight.
+            Run your turf. Not a notebook.
           </h1>
           <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-            See real availability and prices, then send a booking request in under a minute. No account needed.
+            Bookings, bKash advances, slot pricing, managers, SMS and reports — in one workspace, with your own booking
+            page and QR code for players.
           </p>
-          <form
-            className="glass mt-8 flex max-w-2xl flex-col gap-2 rounded-xl p-2 sm:flex-row"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const params = new URLSearchParams();
-              if (q.trim()) params.set("q", q.trim());
-              if (district) params.set("district", district);
-              navigate(`/explore?${params}`);
-            }}
-          >
-            <label className="sr-only" htmlFor="home-q">
-              Search turfs
-            </label>
-            <Input
-              id="home-q"
-              placeholder="Turf name or area, e.g. Mirpur"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              className="border-0 bg-transparent shadow-none"
-            />
-            <label className="sr-only" htmlFor="home-district">
-              District
-            </label>
-            <Select
-              id="home-district"
-              value={district}
-              onChange={(e) => setDistrict(e.target.value)}
-              className="sm:max-w-48"
-            >
-              <option value="">All districts</option>
-              {districts.map((d) => (
-                <option key={d.slug} value={d.slug}>
-                  {d.name}
-                </option>
-              ))}
-            </Select>
-            <Button type="submit" size="lg" className="h-10">
-              <Search /> Search
-            </Button>
-          </form>
-          {stats.data && stats.data.turfs > 0 && (
-            <dl className="mt-8 flex gap-8 text-sm">
-              {[
-                ["Turfs listed", stats.data.turfs],
-                ["Fields", stats.data.fields],
-                ["Districts", stats.data.districts],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <dt className="text-muted-foreground">{label}</dt>
-                  <dd className="tabular font-display text-3xl font-bold">{value}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 py-12">
-        <div className="mb-6 flex items-end justify-between">
-          <h2 className="font-display text-3xl font-extrabold uppercase">
-            {near ? "Turfs near you" : "Popular turfs"}
-          </h2>
-          <div className="flex items-center gap-3">
-            {(geo.status === "idle" || geo.status === "denied") && (
-              <Button variant="outline" size="sm" onClick={locate}>
-                <Crosshair /> Near me
+          <div className="mt-8 flex flex-wrap gap-3">
+            {signedIn ? (
+              <Button asChild size="lg">
+                <Link to={me.data?.home ?? "/"}>Open my dashboard</Link>
               </Button>
+            ) : (
+              <>
+                <Button asChild size="lg">
+                  <Link to="/register-turf">Register your turf</Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link to="/login">Sign in</Link>
+                </Button>
+              </>
             )}
-            <Link to="/explore" className="text-sm font-semibold text-primary hover:underline">
-              See all
-            </Link>
           </div>
+          <p className="mt-6 text-sm text-muted-foreground">
+            Booked a slot already?{" "}
+            <Link to="/booking-status" className="font-semibold text-primary hover:underline">
+              Check your booking status
+            </Link>
+          </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(featured.isPending || geo.status === "locating") &&
-            Array.from({ length: 3 }, (_, i) => <Skeleton key={i} className="h-72 rounded-xl" />)}
-          {featured.data?.results.map((t) => <TurfCardView key={t.slug} turf={t} />)}
-        </div>
-        {featured.data?.results.length === 0 && (
-          <p className="text-muted-foreground">No turfs are listed yet. Check back soon.</p>
-        )}
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-4 px-4 py-12 md:grid-cols-3">
-        {[
-          { icon: <Search />, title: "Search by area", text: "Filter by district, area, indoor or outdoor, amenities and price." },
-          { icon: <Timer />, title: "Live slot times", text: "See which hours are free today and the exact price for each slot." },
-          { icon: <CalendarCheck2 />, title: "Request in a minute", text: "Send your name and phone. The turf confirms and you can track it." },
-        ].map((f) => (
-          <div key={f.title} className="glass rounded-xl p-5">
-            <div className="mb-3 inline-flex rounded-lg bg-accent p-2 text-accent-foreground [&_svg]:size-5">
-              {f.icon}
+      <section className="mx-auto max-w-6xl px-4 py-12" aria-labelledby="features">
+        <h2 id="features" className="mb-6 font-display text-3xl font-extrabold uppercase">
+          Everything a turf needs
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {FEATURES.map((f) => (
+            <div key={f.title} className="glass rounded-xl p-5">
+              <div className="mb-3 inline-flex rounded-lg bg-accent p-2 text-accent-foreground [&_svg]:size-5">{f.icon}</div>
+              <h3 className="font-semibold">{f.title}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{f.text}</p>
             </div>
-            <h3 className="font-semibold">{f.title}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{f.text}</p>
-          </div>
-        ))}
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-12" aria-labelledby="how">
+        <h2 id="how" className="mb-6 font-display text-3xl font-extrabold uppercase">
+          How a booking works
+        </h2>
+        <ol className="grid gap-4 md:grid-cols-3">
+          {STEPS.map((s, i) => (
+            <li key={s.title} className="rounded-xl border p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <span className="tabular flex size-8 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
+                  {i + 1}
+                </span>
+                <span className="text-primary [&_svg]:size-5">{s.icon}</span>
+              </div>
+              <h3 className="font-semibold">{s.title}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{s.text}</p>
+            </li>
+          ))}
+        </ol>
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pb-16">
         <div className="overflow-hidden rounded-2xl bg-primary p-8 text-primary-foreground sm:p-12">
           <div className="grid items-center gap-8 md:grid-cols-[1fr_auto]">
             <div>
-              <h2 className="font-display text-4xl font-extrabold uppercase">Run a turf? Go digital.</h2>
+              <h2 className="font-display text-4xl font-extrabold uppercase">Owners and managers, one workspace</h2>
               <p className="mt-3 max-w-xl opacity-90">
-                Bookings calendar, peak and weekend pricing, payments and dues, expenses, managers, reports and a
-                QR code for your counter — all in one workspace.
+                Give managers exactly the access they need — taking bookings, verifying payments, managing slots — while
+                billing and settings stay with you.
               </p>
               <ul className="mt-4 flex flex-wrap gap-4 text-sm opacity-90">
-                <li className="flex items-center gap-1.5"><ShieldCheck className="size-4" /> No double bookings</li>
-                <li className="flex items-center gap-1.5"><QrCode className="size-4" /> QR booking page</li>
-                <li className="flex items-center gap-1.5"><Store className="size-4" /> Public listing</li>
+                <li className="flex items-center gap-1.5">
+                  <Users className="size-4" /> Role-based access
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <ShieldCheck className="size-4" /> Audit log of every change
+                </li>
               </ul>
             </div>
             <Button asChild variant="accent" size="lg">
-              <Link to="/register-turf">List your turf</Link>
+              <Link to="/register-turf">Get started</Link>
             </Button>
           </div>
         </div>

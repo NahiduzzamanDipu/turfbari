@@ -55,7 +55,7 @@ export function PlanPicker({
       />
       {!value.payment_received && (
         <p className="text-xs text-muted-foreground">
-          The owner will see an unpaid invoice and can pay online from their workspace. The turf stays off Explore and bookings are paused until it is paid.
+          The owner will see an unpaid invoice and can pay online from their workspace. Its booking page stays closed and bookings are paused until it is paid.
         </p>
       )}
     </div>

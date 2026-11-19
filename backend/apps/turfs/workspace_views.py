@@ -141,6 +141,22 @@ class SettingsView(APIView):
         return Response(data.data)
 
 
+class BookingQRView(APIView):
+    """The turf's own booking-page QR code, for owners and managers (works before the page is published)."""
+
+    permission_classes = [IsTenantMember]
+
+    @extend_schema(tags=["workspace"], responses={200: bytes})
+    def get(self, request, kind):
+        from django.http import Http404
+
+        from .public_views import qr_response
+
+        if kind not in ("svg", "png"):
+            raise Http404
+        return qr_response(request.tenant, kind, download=request.query_params.get("download") == "1")
+
+
 class ManagerSerializer(serializers.Serializer):
     id = serializers.UUIDField(read_only=True)
     email = serializers.EmailField()

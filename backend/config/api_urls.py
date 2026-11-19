@@ -33,8 +33,6 @@ workspace_router.register("photos", setup.PhotoViewSet, basename="ws-photos")
 public_urls = [
     path("locations/", public.LocationsView.as_view()),
     path("amenities/", public.AmenitiesView.as_view()),
-    path("stats/", public.StatsView.as_view()),
-    path("turfs/", public.PublicTurfListView.as_view()),
     path("turfs/<slug:slug>/", public.PublicTurfDetailView.as_view()),
     path("turfs/<slug:slug>/availability/", public.PublicAvailabilityView.as_view()),
     path("turfs/<slug:slug>/book/", public.PublicBookingRequestView.as_view()),
@@ -73,6 +71,7 @@ workspace_urls = [
     path("hours/", setup.HoursView.as_view()),
     path("settings/", setup.SettingsView.as_view()),
     path("profile-picture/", setup.ProfilePictureView.as_view()),
+    path("booking-page/qr.<str:kind>", setup.BookingQRView.as_view()),
     path("managers/", setup.ManagersView.as_view()),
     path("managers/<uuid:pk>/", setup.ManagerDetailView.as_view()),
     path("activity/", audit.WorkspaceActivityView.as_view()),

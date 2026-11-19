@@ -1,8 +1,10 @@
-"""Public (no login) API: discovery, turf pages, availability, booking requests, applications."""
+"""Public (no login) API: each turf's own booking page, availability, booking requests, applications.
+
+There is no public turf directory: a turf page is reached only by its link or QR code.
+"""
 
 import io
 import logging
-import math
 import uuid
 from datetime import date, datetime, timedelta
 
@@ -10,13 +12,12 @@ import segno
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
-from django.db.models import Count, F, FloatField, Prefetch, Q
-from django.db.models.functions import Cast, Power, Sqrt
+from django.db.models import Count, Prefetch, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics, serializers
+from rest_framework import serializers
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -32,7 +33,7 @@ from apps.bookings.services import availability, get_or_create_customer, opening
 from apps.locations.models import Area, District, Division
 
 from .models import Amenity, PricingRule, Turf, TurfField
-from .serializers import AmenitySerializer, PublicTurfCardSerializer, PublicTurfDetailSerializer
+from .serializers import AmenitySerializer, PublicTurfDetailSerializer
 
 MAX_PENDING_PER_PHONE_PER_DAY = 3
 BOOKING_HORIZON_DAYS = 60
@@ -89,103 +90,6 @@ class AmenitiesView(PublicAPIView):
     @extend_schema(tags=["public"])
     def get(self, request):
         return Response(AmenitySerializer(Amenity.objects.all(), many=True).data)
-
-
-class StatsView(PublicAPIView):
-    """Real counts only — no invented marketing numbers."""
-
-    @extend_schema(tags=["public"])
-    def get(self, request):
-        listed = Turf.objects.publicly_listed()
-        return Response(
-            {
-                "turfs": listed.count(),
-                "districts": listed.values("district").distinct().count(),
-                "fields": TurfField.objects.filter(turf__in=listed, is_active=True).count(),
-            }
-        )
-
-
-class PublicTurfListView(generics.ListAPIView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
-    serializer_class = PublicTurfCardSerializer
-    filter_backends = []
-
-    SORTS = {
-        "featured": ["-is_featured", "name"],
-        "price_asc": ["min_public_price", "name"],
-        "price_desc": ["-min_public_price", "name"],
-        "newest": ["-created_at"],
-        "name": ["name"],
-    }
-
-    def get_queryset(self):
-        params = self.request.query_params
-        qs = (
-            Turf.objects.publicly_listed()
-            .select_related("district", "area")
-            .prefetch_related("amenities", "photos")
-            .annotate(fields_count=Count("fields", filter=Q(fields__is_active=True)))
-        )
-        if q := params.get("q", "").strip()[:80]:
-            qs = qs.filter(
-                Q(name__icontains=q)
-                | Q(address__icontains=q)
-                | Q(area__name__icontains=q)
-                | Q(district__name__icontains=q)
-                | Q(short_description__icontains=q)
-            )
-        if division := params.get("division"):
-            qs = qs.filter(district__division__slug=division)
-        if district := params.get("district"):
-            qs = qs.filter(district__slug=district)
-        if area := params.get("area"):
-            qs = qs.filter(area__slug=area)
-        if turf_type := params.get("type"):
-            qs = qs.filter(turf_type=turf_type)
-        if surface := params.get("surface"):
-            qs = qs.filter(surface=surface)
-        for amenity in params.getlist("amenity"):
-            qs = qs.filter(amenities__slug=amenity)
-        if max_price := params.get("max_price"):
-            try:
-                qs = qs.filter(show_pricing=True, min_public_price__lte=max_price)
-            except (ValueError, TypeError):
-                pass
-        if params.get("bookable") == "1":
-            qs = qs.filter(public_booking_enabled=True)
-
-        origin = self.origin()
-        sort = params.get("sort") or ("nearest" if origin else "featured")
-        if origin:
-            qs = qs.annotate(distance_km=self.distance_expr(*origin))
-            if radius := self.number("radius_km", 1, 500):
-                qs = qs.filter(distance_km__lte=radius)
-            if sort == "nearest":
-                return qs.order_by(F("distance_km").asc(nulls_last=True), "name").distinct()
-        order = self.SORTS.get(sort, self.SORTS["featured"])
-        return qs.order_by(*order).distinct()
-
-    def number(self, name, low, high) -> float | None:
-        try:
-            value = float(self.request.query_params.get(name, ""))
-        except ValueError:
-            return None
-        return value if low <= value <= high and math.isfinite(value) else None
-
-    def origin(self) -> tuple[float, float] | None:
-        """The player's position, sent by the browser only after they allow location access."""
-        lat, lng = self.number("lat", -90, 90), self.number("lng", -180, 180)
-        return (lat, lng) if lat is not None and lng is not None else None
-
-    @staticmethod
-    def distance_expr(lat: float, lng: float):
-        # Equirectangular approximation: well under 1% error at city/country scale, and plain SQL.
-        km_per_degree = 111.32
-        dlat = (Cast("latitude", FloatField()) - lat) * km_per_degree
-        dlng = (Cast("longitude", FloatField()) - lng) * (km_per_degree * math.cos(math.radians(lat)))
-        return Sqrt(Power(dlat, 2) + Power(dlng, 2))
 
 
 class PublicTurfDetailView(PublicAPIView):
@@ -466,14 +370,19 @@ class PublicBookingLookupView(PublicAPIView):
         return Response(_public_booking(booking))
 
 
-class TurfQRCodeView(PublicAPIView):
-    @extend_schema(tags=["public"], responses={200: bytes})
-    def get(self, request, slug):
-        turf = listed_turf(slug)
-        url = f"{settings.FRONTEND_URL.rstrip('/')}/turfs/{turf.slug}"
-        qr = segno.make(url, error="m")
+def booking_page_url(turf: Turf) -> str:
+    return f"{settings.FRONTEND_URL.rstrip('/')}/turfs/{turf.slug}"
+
+
+def qr_response(turf: Turf, kind: str = "svg", *, download: bool = False) -> HttpResponse:
+    """The turf's booking-page QR code as SVG or PNG."""
+    qr = segno.make(booking_page_url(turf), error="m")
+    buffer = io.BytesIO()
+    if kind == "png":
+        qr.save(buffer, kind="png", scale=16, dark="#064e3b", light="#ffffff", border=3)
+        content_type = "image/png"
+    else:
         # A standalone SVG document (with xmlns) so it renders in <img> tags and as a downloaded file.
-        buffer = io.BytesIO()
         qr.save(
             buffer,
             kind="svg",
@@ -484,9 +393,20 @@ class TurfQRCodeView(PublicAPIView):
             xmldecl=False,
             title=f"{turf.name} booking page",
         )
-        response = HttpResponse(buffer.getvalue(), content_type="image/svg+xml")
+        content_type = "image/svg+xml"
+    response = HttpResponse(buffer.getvalue(), content_type=content_type)
+    if download:
+        response["Content-Disposition"] = f'attachment; filename="{turf.slug}-booking-qr.{kind}"'
+        response["Cache-Control"] = "private, no-store"
+    else:
         response["Cache-Control"] = "public, max-age=3600"
-        return response
+    return response
+
+
+class TurfQRCodeView(PublicAPIView):
+    @extend_schema(tags=["public"], responses={200: bytes})
+    def get(self, request, slug):
+        return qr_response(listed_turf(slug))
 
 
 class ApplicationSerializer(serializers.ModelSerializer):

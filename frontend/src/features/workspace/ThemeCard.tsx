@@ -30,7 +30,7 @@ export function ThemeCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">
-          Colours for buttons, links and highlights on your turf's own page. Explore and the rest of TurfBari keep their usual look.
+          Colours for buttons, links and highlights on your turf's own page. The rest of TurfBari keeps its usual look.
         </p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Colour theme">
           {(Object.entries(THEME_PRESETS) as [ThemePreset, (typeof THEME_PRESETS)[ThemePreset]][]).map(([key, p]) => {
