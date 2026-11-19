@@ -256,3 +256,64 @@ class PricingRule(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.label} ({self.start_time:%H:%M}–{self.end_time:%H:%M})"
+
+
+class PriceCategory(BaseModel):
+    """Time-of-day price band. A turf that sets these up has exactly four, covering the whole day:
+    each one runs from its `starts_at` until the next one starts (Midnight wraps into Morning).
+    A slot takes the category it *starts* in (so a 5:30–6:30 PM slot is an Evening slot)."""
+
+    class Key(models.TextChoices):
+        MORNING = "morning", "Morning"
+        EVENING = "evening", "Evening"
+        NIGHT = "night", "Night"
+        MIDNIGHT = "midnight", "Midnight"
+
+    ORDER = (Key.MORNING, Key.EVENING, Key.NIGHT, Key.MIDNIGHT)
+
+    turf = models.ForeignKey(Turf, on_delete=models.CASCADE, related_name="price_categories")
+    key = models.CharField(max_length=10, choices=Key.choices)
+    starts_at = models.TimeField()
+    hourly_rate = MoneyField()
+
+    class Meta:
+        ordering = ["starts_at"]
+        constraints = [models.UniqueConstraint(fields=["turf", "key"], name="uniq_price_category_per_turf")]
+
+    def __str__(self) -> str:
+        return f"{self.get_key_display()} from {self.starts_at:%H:%M}"
+
+
+class SlotTemplate(BaseModel):
+    """An owner-made bookable slot that repeats every week on `weekday` for one field.
+
+    When a field has any templates for a weekday, those are that day's slots (instead of the automatic
+    grid from opening hours and slot length). end_time <= start_time means the slot ends after midnight.
+    `price` (optional) is the whole slot's price and overrides the category / default rate.
+    """
+
+    turf = models.ForeignKey(Turf, on_delete=models.CASCADE, related_name="slot_templates")
+    field = models.ForeignKey(TurfField, on_delete=models.CASCADE, related_name="slot_templates")
+    weekday = models.PositiveSmallIntegerField()  # 0 = Monday
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    is_active = models.BooleanField(default=True)
+    price = MoneyField(null=True, blank=True, default=None)
+
+    class Meta:
+        ordering = ["field", "weekday", "start_time"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["field", "weekday", "start_time"], name="uniq_slot_start_per_field_day"
+            )
+        ]
+        indexes = [models.Index(fields=["field", "weekday"])]
+
+    def __str__(self) -> str:
+        return f"{self.field} day {self.weekday} {self.start_time:%H:%M}–{self.end_time:%H:%M}"
+
+    @property
+    def minutes(self) -> int:
+        start = self.start_time.hour * 60 + self.start_time.minute
+        end = self.end_time.hour * 60 + self.end_time.minute
+        return (end - start) % (24 * 60) or 24 * 60

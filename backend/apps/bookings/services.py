@@ -14,8 +14,9 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.common.money import to_money
-from apps.turfs.models import OperatingHours, PricingRule, Turf, TurfField
-from apps.turfs.pricing import local_dt, quote
+from apps.turfs.models import PricingRule, Turf, TurfField
+from apps.turfs.pricing import quote
+from apps.turfs.schedule import category_at, day_slots, opening_window, turf_categories  # noqa: F401
 
 from .models import Booking, Customer, MaintenanceBlock, Payment
 from .phone import normalize_bd_phone
@@ -173,38 +174,32 @@ def sync_amount_paid(booking: Booking) -> None:
 
 
 # ------------------------------------------------------------------ availability
-def opening_window(turf: Turf, day: date) -> tuple[datetime, datetime] | None:
-    hours = OperatingHours.objects.filter(turf=turf, weekday=day.weekday()).first()
-    if hours is None or hours.is_closed:
-        return None
-    opens = local_dt(day, hours.opens_at)
-    closes_day = day + timedelta(days=1) if hours.closes_at <= hours.opens_at else day
-    return opens, local_dt(closes_day, hours.closes_at)
-
-
 def availability(field: TurfField, day: date, *, include_price: bool = True) -> list[dict]:
-    window = opening_window(field.turf, day)
-    if window is None:
+    """The day's offered slots (custom templates or the automatic grid) with price and category."""
+    cache: dict = {}
+    slots_today = day_slots(field, day, cache=cache)
+    if not slots_today:
         return []
-    opens, closes = window
-    step = timedelta(minutes=field.slot_minutes or 60)
-    busy = list(overlapping_bookings(field.id, opens, closes).values_list("start", "end")) + list(
-        overlapping_maintenance(field.id, opens, closes).values_list("start", "end")
+    first, last = slots_today[0].start, max(s.end for s in slots_today)
+    busy = list(overlapping_bookings(field.id, first, last).values_list("start", "end")) + list(
+        overlapping_maintenance(field.id, first, last).values_list("start", "end")
     )
     rules = list(PricingRule.objects.filter(turf_id=field.turf_id, is_active=True)) if include_price else []
+    categories = turf_categories(field.turf_id)
     now = timezone.now()
-    slots = []
-    cursor = opens
-    while cursor + step <= closes:
-        slot_end = cursor + step
-        free = cursor > now and not any(s < slot_end and e > cursor for s, e in busy)
+    result = []
+    for s in slots_today:
+        category = category_at(categories, timezone.localtime(s.start).time()) if categories else None
+        free = s.start > now and not any(b < s.end and e > s.start for b, e in busy)
         slot = {
-            "start": timezone.localtime(cursor).isoformat(),
-            "end": timezone.localtime(slot_end).isoformat(),
+            "start": timezone.localtime(s.start).isoformat(),
+            "end": timezone.localtime(s.end).isoformat(),
             "available": free,
+            "category": category.key if category else None,
         }
         if include_price:
-            slot["price"] = str(quote(field, cursor, slot_end, rules).subtotal)
-        slots.append(slot)
-        cursor = slot_end
-    return slots
+            slot["price"] = str(
+                quote(field, s.start, s.end, rules, categories=categories, cache=cache, anchor=s).subtotal
+            )
+        result.append(slot)
+    return result

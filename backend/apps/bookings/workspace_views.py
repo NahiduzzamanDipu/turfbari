@@ -31,7 +31,6 @@ from .services import (
     availability,
     change_status,
     get_or_create_customer,
-    opening_window,
     overlapping_bookings,
     overlapping_maintenance,
     record_payment,
@@ -366,10 +365,10 @@ class AvailabilityView(APIView):
 def slot_board(field, day):
     """Availability plus what occupies each taken slot, for the owner's booking board."""
     slots = availability(field, day)
-    window = opening_window(field.turf, day)
-    if not slots or window is None:
+    if not slots:
         return slots
-    opens, closes = window
+    opens = datetime.fromisoformat(slots[0]["start"])
+    closes = max(datetime.fromisoformat(s["end"]) for s in slots)
     bookings = list(
         overlapping_bookings(field.id, opens, closes).select_related("customer").order_by("start")
     )

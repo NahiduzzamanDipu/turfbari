@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAmenities, useLocations } from "@/features/public/shared";
+import { TimeOfDayPricingCard } from "./SchedulePages";
 import { api } from "@/lib/api";
 import { SURFACE_LABEL, WEEKDAYS, WEEKDAYS_SHORT, fmtClock, weekdayLabel } from "@/lib/format";
 import type { Field, Hours, Manager, ManagerPermissions, PricingRule, TurfSettings } from "@/lib/types";
@@ -273,9 +274,10 @@ export function PricingPage() {
     <>
       <PageHeader
         title="Pricing"
-        description="Rules override a field's standard rate. A special date beats a field-specific rule, which beats higher priority. Bookings that cross a boundary are split and priced per part."
+        description="Price order: a special-date rule (e.g. Eid) beats a slot's fixed price, which beats time-of-day prices. With time-of-day prices off, weekday rules apply (field-specific first, then higher priority) over each field's standard rate."
         actions={isOwner && <Button onClick={() => setEditing(NEW_RULE)}><Plus /> Add rule</Button>}
       />
+      <TimeOfDayPricingCard />
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Standard rates</CardTitle>

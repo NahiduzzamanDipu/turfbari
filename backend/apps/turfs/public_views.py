@@ -33,6 +33,7 @@ from apps.bookings.phone import normalize_bd_phone
 from apps.bookings.services import availability, get_or_create_customer, opening_window, reserve_slot
 from apps.locations.models import Area, District, Division
 
+from . import schedule
 from .models import Amenity, PricingRule, Turf, TurfField
 from .serializers import AmenitySerializer, PublicTurfDetailSerializer
 
@@ -217,7 +218,7 @@ class PublicHoldView(PublicAPIView):
         if field is None:
             raise NotFound("Field not found.")
         start, end = v["start"], v["end"]
-        _check_public_window(turf, start, end)
+        _check_public_window(turf, start, end, field)
         try:
             hold = holds.place_hold(
                 turf=turf, field=field, start=start, end=end, ip=holds.ip_hash(request), token=v.get("token")
@@ -276,7 +277,10 @@ class PublicBookingRequestView(PublicAPIView):
             raise ValidationError({"non_field_errors": ["Request rejected."]})
         phone = normalize_bd_phone(v["phone"])
         start, end = v["start"], v["end"]
-        _check_public_window(turf, start, end)
+        field = turf.fields.filter(is_active=True, pk=v["field"]).first()
+        if field is None:
+            raise NotFound("Field not found.")
+        _check_public_window(turf, start, end, field)
         today_start = timezone.make_aware(datetime.combine(timezone.localdate(), datetime.min.time()))
         recent = Booking.objects.filter(
             turf=turf, customer__phone=phone, status=Booking.Status.PENDING, created_at__gte=today_start
@@ -332,7 +336,7 @@ class PublicBookingRequestView(PublicAPIView):
         return Response(_public_booking(booking), status=201)
 
 
-def _check_public_window(turf: Turf, start: datetime, end: datetime) -> None:
+def _check_public_window(turf: Turf, start: datetime, end: datetime, field: TurfField) -> None:
     now = timezone.now()
     if start <= now:
         raise ValidationError({"start": ["Choose a time in the future."]})
@@ -340,6 +344,14 @@ def _check_public_window(turf: Turf, start: datetime, end: datetime) -> None:
         raise ValidationError({"start": [f"Bookings open {BOOKING_HORIZON_DAYS} days ahead."]})
     if end <= start:
         raise ValidationError({"end": ["End must be after start."]})
+    if schedule.uses_templates(field, timezone.localtime(start).date()) or schedule.uses_templates(
+        field, timezone.localtime(start).date() - timedelta(days=1)
+    ):
+        # Custom slots: only whole, back-to-back offered slots can be held or booked.
+        if not schedule.is_offered_range(field, start, end):
+            msg = "Choose one of the turf's listed slots (or back-to-back ones)."
+            raise ValidationError({"start": [msg]})
+        return
     _ensure_within_hours(turf, start, end)
 
 

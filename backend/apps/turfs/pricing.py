@@ -54,11 +54,33 @@ class Quote:
         return {"subtotal": str(self.subtotal), "segments": self.segments}
 
 
-def quote(field: TurfField, start: datetime, end: datetime, rules: list[PricingRule] | None = None) -> Quote:
+def quote(
+    field: TurfField,
+    start: datetime,
+    end: datetime,
+    rules: list[PricingRule] | None = None,
+    *,
+    categories: list | None = None,
+    cache: dict | None = None,
+    anchor=None,
+) -> Quote:
+    """Price [start, end) in 15-minute segments. Precedence for each segment:
+
+    1. a special-date price rule (holiday/event) covering it;
+    2. the fixed price of the custom slot it belongs to;
+    3. the turf's Morning/Evening/Night/Midnight rate for the time its *slot starts*;
+    4. (turfs without categories) the older weekday/field price rules;
+    5. the field's default hourly rate.
+    """
+    from .schedule import category_at, slot_containing, turf_categories
+
     if end <= start:
         raise ValueError("Booking end must be after start.")
     if rules is None:
         rules = list(PricingRule.objects.filter(turf_id=field.turf_id, is_active=True))
+    if categories is None:
+        categories = turf_categories(field.turf_id)
+    cache = {} if cache is None else cache
     tz = timezone.get_current_timezone()
     segments: list[dict] = []
     cursor = start
@@ -66,18 +88,34 @@ def quote(field: TurfField, start: datetime, end: datetime, rules: list[PricingR
         seg_end = min(cursor + SEGMENT, end)
         local = timezone.localtime(cursor, tz)
         matching = [r for r in rules if rule_matches(r, local, field.id)]
-        best = max(matching, key=_rank) if matching else None
-        rate = best.hourly_rate if best else field.default_hourly_rate
-        label = best.label if best else "Standard"
+        dated = [r for r in matching if r.date]
+        slot = anchor if anchor is not None and anchor.start <= cursor < anchor.end else None
+        if not dated and slot is None:
+            slot = slot_containing(field, cursor, cache=cache)
+        if dated:
+            best = max(dated, key=_rank)
+            rate, label = Decimal(best.hourly_rate), best.label
+        elif slot is not None and slot.template is not None and slot.template.price is not None:
+            rate, label = Decimal(slot.template.price) * 60 / slot.minutes, "Slot price"
+        elif categories:
+            when = timezone.localtime(slot.start, tz).time() if slot is not None else local.time()
+            category = category_at(categories, when)
+            rate, label = Decimal(category.hourly_rate), category.get_key_display()
+        elif matching:
+            best = max(matching, key=_rank)
+            rate, label = Decimal(best.hourly_rate), best.label
+        else:
+            rate, label = Decimal(field.default_hourly_rate), "Standard"
         minutes = int((seg_end - cursor).total_seconds() // 60)
-        if segments and segments[-1]["label"] == label and segments[-1]["rate"] == str(rate):
+        if segments and segments[-1]["label"] == label and segments[-1]["_rate"] == rate:
             segments[-1]["end"] = timezone.localtime(seg_end, tz).isoformat()
             segments[-1]["minutes"] += minutes
         else:
             segments.append(
                 {
                     "label": label,
-                    "rate": str(rate),
+                    "_rate": rate,
+                    "rate": str(to_money(rate)),
                     "start": local.isoformat(),
                     "end": timezone.localtime(seg_end, tz).isoformat(),
                     "minutes": minutes,
@@ -86,7 +124,7 @@ def quote(field: TurfField, start: datetime, end: datetime, rules: list[PricingR
         cursor = seg_end
     subtotal = Decimal("0")
     for seg in segments:
-        seg["amount"] = str(to_money(Decimal(seg["rate"]) * seg["minutes"] / 60))
+        seg["amount"] = str(to_money(seg.pop("_rate") * seg["minutes"] / 60))
         subtotal += Decimal(seg["amount"])
     return Quote(subtotal=to_money(subtotal), segments=segments)
 
@@ -98,7 +136,8 @@ def recompute_min_price(turf: Turf) -> None:
         .filter(Q(field__isnull=True) | Q(field__is_active=True))
         .aggregate(m=Min("hourly_rate"))["m"]
     )
-    values = [v for v in (field_min, rule_min) if v is not None and v > 0]
+    category_min = turf.price_categories.aggregate(m=Min("hourly_rate"))["m"]
+    values = [v for v in (field_min, rule_min, category_min) if v is not None and v > 0]
     turf.min_public_price = min(values) if values else None
     turf.save(update_fields=["min_public_price", "updated_at"])
 

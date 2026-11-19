@@ -158,9 +158,16 @@ class PublicTurfDetailSerializer(PublicTurfCardSerializer):
             "photos",
             "theme",
             "payment",
+            "price_categories",
         ]
 
     payment = serializers.SerializerMethodField()
+    price_categories = serializers.SerializerMethodField()
+
+    def get_price_categories(self, obj):
+        from .schedule import category_bands, turf_categories
+
+        return category_bands(turf_categories(obj.pk)) if obj.show_pricing else []
 
     def get_payment(self, obj):
         """bKash details for the booking form. Online booking needs a bKash number to pay to."""

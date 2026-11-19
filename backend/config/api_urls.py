@@ -15,6 +15,7 @@ from apps.expenses.views import ExpenseViewSet
 from apps.notifications import views as sms
 from apps.subscriptions import views as subs
 from apps.turfs import public_views as public
+from apps.turfs import slot_views as slots
 from apps.turfs import workspace_views as setup
 
 admin_router = SimpleRouter()
@@ -30,6 +31,7 @@ workspace_router.register("customers", ws.CustomerViewSet, basename="ws-customer
 workspace_router.register("maintenance", ws.MaintenanceViewSet, basename="ws-maintenance")
 workspace_router.register("fields", setup.FieldViewSet, basename="ws-fields")
 workspace_router.register("pricing-rules", setup.PricingRuleViewSet, basename="ws-pricing")
+workspace_router.register("slot-templates", slots.SlotTemplateViewSet, basename="ws-slot-templates")
 workspace_router.register("expenses", ExpenseViewSet, basename="ws-expenses")
 workspace_router.register("photos", setup.PhotoViewSet, basename="ws-photos")
 
@@ -88,6 +90,7 @@ workspace_urls = [
     path("payment-verifications/<uuid:pk>/reject/", verify.PaymentRejectView.as_view()),
     path("quote/", ws.QuoteView.as_view()),
     path("hours/", setup.HoursView.as_view()),
+    path("price-categories/", slots.PriceCategoriesView.as_view()),
     path("settings/", setup.SettingsView.as_view()),
     path("profile-picture/", setup.ProfilePictureView.as_view()),
     path("booking-page/qr.<str:kind>", setup.BookingQRView.as_view()),

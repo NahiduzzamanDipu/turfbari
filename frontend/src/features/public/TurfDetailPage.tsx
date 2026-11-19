@@ -27,6 +27,8 @@ import { BookingPanel } from "./BookingPanel";
 import { PhotoGallery } from "./PhotoGallery";
 import { GoogleMapsPin, TurfArt } from "./shared";
 
+const CATEGORY_BN: Record<string, string> = { morning: "সকাল", evening: "বিকাল", night: "রাত", midnight: "মধ্যরাত" };
+
 export function TurfDetailPage() {
   const { slug = "" } = useParams();
   const turf = useQuery({
@@ -206,7 +208,31 @@ export function TurfDetailPage() {
             </CardContent>
           </Card>
 
-          {(t.base_rates.length > 0 || t.pricing.length > 0) && (
+          {t.price_categories.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Prices per hour</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-2 text-sm">
+                {t.price_categories.map((c) => (
+                  <div key={c.key} className="rounded-lg border p-3">
+                    <p className="font-semibold">
+                      {c.label} <span className="font-normal text-muted-foreground">{CATEGORY_BN[c.key]}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {fmtClock(`${c.start}:00`)}–{fmtClock(`${c.end}:00`)}
+                    </p>
+                    <p className="tabular mt-1 text-lg font-bold">{formatBDT(c.hourly_rate)}</p>
+                  </div>
+                ))}
+                {t.pricing.some((p) => p.date) && (
+                  <p className="col-span-2 text-xs text-muted-foreground">Special prices apply on some dates; the slot list shows the exact price.</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {t.price_categories.length === 0 && (t.base_rates.length > 0 || t.pricing.length > 0) && (
             <Card>
               <CardHeader>
                 <CardTitle>Prices per hour</CardTitle>

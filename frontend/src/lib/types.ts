@@ -120,6 +120,7 @@ export interface TurfDetail extends TurfCard {
   }[];
   base_rates: { field: string; hourly_rate: string }[];
   payment: TurfPaymentInfo;
+  price_categories: { key: "morning" | "evening" | "night" | "midnight"; label: string; start: string; end: string; hourly_rate: string }[];
 }
 
 /** free | yours (held by this visitor) | held (someone else is booking) | requested | booked | unavailable | past */

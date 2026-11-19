@@ -187,7 +187,8 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
       return;
     }
     if (!slot.available) return;
-    if (range && i === range.to + 1) hold.mutate({ from: range.from, to: i });
+    // Extend only with the very next slot in time (custom schedules can have gaps).
+    if (range && i === range.to + 1 && list[range.to]!.end === slot.start) hold.mutate({ from: range.from, to: i });
     else hold.mutate({ from: i, to: i });
   };
 
