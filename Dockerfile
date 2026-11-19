@@ -27,15 +27,20 @@ COPY backend/requirements/ requirements/
 RUN pip install -r requirements/prod.txt
 COPY backend/ .
 COPY --from=frontend /app/dist /app/frontend-dist
-RUN useradd --system --uid 10001 --home /app turfbari \
- && mkdir -p /app/staticfiles /app/media \
- && chown -R turfbari /app/staticfiles /app/media
+# Static files are collected at build time (not on every start). The values below are build-only
+# placeholders; the real ones come from the host's environment at run time.
+RUN DJANGO_SECRET_KEY=build-only DATABASE_URL=sqlite:////tmp/build.sqlite3 CACHE_URL=db://build \
+    AWS_STORAGE_BUCKET_NAME=build-only python manage.py collectstatic --noinput --verbosity 0 \
+ && useradd --system --uid 10001 --home /app turfbari \
+ && mkdir -p /app/media \
+ && chown -R turfbari /app/media
 USER turfbari
 
-# Free tiers have no shell access, so setup runs on every start (all steps are idempotent).
-CMD python manage.py migrate --noinput \
- && python manage.py createcachetable \
- && python manage.py ensure_admin \
- && python manage.py check_media_storage \
- && python manage.py collectstatic --noinput --verbosity 0 \
- && exec gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --max-requests 500 --timeout 60 --access-logfile -
+# Free tiers have no shell access, so setup runs on every start. `startup` does migrate, cache table
+# and admin check in one Python process (each extra manage.py call costs seconds on a small CPU);
+# the media-storage self-test runs in the background so it doesn't delay the first request.
+# One worker with threads boots faster and uses less memory than several worker processes.
+CMD python manage.py startup \
+ && (python manage.py check_media_storage &) \
+ && exec gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --threads 8 \
+    --max-requests 1000 --max-requests-jitter 100 --timeout 60 --access-logfile -

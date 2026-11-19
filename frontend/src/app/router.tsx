@@ -16,13 +16,10 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
+import { type ComponentType, lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router";
 import { AppShell, type NavItem } from "@/components/layout/AppShell";
 import { PublicLayout } from "@/components/layout/PublicLayout";
-import { AdminApplicationsPage, AdminDashboardPage, AdminTurfsPage } from "@/features/admin/AdminPages";
-import { AdminBillingPage } from "@/features/admin/BillingPages";
-import { AdminAuditPage, WorkspaceActivityPage } from "@/features/audit/ActivityLog";
-import { AccountPage } from "@/features/auth/AccountPage";
 import { RequireRole } from "@/features/auth/auth";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { BookingStatusPage } from "@/features/public/BookingStatusPage";
@@ -32,17 +29,32 @@ import { RegisterTurfPage } from "@/features/public/RegisterTurfPage";
 import { TurfDetailPage } from "@/features/public/TurfDetailPage";
 import { NotFoundPage } from "@/features/system/NotFoundPage";
 import { SystemStatusPage } from "@/features/system/SystemStatusPage";
-import { BookingsPage } from "@/features/workspace/BookingsPage";
-import { DashboardPage } from "@/features/workspace/DashboardPage";
-import { SlotBoardPage } from "@/features/workspace/SlotBoardPage";
-import { SubscriptionPage } from "@/features/workspace/SubscriptionPage";
-import {
-  CustomersPage,
-  ExpensesPage,
-  MaintenancePage,
-  ReportsPage,
-} from "@/features/workspace/OperationsPages";
-import { FieldsPage, HoursPage, ManagersPage, PricingPage, SettingsPage } from "@/features/workspace/SetupPages";
+
+/**
+ * Signed-in screens load on demand, so the public pages (what players open) download much less.
+ * `page(() => import(...), "Name")` lazy-loads one named export.
+ */
+function page<M extends Record<string, unknown>>(load: () => Promise<M>, name: keyof M & string) {
+  const Component = lazy(() => load().then((m) => ({ default: m[name] as ComponentType })));
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[40vh] items-center justify-center" role="status" aria-label="Loading">
+          <span className="size-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
+        </div>
+      }
+    >
+      <Component />
+    </Suspense>
+  );
+}
+
+const adminPages = () => import("@/features/admin/AdminPages");
+const billingPages = () => import("@/features/admin/BillingPages");
+const activityPages = () => import("@/features/audit/ActivityLog");
+const accountPage = () => import("@/features/auth/AccountPage");
+const operationsPages = () => import("@/features/workspace/OperationsPages");
+const setupPages = () => import("@/features/workspace/SetupPages");
 
 const ADMIN_NAV: NavItem[] = [
   { to: "/admin", label: "Overview", icon: <LayoutDashboard />, end: true },
@@ -90,12 +102,12 @@ export const router = createBrowserRouter([
       </RequireRole>
     ),
     children: [
-      { index: true, element: <AdminDashboardPage /> },
-      { path: "applications", element: <AdminApplicationsPage /> },
-      { path: "turfs", element: <AdminTurfsPage /> },
-      { path: "billing", element: <AdminBillingPage /> },
-      { path: "audit", element: <AdminAuditPage /> },
-      { path: "account", element: <AccountPage /> },
+      { index: true, element: page(adminPages, "AdminDashboardPage") },
+      { path: "applications", element: page(adminPages, "AdminApplicationsPage") },
+      { path: "turfs", element: page(adminPages, "AdminTurfsPage") },
+      { path: "billing", element: page(billingPages, "AdminBillingPage") },
+      { path: "audit", element: page(activityPages, "AdminAuditPage") },
+      { path: "account", element: page(accountPage, "AccountPage") },
     ],
   },
   {
@@ -106,21 +118,21 @@ export const router = createBrowserRouter([
       </RequireRole>
     ),
     children: [
-      { index: true, element: <DashboardPage /> },
-      { path: "book", element: <SlotBoardPage /> },
-      { path: "bookings", element: <BookingsPage /> },
-      { path: "customers", element: <CustomersPage /> },
-      { path: "maintenance", element: <MaintenancePage /> },
-      { path: "fields", element: <FieldsPage /> },
-      { path: "hours", element: <HoursPage /> },
-      { path: "pricing", element: <PricingPage /> },
-      { path: "expenses", element: <ExpensesPage /> },
-      { path: "reports", element: <ReportsPage /> },
-      { path: "team", element: <ManagersPage /> },
-      { path: "activity", element: <WorkspaceActivityPage /> },
-      { path: "settings", element: <SettingsPage /> },
-      { path: "subscription", element: <SubscriptionPage /> },
-      { path: "account", element: <AccountPage /> },
+      { index: true, element: page(() => import("@/features/workspace/DashboardPage"), "DashboardPage") },
+      { path: "book", element: page(() => import("@/features/workspace/SlotBoardPage"), "SlotBoardPage") },
+      { path: "bookings", element: page(() => import("@/features/workspace/BookingsPage"), "BookingsPage") },
+      { path: "customers", element: page(operationsPages, "CustomersPage") },
+      { path: "maintenance", element: page(operationsPages, "MaintenancePage") },
+      { path: "fields", element: page(setupPages, "FieldsPage") },
+      { path: "hours", element: page(setupPages, "HoursPage") },
+      { path: "pricing", element: page(setupPages, "PricingPage") },
+      { path: "expenses", element: page(operationsPages, "ExpensesPage") },
+      { path: "reports", element: page(operationsPages, "ReportsPage") },
+      { path: "team", element: page(setupPages, "ManagersPage") },
+      { path: "activity", element: page(activityPages, "WorkspaceActivityPage") },
+      { path: "settings", element: page(setupPages, "SettingsPage") },
+      { path: "subscription", element: page(() => import("@/features/workspace/SubscriptionPage"), "SubscriptionPage") },
+      { path: "account", element: page(accountPage, "AccountPage") },
     ],
   },
   { path: "*", element: <NotFoundPage /> },
