@@ -171,7 +171,10 @@ class PublicTurfDetailSerializer(PublicTurfCardSerializer):
     def get_youtube_video_id(self, obj):
         from apps.common.models import PlatformSettings
 
-        return PlatformSettings.load().youtube_video_id or None  # one global video for every turf
+        settings = PlatformSettings.load()
+        if not settings.booking_youtube_video_enabled:
+            return None
+        return settings.youtube_video_id or None
 
     def get_legal(self, obj):
         """Documents a customer must accept to book here (platform + this business's sector), in order."""

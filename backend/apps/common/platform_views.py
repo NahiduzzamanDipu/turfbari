@@ -19,8 +19,27 @@ from .models import PlatformSettings
 from .permissions import IsPlatformAdmin
 
 
+def youtube_config_payload(s: PlatformSettings, *, scope: str) -> dict:
+    if scope == "homepage":
+        return {
+            "video_id": s.homepage_youtube_video_id or None,
+            "url": s.homepage_youtube_url or None,
+            "title": s.homepage_youtube_video_title,
+            "enabled": s.homepage_youtube_video_enabled,
+        }
+    return {
+        "video_id": s.youtube_video_id or None,
+        "url": s.youtube_url or None,
+        "title": s.booking_youtube_video_title,
+        "enabled": s.booking_youtube_video_enabled,
+    }
+
+
 def youtube_payload(s: PlatformSettings) -> dict:
-    return {"video_id": s.youtube_video_id or None, "url": s.youtube_url or None}
+    return {
+        "homepage": youtube_config_payload(s, scope="homepage"),
+        "booking_page": youtube_config_payload(s, scope="booking"),
+    }
 
 
 def bulksmsbd_payload(*, with_balance: bool = False) -> dict:
@@ -211,12 +230,15 @@ class PublicContactView(APIView):
 
 class YoutubeSerializer(serializers.Serializer):
     url = serializers.CharField(max_length=300, allow_blank=True)
+    title = serializers.CharField(max_length=120, allow_blank=True, required=False)
+    enabled = serializers.BooleanField(required=False)
 
 
-class AdminYoutubeView(APIView):
-    """PUT {url}: set the global video (validated, ID extracted). Empty url removes it everywhere."""
+class AdminYoutubeConfigView(APIView):
+    """Update one independent homepage or booking-page video configuration."""
 
     permission_classes = [IsPlatformAdmin]
+    scope = "booking"
 
     @extend_schema(tags=["admin"], request=YoutubeSerializer)
     def put(self, request):
@@ -224,22 +246,52 @@ class AdminYoutubeView(APIView):
 
         data = YoutubeSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        url = data.validated_data["url"].strip()
+        values = data.validated_data
+        url = values["url"].strip()
         s = PlatformSettings.objects.get_or_create(pk=1)[0]
+        id_field = "homepage_youtube_video_id" if self.scope == "homepage" else "youtube_video_id"
+        url_field = "homepage_youtube_url" if self.scope == "homepage" else "youtube_url"
+        enabled_field = (
+            "homepage_youtube_video_enabled" if self.scope == "homepage" else "booking_youtube_video_enabled"
+        )
+        title_field = (
+            "homepage_youtube_video_title" if self.scope == "homepage" else "booking_youtube_video_title"
+        )
         if url:
             video = youtube_id(url)
             if video is None:
                 raise serializers.ValidationError(
                     {"url": ["Paste a YouTube video link (youtube.com/watch?v=…, youtu.be/…, /shorts/…)."]}
                 )
-            s.youtube_video_id, s.youtube_url = video, url[:300]
-            summary = f"Set the booking-guide video (YouTube {video}) for every turf page"
+            setattr(s, id_field, video)
+            setattr(s, url_field, url[:300])
         else:
-            s.youtube_video_id, s.youtube_url = "", ""
-            summary = "Removed the booking-guide video from every turf page"
+            setattr(s, id_field, "")
+            setattr(s, url_field, "")
+        enabled = values.get("enabled", getattr(s, enabled_field) if url else False)
+        if enabled and not url:
+            raise serializers.ValidationError(
+                {"url": ["A valid video URL is required when this video is enabled."]}
+            )
+        setattr(s, enabled_field, enabled)
+        setattr(s, title_field, values.get("title", getattr(s, title_field)).strip())
         s.save()
-        record("platform.youtube", summary, category=Category.PLATFORM, request=request)
-        return Response(youtube_payload(s))
+        label = "homepage" if self.scope == "homepage" else "public booking page"
+        record(
+            "platform.youtube",
+            f"Updated the {label} YouTube video configuration",
+            category=Category.PLATFORM,
+            request=request,
+        )
+        return Response(youtube_config_payload(s, scope=self.scope))
+
+
+class AdminYoutubeView(AdminYoutubeConfigView):
+    """Backward-compatible configuration endpoint for the booking-page video."""
+
+
+class AdminHomepageYoutubeView(AdminYoutubeConfigView):
+    scope = "homepage"
 
 
 class BulkSmsSerializer(serializers.Serializer):

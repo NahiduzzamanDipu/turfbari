@@ -60,7 +60,7 @@ export function HomePage() {
   const signedIn = me.data?.authenticated;
   const plans = useQuery({ queryKey: ["public", "plans"], queryFn: () => api<PublicPlan[]>("/public/plans/"), staleTime: 5 * 60_000 });
   const smsPrice = useQuery({ queryKey: ["public", "sms-pricing"], queryFn: () => api<SmsPrice>("/public/sms-pricing/"), staleTime: 5 * 60_000 });
-  const youtube = usePublicYoutubeVideo();
+  const youtube = usePublicYoutubeVideo("homepage");
   const faqs = useQuery({ queryKey: ["public", "faqs"], queryFn: () => api<HomepageFAQ[]>("/public/faqs/"), staleTime: 5 * 60_000 });
 
   return (
@@ -96,9 +96,9 @@ export function HomePage() {
                 </Button>
               </>
             )}
-            {youtube.data?.video_id && (
+            {youtube.data?.enabled && youtube.data.video_id && (
               <Button type="button" variant="outline" size="lg" onClick={() => setAboutOpen(true)}>
-                <CirclePlay aria-hidden="true" className="text-red-600" /> About Us
+                <CirclePlay aria-hidden="true" className="text-red-600" /> {youtube.data.title || "About Us"}
               </Button>
             )}
           </div>
@@ -256,8 +256,8 @@ export function HomePage() {
           <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{faqLanguage === "bn" && faq.answer_bn ? faq.answer_bn : faq.answer_en}</p>
         </details>)}</div>
       </section> : null}
-      {aboutOpen && youtube.data?.video_id && (
-        <YouTubeDialog videoId={youtube.data.video_id} title="About TURFBARI" onClose={() => setAboutOpen(false)} />
+      {aboutOpen && youtube.data?.enabled && youtube.data.video_id && (
+        <YouTubeDialog videoId={youtube.data.video_id} title={youtube.data.title || "About Us"} onClose={() => setAboutOpen(false)} />
       )}
     </>
   );

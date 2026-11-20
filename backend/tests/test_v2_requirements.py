@@ -77,6 +77,76 @@ def test_1_2_3_global_video_is_admin_only_and_same_on_every_page():
     assert page(b)["youtube_video_id"] is None
 
 
+def test_homepage_and_booking_youtube_videos_are_independent():
+    turf, owner = make_turf()
+    admin, _ = admin_client()
+    booking_response = admin.put(
+        "/api/admin/api-config/youtube/booking/",
+        {"url": "https://youtu.be/aqz-KE-bpKQ", "title": "Booking guide", "enabled": True},
+        format="json",
+    )
+    homepage_response = admin.put(
+        "/api/admin/api-config/youtube/homepage/",
+        {"url": "https://youtu.be/dQw4w9WgXcQ", "title": "About TurfBari", "enabled": True},
+        format="json",
+    )
+    assert booking_response.status_code == homepage_response.status_code == 200
+    assert APIClient().get("/api/public/youtube/").json() == {
+        "video_id": "aqz-KE-bpKQ",
+        "url": "https://youtu.be/aqz-KE-bpKQ",
+        "title": "Booking guide",
+        "enabled": True,
+    }
+    assert APIClient().get("/api/public/youtube/homepage/").json()["video_id"] == "dQw4w9WgXcQ"
+    assert page(turf)["youtube_video_id"] == "aqz-KE-bpKQ"
+
+    admin.put(
+        "/api/admin/api-config/youtube/homepage/",
+        {"url": "https://youtu.be/M7lc1UVf-VE", "title": "New homepage intro", "enabled": True},
+        format="json",
+    )
+    assert APIClient().get("/api/public/youtube/homepage/").json()["video_id"] == "M7lc1UVf-VE"
+    assert APIClient().get("/api/public/youtube/").json()["video_id"] == "aqz-KE-bpKQ"
+
+    admin.put(
+        "/api/admin/api-config/youtube/homepage/",
+        {"url": "https://youtu.be/M7lc1UVf-VE", "title": "New homepage intro", "enabled": False},
+        format="json",
+    )
+    assert APIClient().get("/api/public/youtube/homepage/").json()["enabled"] is False
+    assert APIClient().get("/api/public/youtube/").json()["enabled"] is True
+
+    admin.put(
+        "/api/admin/api-config/youtube/booking/",
+        {"url": "https://youtu.be/aqz-KE-bpKQ", "title": "Booking guide", "enabled": False},
+        format="json",
+    )
+    assert APIClient().get("/api/public/youtube/").json()["enabled"] is False
+    assert APIClient().get("/api/public/youtube/homepage/").json()["video_id"] == "M7lc1UVf-VE"
+    assert page(turf)["youtube_video_id"] is None
+
+    assert (
+        admin.put(
+            "/api/admin/api-config/youtube/homepage/", {"url": "https://evil.example/video"}, format="json"
+        ).status_code
+        == 400
+    )
+    assert (
+        client_for(owner)
+        .put(
+            "/api/admin/api-config/youtube/homepage/", {"url": "https://youtu.be/M7lc1UVf-VE"}, format="json"
+        )
+        .status_code
+        == 403
+    )
+    assert (
+        client_for(owner)
+        .put("/api/admin/api-config/youtube/booking/", {"url": "https://youtu.be/aqz-KE-bpKQ"}, format="json")
+        .status_code
+        == 403
+    )
+
+
 # ------------------------------------------------------------------ 5-8 terms (now the legal system)
 def test_5_admin_publishes_and_updates_terms_with_history():
     admin, _ = admin_client()

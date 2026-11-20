@@ -54,8 +54,8 @@ const clock = (iso: string) =>
  * everyone else as "Someone is booking". Statuses refresh every few seconds.
  */
 export function BookingPanel({ turf }: { turf: TurfDetail }) {
-  const youtube = usePublicYoutubeVideo();
-  const youtubeVideoId = youtube.data?.video_id;
+  const youtube = usePublicYoutubeVideo("booking");
+  const youtubeVideoId = youtube.data?.enabled ? youtube.data.video_id : null;
   const qc = useQueryClient();
   const qcDraft = useMemo(() => loadDraft(turf.slug), [turf.slug]);
   const validDay = (d?: string) => (d && d >= todayISO() ? d : todayISO());
@@ -291,7 +291,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
   );
   const video =
     showVideo && youtubeVideoId ? (
-      <YouTubeDialog videoId={youtubeVideoId} title="বুকিং করার নিয়ম — How to book" onClose={() => setShowVideo(false)} />
+      <YouTubeDialog videoId={youtubeVideoId} title={youtube.data?.title || "How to book"} onClose={() => setShowVideo(false)} />
     ) : null;
 
   if (done) {

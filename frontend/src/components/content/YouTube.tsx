@@ -26,6 +26,7 @@ export function YouTubeDialog({ videoId, title, onClose }: { videoId: string; ti
             className="size-full"
             src={`https://www.youtube-nocookie.com/embed/${safeId}?rel=0&modestbranding=1`}
             title={title}
+            loading="lazy"
             allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             referrerPolicy="strict-origin-when-cross-origin"
             allowFullScreen

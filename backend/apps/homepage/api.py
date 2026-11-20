@@ -76,8 +76,18 @@ class PublicYoutubeView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
+        from apps.common.platform_views import youtube_config_payload
+
         settings = PlatformSettings.load()
-        return Response({"video_id": settings.youtube_video_id or None})
+        return Response(youtube_config_payload(settings, scope="booking"))
+
+
+class PublicHomepageYoutubeView(PublicYoutubeView):
+    def get(self, request):
+        from apps.common.platform_views import youtube_config_payload
+
+        settings = PlatformSettings.load()
+        return Response(youtube_config_payload(settings, scope="homepage"))
 
 
 class FAQSerializer(serializers.ModelSerializer):

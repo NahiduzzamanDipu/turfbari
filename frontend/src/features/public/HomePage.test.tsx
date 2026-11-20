@@ -16,7 +16,7 @@ beforeEach(() => {
       : key === "sms-pricing"
         ? { configured: true, price_per_segment: "0.42", examples: [{ segments: 2, cost: "0.84" }] }
         : key === "youtube"
-          ? { video_id: "dQw4w9WgXcQ" }
+        ? { video_id: "dQw4w9WgXcQ", url: "https://youtu.be/dQw4w9WgXcQ", title: "About TURFBARI", enabled: true }
           : key === "faqs"
             ? [{ id: "faq-1", question_en: "Dynamic question?", question_bn: "", answer_en: "Dynamic answer", answer_bn: "" }]
             : { enabled: false };
@@ -38,9 +38,25 @@ describe("homepage configuration sections", () => {
   it("mounts the configured YouTube player only while About Us is open", () => {
     render(<MemoryRouter><HomePage /></MemoryRouter>);
     expect(screen.queryByTitle("About TURFBARI")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "About Us" }));
+    fireEvent.click(screen.getByRole("button", { name: "About TURFBARI" }));
     expect(screen.getByTitle("About TURFBARI")).toHaveAttribute("src", "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1");
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.queryByTitle("About TURFBARI")).not.toBeInTheDocument();
+  });
+
+  it("does not fall back to another video when the homepage video is disabled", () => {
+    mocks.useQuery.mockImplementation(({ queryKey }: { queryKey: string[] }) => {
+      const key = queryKey[1];
+      const data = key === "youtube"
+        ? { video_id: "dQw4w9WgXcQ", url: "https://youtu.be/dQw4w9WgXcQ", title: "About TURFBARI", enabled: false }
+        : key === "plans"
+          ? []
+          : key === "faqs"
+            ? []
+            : { configured: false, examples: [] };
+      return { data, isPending: false, isError: false };
+    });
+    render(<MemoryRouter><HomePage /></MemoryRouter>);
+    expect(screen.queryByRole("button", { name: "About Us" })).not.toBeInTheDocument();
   });
 });

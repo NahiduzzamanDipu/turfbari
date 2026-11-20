@@ -31,8 +31,16 @@ class BaseModel(UUIDModel, TimeStampedModel):
 class PlatformSettings(models.Model):
     """Single row of platform-wide settings the Super Admin manages (Admin -> API / Terms)."""
 
-    youtube_video_id = models.CharField(max_length=11, blank=True)  # "how to book" video on every turf page
-    youtube_url = models.CharField(max_length=300, blank=True)  # as pasted, for display only
+    # Public booking guide (legacy youtube_* names retained for API/data compatibility).
+    youtube_video_id = models.CharField(max_length=11, blank=True)
+    youtube_url = models.CharField(max_length=300, blank=True)
+    booking_youtube_video_enabled = models.BooleanField(default=True)
+    booking_youtube_video_title = models.CharField(max_length=120, blank=True, default="বুকিং করার নিয়ম")
+    # The homepage introduction is independent and starts disabled until configured by an admin.
+    homepage_youtube_video_id = models.CharField(max_length=11, blank=True)
+    homepage_youtube_url = models.CharField(max_length=300, blank=True)
+    homepage_youtube_video_enabled = models.BooleanField(default=False)
+    homepage_youtube_video_title = models.CharField(max_length=120, blank=True, default="About TURFBARI")
     # Public homepage contact details. Blank values are never exposed as contact links.
     contact_enabled = models.BooleanField(default=True)
     contact_phone = models.CharField(max_length=30, blank=True)

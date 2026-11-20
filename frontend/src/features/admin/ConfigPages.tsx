@@ -36,7 +36,7 @@ function youtubeId(url: string): string | null {
 }
 
 interface ApiConfig {
-  youtube: { video_id: string | null; url: string | null };
+  youtube: { homepage: YoutubeVideoConfig; booking_page: YoutubeVideoConfig };
   bulksmsbd: {
     api_key_masked: string;
     api_key_source: "admin" | "environment" | "none";
@@ -55,6 +55,13 @@ interface ApiConfig {
   recurring: { max_days: number; max_occurrences: number; hold_hours: number; limit_exempt: boolean };
 }
 
+interface YoutubeVideoConfig {
+  video_id: string | null;
+  url: string | null;
+  title: string;
+  enabled: boolean;
+}
+
 function Preview({ id }: { id: string }) {
   return (
     <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
@@ -62,6 +69,7 @@ function Preview({ id }: { id: string }) {
         className="size-full"
         src={`https://www.youtube-nocookie.com/embed/${id}?rel=0`}
         title="Video preview"
+        loading="lazy"
         allow="encrypted-media; picture-in-picture; fullscreen"
         referrerPolicy="strict-origin-when-cross-origin"
         allowFullScreen
@@ -76,20 +84,42 @@ export function AdminApiPage() {
   const c = config.data;
   return (
     <>
-      <PageHeader title="API" description="Platform integrations shared by every turf: the booking-guide video and BulkSMSBD. Credentials never leave the server." />
+      <PageHeader title="API Settings" description="Manage platform integrations and public video settings. Provider credentials stay on the server." />
       {config.isPending && <Skeleton className="h-96" />}
       {config.isError && <ErrorState error={config.error} onRetry={() => config.refetch()} />}
       {c && (
-        <div className="grid gap-6 xl:grid-cols-2">
-          <YouTubeCard current={c.youtube} onSaved={() => {
-            qc.invalidateQueries({ queryKey: ["admin", "api-config"] });
-            qc.invalidateQueries({ queryKey: ["public", "youtube"] });
-          }} />
-          <BulkSmsCard current={c.bulksmsbd} onSaved={(b) => qc.setQueryData(["admin", "api-config"], { ...c, bulksmsbd: b })} />
-          <BookingLimitCard current={c.booking.max_slots_per_customer} onSaved={() => qc.invalidateQueries({ queryKey: ["admin", "api-config"] })} />
-          <PaymentsCard />
-          <RecurringPolicyCard current={c.recurring} onSaved={() => qc.invalidateQueries({ queryKey: ["admin", "api-config"] })} />
-          <CredentialSmsCard />
+        <div className="space-y-8">
+          <section aria-labelledby="youtube-management-title">
+            <div className="mb-4"><h2 id="youtube-management-title" className="text-lg font-semibold">YouTube Video Management</h2><p className="text-sm text-muted-foreground">Configure homepage and public booking videos independently.</p></div>
+            <div className="grid gap-6 xl:grid-cols-2">
+              <YouTubeConfigCard
+                current={c.youtube.homepage}
+                scope="homepage"
+                onSaved={() => {
+                  qc.invalidateQueries({ queryKey: ["admin", "api-config"] });
+                  qc.invalidateQueries({ queryKey: ["public", "youtube", "homepage"] });
+                }}
+              />
+              <YouTubeConfigCard
+                current={c.youtube.booking_page}
+                scope="booking"
+                onSaved={() => {
+                  qc.invalidateQueries({ queryKey: ["admin", "api-config"] });
+                  qc.invalidateQueries({ queryKey: ["public", "youtube", "booking"] });
+                }}
+              />
+            </div>
+          </section>
+          <section aria-labelledby="other-api-settings-title">
+            <h2 id="other-api-settings-title" className="mb-4 text-lg font-semibold">Other API &amp; Platform Settings</h2>
+            <div className="grid gap-6 xl:grid-cols-2">
+              <BulkSmsCard current={c.bulksmsbd} onSaved={(b) => qc.setQueryData(["admin", "api-config"], { ...c, bulksmsbd: b })} />
+              <BookingLimitCard current={c.booking.max_slots_per_customer} onSaved={() => qc.invalidateQueries({ queryKey: ["admin", "api-config"] })} />
+              <PaymentsCard />
+              <RecurringPolicyCard current={c.recurring} onSaved={() => qc.invalidateQueries({ queryKey: ["admin", "api-config"] })} />
+              <CredentialSmsCard />
+            </div>
+          </section>
         </div>
       )}
     </>
@@ -160,99 +190,84 @@ function PreviewLine({ icon, value }: { icon: React.ReactNode; value: string }) 
   return <div className="flex min-h-11 items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm"><span className="text-primary">{icon}</span>{value}</div>;
 }
 
-function YouTubeCard({ current, onSaved }: { current: ApiConfig["youtube"]; onSaved: () => void }) {
-  const [url, setUrl] = useState("");
-  const [editing, setEditing] = useState(!current.video_id);
+function YouTubeConfigCard({ current, scope, onSaved }: {
+  current: YoutubeVideoConfig;
+  scope: "homepage" | "booking";
+  onSaved: () => void;
+}) {
+  const isHomepage = scope === "homepage";
+  const [url, setUrl] = useState(current.url ?? "");
+  const [title, setTitle] = useState(current.title ?? "");
+  const [enabled, setEnabled] = useState(current.enabled);
   const id = youtubeId(url);
+  useEffect(() => {
+    setUrl(current.url ?? "");
+    setTitle(current.title ?? "");
+    setEnabled(current.enabled);
+  }, [current.url, current.title, current.enabled]);
   const save = useMutation({
-    mutationFn: (value: string) => api<ApiConfig["youtube"]>("/admin/api-config/youtube/", { method: "PUT", json: { url: value } }),
-    onSuccess: (r) => {
-      toast.success(r.video_id ? "Video saved — every turf page shows it now" : "Video removed from every turf page");
-      setUrl("");
-      setEditing(!r.video_id);
+    mutationFn: () => api<YoutubeVideoConfig>(`/admin/api-config/youtube/${scope}/`, {
+      method: "PUT",
+      json: { url, title, enabled },
+    }),
+    onSuccess: () => {
+      toast.success(`${isHomepage ? "Homepage" : "Booking page"} video settings saved`);
       onSaved();
     },
-    onError: (e) => toast.error(errorText(e)),
+    onError: (error) => toast.error(errorText(error)),
   });
+  const invalidUrl = Boolean(url.trim()) && !id;
+  const endpointError = save.error instanceof ApiError ? save.error.fields?.url : null;
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <YouTubeIcon className="h-5 w-auto" /> YouTube
-          {current.video_id ? <Badge tone="green">Showing on all turf pages</Badge> : <Badge tone="neutral">Off</Badge>}
+          <YouTubeIcon className="h-5 w-auto" /> {isHomepage ? "Homepage Video" : "Public Booking Page Video"}
+          {enabled && id ? <Badge tone="green">Enabled</Badge> : <Badge tone="neutral">Disabled</Badge>}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">
-          The <span lang="bn">“বুকিং করার নিয়ম”</span> video next to “Book a slot” on every turf's booking page. Turf owners can't change it.
+          {isHomepage
+            ? "Manage the YouTube video displayed on the main TurfBari homepage."
+            : "Manage the YouTube video displayed next to the booking heading on public turf pages."}
         </p>
-        {current.video_id && !editing && (
-          <>
-            <div className="rounded-lg border p-3 text-sm">
-              <p className="text-xs text-muted-foreground">Current video</p>
-              <p className="break-all font-medium">{current.url}</p>
-              <p className="font-mono text-xs text-muted-foreground">ID {current.video_id}</p>
-            </div>
-            <Preview id={current.video_id} />
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button variant="ghost" disabled={save.isPending} onClick={() => window.confirm("Remove the video from every turf page?") && save.mutate("")}>
-                <Trash2 /> Remove
-              </Button>
-              <Button variant="outline" onClick={() => setEditing(true)}>
-                Change video
-              </Button>
-            </div>
-          </>
-        )}
-        {editing && (
-          <form
-            className="flex flex-col gap-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (id) save.mutate(url);
-            }}
+        <form className="flex flex-col gap-3" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
+          <Checkbox
+            label={isHomepage ? "Show homepage video" : "Show video on public booking pages"}
+            checked={enabled}
+            onChange={(event) => setEnabled(event.target.checked)}
+          />
+          <FormField label="Section title" hint="Optional title shown above the video popup.">
+            {(fieldId) => <Input id={fieldId} maxLength={120} value={title} onChange={(event) => setTitle(event.target.value)} />}
+          </FormField>
+          <FormField
+            label="YouTube video URL"
+            hint="youtube.com/watch?v=…, youtu.be/…, /shorts/…, /embed/…"
+            error={invalidUrl ? ["Paste a valid YouTube video link."] : endpointError}
           >
-            <FormField
-              label="YouTube video URL"
-              hint="youtube.com/watch?v=…, youtu.be/…, /shorts/…, /embed/…"
-              error={url && !id ? ["That isn't a YouTube video link."] : save.error instanceof ApiError ? save.error.fields?.url : null}
-            >
-              {(fid) => (
-                <div className="flex gap-2">
-                  <Input id={fid} placeholder="Paste the link here" value={url} onChange={(e) => setUrl(e.target.value)} />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      navigator.clipboard
-                        .readText()
-                        .then((t) => setUrl(t.trim()))
-                        .catch(() => toast.error("Couldn't read the clipboard — paste with Ctrl+V"))
-                    }
-                  >
-                    Paste
-                  </Button>
-                </div>
-              )}
-            </FormField>
-            {id && <Preview id={id} />}
-            <div className="flex justify-end gap-2">
-              {current.video_id && (
-                <Button type="button" variant="ghost" onClick={() => setEditing(false)}>
-                  Cancel
-                </Button>
-              )}
-              <Button type="submit" disabled={!id || save.isPending}>
-                {save.isPending && <Loader2 className="animate-spin" />} Save video
-              </Button>
-            </div>
-          </form>
-        )}
+            {(fieldId) => (
+              <div className="flex gap-2">
+                <Input id={fieldId} placeholder="Paste the link here" value={url} onChange={(event) => setUrl(event.target.value)} />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigator.clipboard.readText().then((value) => setUrl(value.trim())).catch(() => toast.error("Couldn't read the clipboard — paste with Ctrl+V"))}
+                >Paste</Button>
+              </div>
+            )}
+          </FormField>
+          {id && <Preview id={id} />}
+          <div className="flex justify-end">
+            <Button type="submit" disabled={save.isPending || invalidUrl || (enabled && !id)}>
+              {save.isPending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} Save Changes
+            </Button>
+          </div>
+        </form>
       </CardContent>
     </Card>
   );
 }
-
 function BulkSmsCard({ current, onSaved }: { current: ApiConfig["bulksmsbd"]; onSaved: (b: ApiConfig["bulksmsbd"]) => void }) {
   const [key, setKey] = useState("");
   const [sender, setSender] = useState("");

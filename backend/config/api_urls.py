@@ -49,6 +49,7 @@ workspace_router.register("photos", setup.PhotoViewSet, basename="ws-photos")
 public_urls = [
     path("plans/", homepage.PublicPlansView.as_view()),
     path("sms-pricing/", homepage.PublicSmsPricingView.as_view()),
+    path("youtube/homepage/", homepage.PublicHomepageYoutubeView.as_view()),
     path("youtube/", homepage.PublicYoutubeView.as_view()),
     path("faqs/", homepage.PublicFAQsView.as_view()),
     path("contact/", platform.PublicContactView.as_view()),
@@ -112,6 +113,8 @@ admin_urls = [
     path("health/", subs_admin.AdminHealthView.as_view()),
     path("api-config/", platform.AdminApiConfigView.as_view()),
     path("contact-settings/", platform.AdminContactSettingsView.as_view()),
+    path("api-config/youtube/homepage/", platform.AdminHomepageYoutubeView.as_view()),
+    path("api-config/youtube/booking/", platform.AdminYoutubeView.as_view()),
     path("api-config/youtube/", platform.AdminYoutubeView.as_view()),
     path("api-config/bulksmsbd/", platform.AdminBulkSmsView.as_view()),
     path("api-config/booking/", platform.AdminBookingPolicyView.as_view()),
