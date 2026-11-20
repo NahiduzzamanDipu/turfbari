@@ -6,7 +6,7 @@ import { YouTubeIcon } from "@/components/content/YouTube";
 import { PageHeader } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge, Checkbox, ErrorState, FormField, Input, Textarea } from "@/components/ui/form";
+import { Badge, Checkbox, ErrorState, FormField, Input, Select, Textarea } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { errorText } from "@/features/workspace/hooks";
 import { ApiError, api } from "@/lib/api";
@@ -83,6 +83,7 @@ export function AdminApiPage() {
           <BulkSmsCard current={c.bulksmsbd} onSaved={(b) => qc.setQueryData(["admin", "api-config"], { ...c, bulksmsbd: b })} />
           <BookingLimitCard current={c.booking.max_slots_per_customer} onSaved={() => qc.invalidateQueries({ queryKey: ["admin", "api-config"] })} />
           <PaymentsCard />
+          <CredentialSmsCard />
         </div>
       )}
     </>
@@ -413,6 +414,146 @@ function PaymentsCard() {
             Save payment settings
           </Button>
         </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ------------------------------------------------------------------ login details by SMS
+interface CredentialSms {
+  enabled: boolean;
+  language: "bn" | "en";
+  temp_password_hours: number;
+  created_en: string;
+  created_bn: string;
+  reset_en: string;
+  reset_bn: string;
+  defaults: Record<"created_en" | "created_bn" | "reset_en" | "reset_bn", string>;
+  previews: Record<"created_en" | "created_bn" | "reset_en" | "reset_bn", string>;
+  placeholders: string[];
+  sms_available: boolean;
+}
+type TemplateKey = "created_en" | "created_bn" | "reset_en" | "reset_bn";
+
+/** Temporary passwords for new accounts and admin resets, sent by SMS (paid by TurfBari). */
+function CredentialSmsCard() {
+  const qc = useQueryClient();
+  const data = useQuery({ queryKey: ["admin", "credential-sms"], queryFn: () => api<CredentialSms>("/admin/api-config/credentials/") });
+  const [form, setForm] = useState<Omit<CredentialSms, "defaults" | "previews" | "placeholders" | "sms_available"> | null>(null);
+  const [which, setWhich] = useState<TemplateKey>("created_bn");
+  useEffect(() => {
+    if (data.data && !form) {
+      const { defaults: _d, previews: _p, placeholders: _ph, sms_available: _a, ...rest } = data.data;
+      setForm(rest);
+    }
+  }, [data.data, form]);
+  const save = useMutation({
+    mutationFn: () => api<CredentialSms>("/admin/api-config/credentials/", { method: "PUT", json: form }),
+    onSuccess: (d) => {
+      qc.setQueryData(["admin", "credential-sms"], d);
+      toast.success("Login-details SMS settings saved");
+    },
+    onError: (e) => toast.error(errorText(e)),
+  });
+  const fields = save.error instanceof ApiError ? save.error.fields : null;
+  const d = data.data;
+  return (
+    <Card className="xl:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex flex-wrap items-center gap-2">
+          <KeyRound className="size-5 text-primary" /> Login details by SMS
+          {d && (d.sms_available ? <Badge tone="green">Active</Badge> : <Badge tone="amber">Not sending — shown once instead</Badge>)}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {data.isPending && <Skeleton className="h-48" />}
+        {data.isError && <ErrorState error={data.error} onRetry={() => data.refetch()} />}
+        {d && form && (
+          <form
+            className="flex flex-col gap-4 text-sm"
+            onSubmit={(e) => {
+              e.preventDefault();
+              save.mutate();
+            }}
+          >
+            <p className="text-muted-foreground">
+              New accounts and admin password resets get a random temporary password by SMS to the account's mobile. TurfBari pays for these SMS
+              (no turf wallet is charged), the password is never shown to anyone, and the user must change it at first sign-in. When this is off
+              or SMS isn't connected, the password is shown once to whoever created the account instead.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Checkbox label="Send login details by SMS" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />
+              <FormField label="SMS language">
+                {(id) => (
+                  <Select id={id} value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value as "bn" | "en" })}>
+                    <option value="bn">বাংলা</option>
+                    <option value="en">English</option>
+                  </Select>
+                )}
+              </FormField>
+              <FormField label="Temporary password valid for (hours)" error={fields?.temp_password_hours}>
+                {(id) => (
+                  <Input
+                    id={id}
+                    type="number"
+                    min={1}
+                    max={168}
+                    value={form.temp_password_hours}
+                    onChange={(e) => setForm({ ...form, temp_password_hours: Number(e.target.value) })}
+                  />
+                )}
+              </FormField>
+            </div>
+            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Template">
+              {(
+                [
+                  ["created_bn", "New account · বাংলা"],
+                  ["created_en", "New account · English"],
+                  ["reset_bn", "Reset · বাংলা"],
+                  ["reset_en", "Reset · English"],
+                ] as [TemplateKey, string][]
+              ).map(([k, label]) => (
+                <button
+                  key={k}
+                  type="button"
+                  role="tab"
+                  aria-selected={which === k}
+                  onClick={() => setWhich(k)}
+                  className={cn("rounded-full border px-3 py-1 text-xs font-medium", which === k ? "border-primary bg-primary text-primary-foreground" : "hover:bg-secondary")}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <FormField
+                label="Message"
+                hint={`Leave empty to use TurfBari's default. Placeholders: ${d.placeholders.map((p) => `{${p}}`).join(" ")} — {password} and {login_url} are required.`}
+                error={fields?.[which]}
+              >
+                {(id) => (
+                  <Textarea
+                    id={id}
+                    rows={7}
+                    lang={which.endsWith("bn") ? "bn" : "en"}
+                    placeholder={d.defaults[which]}
+                    value={form[which]}
+                    onChange={(e) => setForm({ ...form, [which]: e.target.value })}
+                  />
+                )}
+              </FormField>
+              <div>
+                <p className="mb-1.5 text-sm font-medium">Saved preview (password hidden)</p>
+                <pre className="whitespace-pre-wrap rounded-md border bg-secondary/50 p-3 font-sans text-xs" lang={which.endsWith("bn") ? "bn" : "en"}>
+                  {d.previews[which]}
+                </pre>
+              </div>
+            </div>
+            <Button type="submit" className="self-start" disabled={save.isPending}>
+              {save.isPending && <Loader2 className="animate-spin" />} Save
+            </Button>
+          </form>
+        )}
       </CardContent>
     </Card>
   );

@@ -187,3 +187,86 @@ class AdminBookingPolicyView(APIView):
             request=request,
         )
         return Response({"max_slots_per_customer": s.max_slots_per_customer})
+
+
+# ------------------------------------------------------------------ login details by SMS
+class CredentialSmsSerializer(serializers.Serializer):
+    enabled = serializers.BooleanField()
+    language = serializers.ChoiceField(choices=["bn", "en"])
+    temp_password_hours = serializers.IntegerField(min_value=1, max_value=168)
+    created_en = serializers.CharField(allow_blank=True, max_length=600, trim_whitespace=False)
+    created_bn = serializers.CharField(allow_blank=True, max_length=600, trim_whitespace=False)
+    reset_en = serializers.CharField(allow_blank=True, max_length=600, trim_whitespace=False)
+    reset_bn = serializers.CharField(allow_blank=True, max_length=600, trim_whitespace=False)
+
+    def _template(self, value):
+        from apps.accounts.credentials import validate_template
+
+        return validate_template(value)
+
+    validate_created_en = validate_created_bn = validate_reset_en = validate_reset_bn = _template
+
+
+def credential_sms_payload() -> dict:
+    from apps.accounts import credentials as c
+
+    s = PlatformSettings.load()
+    sample_user = type("Sample", (), {"full_name": "Rahim", "username": "", "email": "owner@example.com"})()
+    previews = {}
+    for purpose, key in (("account_created", "created"), ("admin_reset", "reset")):
+        for lang in ("bn", "en"):
+            text = c.render(
+                c.template_for(purpose, lang),
+                user=sample_user,
+                password=c.MASK,  # previews never contain a real password
+                n_hours=s.temp_password_hours,
+                lang=lang,
+            )
+            previews[f"{key}_{lang}"] = text
+    return {
+        "enabled": s.credential_sms_enabled,
+        "language": s.credential_sms_language,
+        "temp_password_hours": s.temp_password_hours,
+        "created_en": s.credential_created_en,
+        "created_bn": s.credential_created_bn,
+        "reset_en": s.credential_reset_en,
+        "reset_bn": s.credential_reset_bn,
+        "defaults": {
+            f"{'created' if p == 'account_created' else 'reset'}_{lang}": text
+            for (p, lang), text in c.DEFAULTS.items()
+        },
+        "previews": previews,
+        "placeholders": sorted(c.PLACEHOLDERS),
+        "sms_available": c.sms_available(),
+    }
+
+
+class AdminCredentialSmsView(APIView):
+    """Admin -> API: temporary passwords sent by SMS (templates, language, expiry, on/off)."""
+
+    permission_classes = [IsPlatformAdmin]
+
+    @extend_schema(tags=["admin"])
+    def get(self, request):
+        return Response(credential_sms_payload())
+
+    @extend_schema(tags=["admin"], request=CredentialSmsSerializer)
+    def put(self, request):
+        data = CredentialSmsSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        v = data.validated_data
+        s = PlatformSettings.objects.get_or_create(pk=1)[0]
+        s.credential_sms_enabled = v["enabled"]
+        s.credential_sms_language = v["language"]
+        s.temp_password_hours = v["temp_password_hours"]
+        s.credential_created_en, s.credential_created_bn = v["created_en"], v["created_bn"]
+        s.credential_reset_en, s.credential_reset_bn = v["reset_en"], v["reset_bn"]
+        s.save()
+        record(
+            "platform.credential_sms",
+            f"Login-details SMS {'on' if s.credential_sms_enabled else 'off'} ({s.credential_sms_language}), "
+            f"temporary passwords valid {s.temp_password_hours} h",
+            category=Category.PLATFORM,
+            request=request,
+        )
+        return Response(credential_sms_payload())

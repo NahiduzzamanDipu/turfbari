@@ -73,7 +73,9 @@ def test_setup_settings_team_and_auto_crud_events():
     )
     client.patch("/api/workspace/settings/", {"short_description": "New text"}, format="json")  # no change
     manager = client.post(
-        "/api/workspace/managers/", {"email": "mgr@example.com", "full_name": "Mina"}, format="json"
+        "/api/workspace/managers/",
+        {"email": "mgr@example.com", "full_name": "Mina", "phone": "01812345678"},
+        format="json",
     ).json()
     client.delete(f"/api/workspace/managers/{manager['id']}/")
 
@@ -83,6 +85,7 @@ def test_setup_settings_team_and_auto_crud_events():
         "field.deleted",
         "settings.updated",
         "team.manager_added",
+        "account.temporary_password_issued",  # the new manager's login details went out by SMS
         "team.manager_removed",
     ]
     settings_event = AuditEvent.objects.get(action="settings.updated")

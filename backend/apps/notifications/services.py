@@ -20,7 +20,7 @@ from django.utils import timezone
 
 from . import wallet
 from .models import SmsAttempt, SmsConfig, SmsKind, SmsMessage, SmsTemplate
-from .providers import bd_msisdn, get_provider, segment_count
+from .providers import LOG_BODY, bd_msisdn, get_provider, segment_count
 
 log = logging.getLogger(__name__)
 
@@ -101,7 +101,10 @@ def sender_id() -> str:
 
 
 # Sent on TurfBari's behalf (plan notices, sign-in codes, admin tests): never counted as a turf's usage.
+CREDENTIAL_KINDS = {SmsKind.ACCOUNT_CREDENTIALS, SmsKind.CREDENTIAL_RESET}
 PLATFORM_KINDS = {
+    SmsKind.ACCOUNT_CREDENTIALS,
+    SmsKind.CREDENTIAL_RESET,
     SmsKind.SUBSCRIPTION_REMINDER,
     SmsKind.SUBSCRIPTION_EXPIRED,
     SmsKind.PASSWORD_RESET,
@@ -259,11 +262,28 @@ def deliver(message_id) -> SmsMessage | None:
                     ]
                 )
                 return message
+        text = message.body
+        if message.kind in CREDENTIAL_KINDS:
+            # The stored text has the temporary password masked; only here is the real one put in.
+            from apps.accounts.credentials import provider_text
+
+            text = provider_text(message)
+            if text is None:
+                message.status, message.next_attempt_at = SmsMessage.Status.FAILED, None
+                message.provider_message = (
+                    "Not sent: this temporary password was replaced, used or has expired"
+                )
+                message.save(update_fields=["status", "next_attempt_at", "provider_message", "updated_at"])
+                return message
         message.status = SmsMessage.Status.SENDING
         message.attempts += 1
         message.save(update_fields=["status", "attempts", "updated_at"])
 
-    result = get_provider().send(message.to, message.body, sender_id())
+    token = LOG_BODY.set(message.body)  # what a logging provider may print: never the real password
+    try:
+        result = get_provider().send(message.to, text, sender_id())
+    finally:
+        LOG_BODY.reset(token)
     if tenant and not result.ok and result.code != "timeout":
         # BulkSMSBD clearly did not take it: give the money back (a timeout keeps the charge for review).
         wallet.refund(message, attempt_no, f"Refund: not sent ({result.code} {result.message})")
@@ -310,6 +330,10 @@ def deliver(message_id) -> SmsMessage | None:
     message.save(update_fields=["charged_amount"])
     if not result.ok:
         log.warning("SMS %s to %s failed: %s %s", message.pk, message.masked_to, result.code, result.message)
+    if message.kind in CREDENTIAL_KINDS:
+        from apps.accounts.credentials import on_sms_result
+
+        on_sms_result(message)
     return message
 
 

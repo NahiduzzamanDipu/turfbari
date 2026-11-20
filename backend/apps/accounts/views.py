@@ -221,9 +221,16 @@ class SwitchTurfView(APIView):
 class ChangePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(trim_whitespace=False)
     new_password = serializers.CharField(trim_whitespace=False, min_length=10)
+    # Required when replacing a temporary password; checked whenever it is sent.
+    new_password_confirm = serializers.CharField(trim_whitespace=False, required=False)
 
     def validate(self, attrs):
         user = self.context["request"].user
+        confirm = attrs.get("new_password_confirm")
+        if (confirm is None and user.must_change_password) or (
+            confirm is not None and confirm != attrs["new_password"]
+        ):
+            raise serializers.ValidationError({"new_password_confirm": ["Type the same new password twice."]})
         if not user.check_password(attrs["current_password"]):
             raise serializers.ValidationError({"current_password": ["Current password is incorrect."]})
         if attrs["new_password"] == attrs["current_password"]:

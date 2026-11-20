@@ -10,6 +10,7 @@ Response code 202 = accepted. BulkSMSBD documents no delivery-report endpoint, s
 import json
 import logging
 import re
+from contextvars import ContextVar
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from urllib.error import HTTPError, URLError
@@ -19,6 +20,8 @@ from urllib.request import Request, urlopen
 from django.conf import settings
 
 log = logging.getLogger(__name__)
+# Text a provider may write to logs for the current send (the stored, masked text — never a password).
+LOG_BODY: ContextVar[str | None] = ContextVar("sms_log_body", default=None)
 
 # What each BulkSMSBD code means, and whether trying again later can help.
 CODES: dict[str, tuple[str, bool]] = {
@@ -99,7 +102,7 @@ class ConsoleProvider(BaseProvider):
     name = "console"
 
     def send(self, to, body, sender_id):
-        log.warning("SMS (console) to %s from %s: %s", to, sender_id or "-", body)
+        log.warning("SMS (console) to %s from %s: %s", to, sender_id or "-", LOG_BODY.get() or body)
         return SendResult(True, "console", "Logged to the server console (development)", False)
 
 

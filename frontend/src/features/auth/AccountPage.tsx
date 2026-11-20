@@ -25,7 +25,7 @@ export function AccountPage() {
     mutationFn: () =>
       api<void>("/auth/change-password/", {
         method: "POST",
-        json: { current_password: pw.current_password, new_password: pw.new_password },
+        json: { current_password: pw.current_password, new_password: pw.new_password, new_password_confirm: pw.confirm },
       }),
     onSuccess: () => {
       toast.success("Password changed. Use the new password next time you sign in.");

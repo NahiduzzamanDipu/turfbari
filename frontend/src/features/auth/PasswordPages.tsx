@@ -53,7 +53,7 @@ export function SetPasswordPage() {
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
   const save = useMutation({
-    mutationFn: () => api<void>("/auth/change-password/", { method: "POST", json: { current_password: current, new_password: next } }),
+    mutationFn: () => api<void>("/auth/change-password/", { method: "POST", json: { current_password: current, new_password: next, new_password_confirm: confirm } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: meKey }),
   });
 

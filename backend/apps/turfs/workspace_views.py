@@ -11,6 +11,8 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts import credentials
+from apps.accounts.models import TemporaryCredential
 from apps.accounts.passwords import create_user_with_temporary_password
 from apps.audit.services import Category, record
 from apps.common.tenancy import IsTenantMember, TenantViewSet
@@ -212,6 +214,7 @@ class ManagersView(APIView):
         user = User.objects.filter(email=email).first()
         password = None
         if user is None:
+            credentials.require_phone(v.get("phone", ""))
             user, password = create_user_with_temporary_password(
                 email, full_name=v["full_name"], phone=v.get("phone", "")
             )
@@ -233,7 +236,16 @@ class ManagersView(APIView):
             request=request,
             target=membership,
         )
-        return Response({**manager_row(membership), "temporary_password": password}, status=201)
+        delivery = {"temporary_password": None, "credential": None}
+        if password:  # new account: password goes by SMS (shown once only if SMS is unavailable)
+            delivery = credentials.start_delivery(
+                user,
+                password,
+                purpose=TemporaryCredential.Purpose.ACCOUNT_CREATED,
+                by=request.user,
+                request=request,
+            )
+        return Response({**manager_row(membership), **delivery}, status=201)
 
 
 class ManagerDetailView(APIView):

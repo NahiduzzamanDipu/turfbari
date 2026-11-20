@@ -4,6 +4,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
@@ -12,6 +13,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts import credentials
 from apps.audit.services import Category, record
 from apps.bookings.models import Booking, Payment
 from apps.bookings.phone import normalize_bd_phone
@@ -23,6 +25,17 @@ from apps.turfs.models import Turf
 
 from .models import TurfApplication
 from .services import approve_application, create_turf_with_owner
+
+
+def _deliver(owner, password, request) -> dict:
+    """New owner account: send the temporary password by SMS (or show it once if SMS is unavailable)."""
+    if not password:  # the owner already had an account
+        return {"temporary_password": None, "credential": None}
+    from apps.accounts.models import TemporaryCredential
+
+    return credentials.start_delivery(
+        owner, password, purpose=TemporaryCredential.Purpose.ACCOUNT_CREATED, by=request.user, request=request
+    )
 
 
 class AdminDashboardView(APIView):
@@ -164,6 +177,7 @@ class ApplicationAdminViewSet(
         data = ApproveSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         result = approve_application(self.get_object(), reviewer=request.user, **data.validated_data)
+        delivery = _deliver(result["owner"], result["temporary_password"], request)
         record(
             "platform.application_approved",
             f"Approved application and created turf “{result['turf'].name}” for {result['owner'].email}",
@@ -181,7 +195,7 @@ class ApplicationAdminViewSet(
                     "slug": result["turf"].slug,
                 },
                 "owner_email": result["owner"].email,
-                "temporary_password": result["temporary_password"],
+                **delivery,
             }
         )
 
@@ -332,7 +346,12 @@ class TurfAdminViewSet(
     def create(self, request, *args, **kwargs):
         data = TurfCreateSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        turf, owner, password = create_turf_with_owner(**data.validated_data, assigned_by=request.user)
+        email = data.validated_data["owner_email"].strip().lower()
+        if not get_user_model().objects.filter(email=email).exists():
+            credentials.require_phone(data.validated_data.get("owner_phone", ""))
+        with transaction.atomic():
+            turf, owner, password = create_turf_with_owner(**data.validated_data, assigned_by=request.user)
+            delivery = _deliver(owner, password, request)
         record(
             "platform.turf_created",
             f"Created turf “{turf.name}” for {owner.email}",
@@ -345,7 +364,7 @@ class TurfAdminViewSet(
             {
                 "turf": TurfAdminSerializer(self.get_queryset().get(pk=turf.pk)).data,
                 "owner_email": owner.email,
-                "temporary_password": password,
+                **delivery,
             },
             status=201,
         )

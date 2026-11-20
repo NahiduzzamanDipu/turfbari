@@ -27,6 +27,8 @@ class SmsKind(models.TextChoices):
     WALLET_RECHARGE_REJECTED = "wallet_recharge_rejected", "SMS wallet recharge rejected"
     SUBSCRIPTION_APPROVED = "subscription_approved", "Plan approved"
     SUBSCRIPTION_REJECTED = "subscription_rejected", "Plan payment rejected"
+    ACCOUNT_CREDENTIALS = "account_credentials", "New account login details"
+    CREDENTIAL_RESET = "credential_reset", "Password reset by TurfBari"
 
 
 class SmsMessage(BaseModel):

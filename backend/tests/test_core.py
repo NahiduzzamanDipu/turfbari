@@ -358,7 +358,10 @@ def test_application_to_live_turf():
     admin = get_user_model().objects.create_superuser("root@example.com", PASSWORD)
     approved = client_for(admin).post(f"/api/admin/applications/{application.id}/approve/", {}, format="json")
     assert approved.status_code == 200, approved.json()
-    password = approved.json()["temporary_password"]
+    assert approved.json()["temporary_password"] is None  # sent by SMS, never returned
+    from .test_account_security import sms_password
+
+    password = sms_password()
     turf = Turf.objects.get(slug="new-ground")
     assert turf.fields.count() == 2 and turf.hours.count() == 7
 

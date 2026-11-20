@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { ChevronLeft, ChevronRight, Copy, KeyRound, Lock, Plus, ShieldOff, UserCheck, UserX, Users } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { type CredentialInfo, CredentialStatus } from "@/components/account/CredentialStatus";
 import { PageHeader } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,7 +37,9 @@ interface Account {
   locked: boolean;
   memberships: AccountMembership[];
   security_events?: { at: string; action: string; summary: string; ip: string | null; by: string }[];
-  temporary_password?: string;
+  /** Only when SMS is unavailable (shown once). Normally the password goes by SMS and is never sent here. */
+  temporary_password?: string | null;
+  credential?: CredentialInfo | null;
   sessions_ended?: number;
 }
 
@@ -195,9 +198,10 @@ const ACTIONS: { key: string; label: string; icon: React.ReactNode; confirm: str
   { key: "unlock", label: "Unlock sign-in", icon: <Lock />, confirm: "Clear the failed sign-in lockout?", show: (a) => a.locked },
   {
     key: "reset-password",
-    label: "Issue temporary password",
+    label: "Reset password & send SMS",
     icon: <KeyRound />,
-    confirm: "Issue a new temporary password? Their current password stops working and they're signed out everywhere.",
+    confirm:
+      "Reset this password? A new temporary password is sent by SMS to their registered mobile. Their current password stops working and they're signed out everywhere.",
     show: () => true,
   },
   { key: "force-change", label: "Require password change", icon: <KeyRound />, confirm: "Make them choose a new password at their next request?", show: (a) => !a.must_change_password },
@@ -220,11 +224,23 @@ function AccountDialog({ id, onClose }: { id: string; onClose: () => void }) {
     toast.success(message);
   };
   const act = useMutation({
-    mutationFn: (key: string) => api<Account>(`/admin/users/${id}/${key}/`, { method: "POST" }),
+    // A fresh key per click: a double submit or network retry of the same click is not a second reset.
+    mutationFn: (key: string) =>
+      api<Account>(`/admin/users/${id}/${key}/`, { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() } }),
     onSuccess: (a, key) => {
       if (a.temporary_password) setTemp(a.temporary_password);
-      done(a, ACTIONS.find((x) => x.key === key)?.label + " — done");
+      done(
+        a,
+        key === "reset-password" && a.credential?.channel === "sms"
+          ? `Password reset requested — SMS to ${a.credential.masked_phone}: ${a.credential.status_label}`
+          : ACTIONS.find((x) => x.key === key)?.label + " — done",
+      );
     },
+    onError: (e) => toast.error(errorText(e)),
+  });
+  const resend = useMutation({
+    mutationFn: () => api<Account>(`/admin/users/${id}/credential/resend/`, { method: "POST" }),
+    onSuccess: (a) => done(a, `SMS to ${a.credential?.masked_phone ?? "their mobile"}: ${a.credential?.status_label ?? "queued"}`),
     onError: (e) => toast.error(errorText(e)),
   });
   const membership = useMutation({
@@ -252,6 +268,9 @@ function AccountDialog({ id, onClose }: { id: string; onClose: () => void }) {
         <div className="flex flex-col gap-5 text-sm">
           <StatusBadges a={a} />
           {temp && <TempPassword value={temp} email={a.email} />}
+          {a.credential && a.credential.status !== "superseded" && (
+            <CredentialStatus credential={a.credential} onResend={editable ? () => resend.mutate() : undefined} resending={resend.isPending} />
+          )}
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
             <div>
               <dt className="text-muted-foreground">Phone</dt>
@@ -294,7 +313,8 @@ function AccountDialog({ id, onClose }: { id: string; onClose: () => void }) {
                 ))}
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                Passwords are never shown or set directly — a temporary password works once until the user picks their own.
+                Passwords are never shown or set here. A temporary password goes to the account's registered mobile by SMS and works
+                until the user picks their own.
               </p>
             </section>
           ) : (
@@ -414,9 +434,11 @@ function CreateAccountDialog({ onClose, onCreated }: { onClose: () => void; onCr
 
   return (
     <Dialog open onClose={onClose} title="New account" description="Creates an owner or manager login with a one-time temporary password.">
-      {result?.temporary_password ? (
+      {result ? (
         <div className="flex flex-col gap-3">
-          <TempPassword value={result.temporary_password} email={result.email} />
+          <p className="text-sm font-medium">Account created for {result.email}.</p>
+          {result.credential && <CredentialStatus credential={result.credential} />}
+          {result.temporary_password && <TempPassword value={result.temporary_password} email={result.email} />}
           <Button
             onClick={() => {
               onClose();
@@ -434,14 +456,17 @@ function CreateAccountDialog({ onClose, onCreated }: { onClose: () => void; onCr
             create.mutate();
           }}
         >
+          <p className="rounded-md bg-secondary px-3 py-2 text-xs text-muted-foreground sm:col-span-2">
+            A temporary password is generated automatically and sent by SMS to the mobile number below. It's never shown here.
+          </p>
           <FormField label="Full name" error={fields?.full_name}>
             {(id) => <Input id={id} required value={form.full_name} onChange={set("full_name")} />}
           </FormField>
           <FormField label="Email" error={fields?.email}>
             {(id) => <Input id={id} type="email" required value={form.email} onChange={set("email")} />}
           </FormField>
-          <FormField label="Mobile (optional)" hint="Used for SMS password-reset codes" error={fields?.phone}>
-            {(id) => <Input id={id} type="tel" placeholder="01XXXXXXXXX" value={form.phone} onChange={set("phone")} />}
+          <FormField label="Mobile number" hint="The login details are sent here by SMS" error={fields?.phone}>
+            {(id) => <Input id={id} type="tel" required placeholder="01XXXXXXXXX" value={form.phone} onChange={set("phone")} />}
           </FormField>
           <FormField label="Role" error={fields?.role}>
             {(id) => (

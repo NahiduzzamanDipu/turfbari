@@ -27,12 +27,23 @@ def sign_in(identifier, password):
     return client, r
 
 
+def sms_password() -> str:
+    """The temporary password from the last credential SMS (it is never in an API response)."""
+    from apps.notifications.providers import MemoryProvider
+
+    body = MemoryProvider.outbox[-1]["body"]
+    return re.search(r"(?:password|পাসওয়ার্ড): (\S{12})", body).group(1)
+
+
 def add_manager(owner_client, email="mgr@example.com"):
     r = owner_client.post(
-        "/api/workspace/managers/", {"email": email, "full_name": "Manager Mia", "phone": ""}, format="json"
+        "/api/workspace/managers/",
+        {"email": email, "full_name": "Manager Mia", "phone": "01812345678"},
+        format="json",
     )
     assert r.status_code == 201, r.json()
-    return r.json()
+    assert r.json()["temporary_password"] is None and r.json()["credential"]["status"] == "submitted"
+    return {**r.json(), "temporary_password": sms_password()}
 
 
 # ------------------------------------------------------------------ first sign-in
@@ -51,15 +62,21 @@ def test_new_manager_must_replace_temporary_password_before_anything_else():
     assert client.get("/api/auth/me/").status_code == 200  # allowed
 
     same = client.post(
-        "/api/auth/change-password/", {"current_password": temp, "new_password": temp}, format="json"
+        "/api/auth/change-password/",
+        {"current_password": temp, "new_password": temp, "new_password_confirm": temp},
+        format="json",
     )
     assert same.status_code == 400
     weak = client.post(
-        "/api/auth/change-password/", {"current_password": temp, "new_password": "1234567890"}, format="json"
+        "/api/auth/change-password/",
+        {"current_password": temp, "new_password": "1234567890", "new_password_confirm": "1234567890"},
+        format="json",
     )
     assert weak.status_code == 400
     ok = client.post(
-        "/api/auth/change-password/", {"current_password": temp, "new_password": NEW_PASSWORD}, format="json"
+        "/api/auth/change-password/",
+        {"current_password": temp, "new_password": NEW_PASSWORD, "new_password_confirm": NEW_PASSWORD},
+        format="json",
     )
     assert ok.status_code == 204
     assert client.get("/api/workspace/bookings/").status_code == 200  # same session keeps working
@@ -199,7 +216,8 @@ def test_admin_creates_searches_resets_and_deactivates_accounts():
     assert created.status_code == 201, created.json()
     body = created.json()
     assert body["email"] == "new.mgr@example.com" and body["must_change_password"] is True
-    assert body["temporary_password"] and body["memberships"][0]["role"] == "manager"
+    assert body["temporary_password"] is None and body["memberships"][0]["role"] == "manager"
+    assert body["credential"]["status"] == "submitted" and body["credential"]["masked_phone"] == "018•••••678"
     assert "temporary_password" not in admin.get(f"/api/admin/users/{body['id']}/").json()
 
     found = admin.get("/api/admin/users/", {"q": "01812345678"}).json()["results"]
@@ -208,6 +226,8 @@ def test_admin_creates_searches_resets_and_deactivates_accounts():
     assert {owner.email, "new.mgr@example.com"} <= by_turf
 
     reset = admin.post(f"/api/admin/users/{owner.id}/reset-password/").json()
+    assert reset["temporary_password"] is None and "credential" in reset
+    reset["temporary_password"] = sms_password()
     owner.refresh_from_db()
     assert owner.must_change_password and owner.check_password(reset["temporary_password"])
     off = admin.post(f"/api/admin/users/{owner.id}/deactivate/")

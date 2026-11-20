@@ -34,7 +34,12 @@ RESET_MAX_PER_HOUR = 3
 
 
 def temp_password_hours() -> int:
-    return int(getattr(settings, "TEMP_PASSWORD_HOURS", 72))
+    """Admin-configurable (Admin -> API -> Login details by SMS); env TEMP_PASSWORD_HOURS as fallback."""
+    from apps.common.models import PlatformSettings
+
+    return max(
+        1, int(PlatformSettings.load().temp_password_hours or getattr(settings, "TEMP_PASSWORD_HOURS", 72))
+    )
 
 
 def make_temporary_password() -> str:
@@ -72,8 +77,11 @@ def temporary_password_expired(user) -> bool:
 
 
 def clear_temporary_flags(user) -> None:
+    from .credentials import consume
+
     user.must_change_password = False
     user.temp_password_expires_at = None
+    consume(user)  # outstanding temporary passwords (and their encrypted copies) are finished
 
 
 def end_sessions(user, *, keep_session_key: str | None = None) -> int:

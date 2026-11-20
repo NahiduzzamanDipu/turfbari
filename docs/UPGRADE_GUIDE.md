@@ -379,3 +379,64 @@ In Admin → Legal & Compliance → Documents each module has **Edit**; the edit
 (replaces the draft text with the standard wording; saved only on *Save draft*). Published documents are changed
 with **Edit / rewrite (new version)**. The wording in `apps/legal/standard_text.py` is not legal advice — review it
 before publishing. The football wording is never offered for other sectors.
+
+---
+
+# Version 5 — Temporary passwords sent by SMS
+
+## What happens
+- **New accounts** (Admin → Accounts → New account, approving an application, Admin → Turfs → new turf, and an
+  owner adding a manager) and **admin resets** (Accounts → *Reset password & send SMS*) generate a 12-character
+  random password (`secrets`), require a change at first sign-in, and send it by SMS to the account's registered
+  Bangladeshi mobile number. A valid mobile number is required while credential SMS is on.
+- The password is **never** returned by the API, shown in the dashboard, written to logs or the audit log. The admin
+  sees only: masked number, status (Queued / Retrying / Submitted / Failed / Expired / Password changed), reset time and
+  expiry. "Submitted" means BulkSMSBD accepted it; BulkSMSBD has no delivery reports, so "Delivered" is never claimed.
+- **Resend** reuses the same password while it hasn't been handed to the provider yet (e.g. after a failure) and is
+  still valid; after it was submitted or once it expired, Resend makes a new one and the old one stops working.
+- **Mandatory change**: until the user sets their own password (with confirmation), every API except `me`, `csrf`,
+  logout and change-password answers `403 password_change_required` (existing middleware). On change: hash saved,
+  flag cleared, temporary credential finished, other sessions signed out, audit event recorded.
+- **When credential SMS is off or SMS isn't connected**, the password is shown once to whoever created the account
+  (the only other way to hand it over), clearly labelled — accounts are never created unreachable.
+
+## How the password is protected
+- Login checks use Django's normal (argon2) password hash.
+- `TemporaryCredential.secret` holds a Fernet-encrypted copy (key derived from `DJANGO_SECRET_KEY`) only for the SMS
+  sender. It is wiped when BulkSMSBD accepts the SMS, when a newer password is issued, when the user changes it,
+  or when it expires (tick step `expire_temporary_passwords`).
+- The SMS outbox stores the text with `************` in place of the password; the real text is assembled only at the
+  moment of hand-off to the provider. The console SMS backend logs the masked text.
+- Limits: 5 temporary passwords per account per hour (429 after), 5 SMS per password, double-click/same
+  `Idempotency-Key` returns the existing reset instead of a new one, a pending automatic retry is cancelled when an
+  admin resends (no duplicate SMS). Only platform admins can reset/resend; the public forgot-password flow is
+  unchanged and still doesn't reveal whether an account exists.
+- Cost: credential SMS are TurfBari platform SMS (`account_credentials`, `credential_reset`), recorded as platform
+  usage; no turf wallet is ever charged.
+- Audit events: `account.temporary_password_issued`, `…_sms_submitted`, `…_sms_failed`, `…_resent`, `…_expired`,
+  `…_replaced`, `account.password_changed`, plus the existing `platform.user_created` / `platform.user_reset_password`.
+
+## Settings (Admin → API → Login details by SMS)
+On/off, SMS language (বাংলা default / English), temporary password validity in hours (1–168, default 72), and the four
+templates (new account / reset × BN / EN; empty = built-in). Placeholders: `{name}` `{login_url}` `{username}`
+`{password}` `{expires}` — `{password}` and `{login_url}` are required, unknown placeholders are refused.
+`{login_url}` is `FRONTEND_URL` + `/login`; `{username}` is the username or the email.
+
+## Migrations / endpoints
+`accounts.0005` (TemporaryCredential), `common.0003` (settings fields), `notifications.0005` (two SMS kinds).
+`POST /api/admin/users/<id>/reset-password/` (now SMS; optional `Idempotency-Key` header),
+`GET /api/admin/users/<id>/credential/`, `POST /api/admin/users/<id>/credential/resend/`,
+`GET/PUT /api/admin/api-config/credentials/`. Responses that created an account now carry `credential` (status) and
+`temporary_password` = `null` unless shown-once. `change-password` takes `new_password_confirm` (required while on a
+temporary password).
+
+## Deploy notes
+No new environment variables. Make sure `FRONTEND_URL` on Render is the live address (`https://turfbari.onrender.com`)
+so the SMS login link is right, BulkSMSBD is connected (Admin → API) and has balance, and the SMS sender ID is
+approved. Background sending uses the existing SMS sender (instant background send + the tick retries); there is no
+separate Celery worker on the free plan.
+
+## Known limits
+- Mobile numbers are the registered numbers; there is no separate phone-ownership verification step.
+- BulkSMSBD gives no delivery reports.
+- Changing `DJANGO_SECRET_KEY` makes unsent encrypted copies unreadable; Resend then issues a new password.

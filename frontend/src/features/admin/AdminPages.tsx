@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { PageHeader, StatCard } from "@/components/layout/AppShell";
+import { type CredentialInfo, CredentialStatus } from "@/components/account/CredentialStatus";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -158,7 +159,7 @@ export function AdminApplicationsPage() {
   const [note, setNote] = useState("");
   const [rate, setRate] = useState("1500");
   const [plan, setPlan] = useState({ plan: "monthly", payment_received: true });
-  const [credentials, setCredentials] = useState<{ email: string; password: string | null; slug: string } | null>(null);
+  const [credentials, setCredentials] = useState<OwnerLogin | null>(null);
 
   const list = useQuery({
     queryKey: ["admin", "applications", status],
@@ -179,13 +180,13 @@ export function AdminApplicationsPage() {
   });
   const approve = useMutation({
     mutationFn: () =>
-      api<{ owner_email: string; temporary_password: string | null; turf: { slug: string } }>(
+      api<{ owner_email: string; temporary_password: string | null; credential: CredentialInfo | null; turf: { slug: string } }>(
         `/admin/applications/${open?.id}/approve/`,
         { method: "POST", json: { hourly_rate: rate, ...plan } },
       ),
     onSuccess: (r) => {
       setOpen(null);
-      setCredentials({ email: r.owner_email, password: r.temporary_password, slug: r.turf.slug });
+      setCredentials({ email: r.owner_email, password: r.temporary_password, credential: r.credential, slug: r.turf.slug });
       refresh();
     },
     onError: (e) => toast.error(e instanceof ApiError && e.fields ? Object.values(e.fields).flat()[0] ?? e.message : e.message),
@@ -281,20 +282,29 @@ export function AdminApplicationsPage() {
   );
 }
 
+interface OwnerLogin {
+  email: string;
+  /** Only when SMS is unavailable: shown once, never retrievable again. */
+  password: string | null;
+  credential: CredentialInfo | null;
+  slug: string;
+}
+
 function CredentialsDialog({
   value,
   onClose,
 }: {
-  value: { email: string; password: string | null; slug: string } | null;
+  value: OwnerLogin | null;
   onClose: () => void;
 }) {
   return (
-    <Dialog open={value !== null} onClose={onClose} title="Turf created" description="Share the owner login securely. The password is shown only once.">
+    <Dialog open={value !== null} onClose={onClose} title="Turf created" description="The owner's login details go to their mobile by SMS.">
       {value && (
         <div className="flex flex-col gap-3 text-sm">
           <p>
             Owner email: <span className="font-semibold">{value.email}</span>
           </p>
+          {value.credential && <CredentialStatus credential={value.credential} />}
           {value.password ? (
             <div className="flex items-center gap-2 rounded-md bg-secondary p-3">
               <code className="flex-1 font-mono text-base">{value.password}</code>
@@ -307,7 +317,9 @@ function CredentialsDialog({
               </Button>
             </div>
           ) : (
-            <p className="text-muted-foreground">This owner already had an account, so their existing password still works.</p>
+            !value.credential && (
+              <p className="text-muted-foreground">This owner already had an account, so their existing password still works.</p>
+            )
           )}
           <p className="text-muted-foreground">
             The turf is not public yet. The owner can list it from Workspace → Settings, or you can list it from Turfs.
@@ -345,7 +357,7 @@ export function AdminTurfsPage() {
   const [status, setStatus] = useState("");
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState(NEW_TURF);
-  const [credentials, setCredentials] = useState<{ email: string; password: string | null; slug: string } | null>(null);
+  const [credentials, setCredentials] = useState<OwnerLogin | null>(null);
 
   const list = useQuery({
     queryKey: ["admin", "turfs", q, status, plan],
@@ -363,14 +375,14 @@ export function AdminTurfsPage() {
   });
   const create = useMutation({
     mutationFn: () =>
-      api<{ owner_email: string; temporary_password: string | null; turf: AdminTurf }>("/admin/turfs/", {
+      api<{ owner_email: string; temporary_password: string | null; credential: CredentialInfo | null; turf: AdminTurf }>("/admin/turfs/", {
         method: "POST",
         json: { ...form, area: form.area || null, number_of_fields: Number(form.number_of_fields) },
       }),
     onSuccess: (r) => {
       setCreating(false);
       setForm(NEW_TURF);
-      setCredentials({ email: r.owner_email, password: r.temporary_password, slug: r.turf.slug });
+      setCredentials({ email: r.owner_email, password: r.temporary_password, credential: r.credential, slug: r.turf.slug });
       qc.invalidateQueries({ queryKey: ["admin"] });
     },
   });

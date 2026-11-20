@@ -337,7 +337,9 @@ export interface Manager {
   is_active: boolean;
   permissions: ManagerPermissions;
   must_change_password: boolean;
+  /** Only when SMS is unavailable (shown once). */
   temporary_password?: string | null;
+  credential?: import("@/components/account/CredentialStatus").CredentialInfo | null;
 }
 
 export interface Application {

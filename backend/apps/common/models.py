@@ -49,6 +49,14 @@ class PlatformSettings(models.Model):
     # TurfBari's own SMS to owners (wallet credited, plan approved/rejected).
     platform_owner_sms = models.BooleanField(default=True)
     terms_enabled = models.BooleanField(default=True)
+    # Temporary passwords for new accounts / admin resets, sent by SMS (paid by TurfBari, never a turf).
+    credential_sms_enabled = models.BooleanField(default=True)
+    credential_sms_language = models.CharField(max_length=2, default="bn")  # bn / en
+    credential_created_en = models.TextField(blank=True)  # blank = built-in template
+    credential_created_bn = models.TextField(blank=True)
+    credential_reset_en = models.TextField(blank=True)
+    credential_reset_bn = models.TextField(blank=True)
+    temp_password_hours = models.PositiveSmallIntegerField(default=72)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:

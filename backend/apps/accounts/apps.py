@@ -7,4 +7,8 @@ class AccountsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
 
     def ready(self):
-        from . import middleware  # noqa: F401  (connects the sign-in time signal)
+        from apps.notifications import tick
+
+        from . import credentials, middleware  # noqa: F401  (middleware connects the sign-in time signal)
+
+        tick.EXTRA_STEPS.append(("expire_temporary_passwords", credentials.expire_due))

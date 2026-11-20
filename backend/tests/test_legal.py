@@ -227,7 +227,10 @@ def test_7_registration_requires_acceptance_and_owner_is_not_asked_again():
     approved = admin.post(f"/api/admin/applications/{application.id}/approve/", {}, format="json").json()
     owner = get_user_model().objects.get(email="sadia@example.com")
     assert LegalAcceptance.objects.filter(user=owner, version_id=rules["id"], action="registration").exists()
-    client, r = sign_in("sadia@example.com", approved["temporary_password"])
+    from .test_account_security import sms_password
+
+    assert approved["temporary_password"] is None
+    client, r = sign_in("sadia@example.com", sms_password())
     assert r.json()["user"]["legal_pending"] is False  # already accepted when applying
 
 

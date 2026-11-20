@@ -107,3 +107,53 @@ class PasswordResetCode(models.Model):
 
     def __str__(self) -> str:
         return f"Reset code for {self.user} ({self.channel})"
+
+
+class TemporaryCredential(UUIDModel):
+    """One temporary password handed to a user (new account or admin reset).
+
+    The password itself is checked through the user's normal (argon2) password hash. `secret` is a
+    Fernet-encrypted copy that only the SMS sender can read, and it is wiped as soon as the SMS is
+    handed to the provider, the password is replaced, used or expires. It is never returned by an API
+    or written to a log."""
+
+    class Purpose(models.TextChoices):
+        ACCOUNT_CREATED = "account_created", "New account"
+        ADMIN_RESET = "admin_reset", "Password reset by TurfBari"
+
+    class Channel(models.TextChoices):
+        SMS = "sms", "SMS"
+        SHOWN_ONCE = "shown_once", "Shown once to the person who created it"
+
+    class Status(models.TextChoices):
+        QUEUED = "queued", "Queued"
+        SUBMITTED = "submitted", "Submitted to SMS provider"
+        FAILED = "failed", "SMS failed"
+        SHOWN = "shown", "Shown once"
+        USED = "used", "Replaced by the user"
+        SUPERSEDED = "superseded", "Replaced by a newer temporary password"
+        EXPIRED = "expired", "Expired"
+
+    ACTIVE = (Status.QUEUED, Status.SUBMITTED, Status.FAILED, Status.SHOWN)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="temporary_credentials")
+    purpose = models.CharField(max_length=20, choices=Purpose.choices)
+    channel = models.CharField(max_length=12, choices=Channel.choices)
+    status = models.CharField(max_length=12, choices=Status.choices, db_index=True)
+    secret = models.TextField(blank=True)  # encrypted; empty once no longer needed
+    phone = models.CharField(max_length=20, blank=True)  # where the SMS went (as BD msisdn)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)  # used / superseded / expired
+    sends = models.PositiveSmallIntegerField(default=0)  # SMS queued for this credential
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    idempotency_key = models.CharField(max_length=80, unique=True, null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["user", "status"])]
+
+    def __str__(self) -> str:
+        return f"Temporary password for {self.user} ({self.status})"

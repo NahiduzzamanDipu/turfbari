@@ -5,6 +5,7 @@ import type * as React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/AppShell";
+import { CredentialStatus } from "@/components/account/CredentialStatus";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -841,8 +842,8 @@ export function ManagersPage() {
           <FormField label="Email" hint="They sign in with this email.">
             {(id) => <Input id={id} type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />}
           </FormField>
-          <FormField label="Phone (optional)">
-            {(id) => <Input id={id} type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />}
+          <FormField label="Mobile number" hint="New managers get their login details here by SMS.">
+            {(id) => <Input id={id} type="tel" required placeholder="01XXXXXXXXX" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />}
           </FormField>
           {add.error && <p className="text-sm text-destructive">{errorText(add.error)}</p>}
           <Button type="submit" disabled={add.isPending}>
@@ -850,12 +851,13 @@ export function ManagersPage() {
           </Button>
         </form>
       </Dialog>
-      <Dialog open={created !== null} onClose={() => setCreated(null)} title="Manager added" description="Share the login securely. The temporary password is shown only once; they must choose their own the first time they sign in.">
+      <Dialog open={created !== null} onClose={() => setCreated(null)} title="Manager added" description="New managers get a temporary password by SMS and must choose their own the first time they sign in.">
         {created && (
           <div className="flex flex-col gap-3 text-sm">
             <p>
               Email: <strong>{created.email}</strong>
             </p>
+            {created.credential && <CredentialStatus credential={created.credential} />}
             {created.temporary_password ? (
               <div className="flex items-center gap-2 rounded-md bg-secondary p-3">
                 <code className="flex-1 font-mono text-base">{created.temporary_password}</code>
@@ -864,7 +866,9 @@ export function ManagersPage() {
                 </Button>
               </div>
             ) : (
-              <p className="text-muted-foreground">They already have a TurfBari account and can sign in with their existing password.</p>
+              !created.credential && (
+                <p className="text-muted-foreground">They already have a TurfBari account and can sign in with their existing password.</p>
+              )
             )}
             <Button onClick={() => setCreated(null)}>Done</Button>
           </div>

@@ -23,8 +23,9 @@ from apps.common.pagination import StandardPagination
 from apps.common.permissions import IsPlatformAdmin
 from apps.turfs.models import TenantMembership, Turf
 
-from .models import TwoFactorDevice
-from .passwords import create_user_with_temporary_password, end_sessions, issue_temporary_password
+from . import credentials
+from .models import TemporaryCredential, TwoFactorDevice
+from .passwords import create_user_with_temporary_password, end_sessions
 from .views import unlock_user
 
 User = get_user_model()
@@ -71,6 +72,7 @@ def user_row(user, *, detail: bool = False) -> dict:
         "memberships": [membership_row(m) for m in user.memberships.all()],
     }
     if detail:
+        row["credential"] = credentials.latest_for(user)
         events = AuditEvent.objects.filter(Q(actor=user) | Q(target_type="user", target_id=str(user.pk)))
         row["security_events"] = [
             {
@@ -185,13 +187,22 @@ class AccountListView(APIView):
         turf = Turf.objects.filter(pk=v["turf"]).first()
         if turf is None:
             raise ValidationError({"turf": ["Unknown turf."]})
+        credentials.require_phone(v.get("phone", ""))
         user, password = create_user_with_temporary_password(
             v["email"], full_name=v["full_name"], phone=v.get("phone", "")
         )
         TenantMembership.objects.create(user=user, turf=turf, role=v["role"])
         _audit(request, "created", f"Created {v['role']} account {user.email} for {turf.name}", user)
+        delivery = credentials.start_delivery(
+            user,
+            password,
+            purpose=TemporaryCredential.Purpose.ACCOUNT_CREATED,
+            by=request.user,
+            request=request,
+        )
         user = users_qs().get(pk=user.pk)
-        return Response({**user_row(user), "temporary_password": password}, status=status.HTTP_201_CREATED)
+        # The password itself is only returned when it can't be sent by SMS (shown once, never again).
+        return Response({**user_row(user), **delivery}, status=status.HTTP_201_CREATED)
 
 
 class AccountDetailView(APIView):
@@ -258,8 +269,12 @@ class AccountActionView(APIView):
         elif action == "unlock":
             unlock_user(user)
         elif action == "reset-password":
-            extra["temporary_password"] = issue_temporary_password(user)
-            extra["sessions_ended"] = end_sessions(user)
+            result = credentials.reset(
+                user, by=request.user, request=request, idempotency_key=request.headers.get("Idempotency-Key")
+            )
+            if result.get("duplicate"):  # same request again: nothing new was issued or sent
+                return Response({**user_row(users_qs().get(pk=user.pk), detail=True), **result})
+            extra.update(result)
             unlock_user(user)
         elif action == "force-change":
             user.must_change_password = True
@@ -271,6 +286,35 @@ class AccountActionView(APIView):
             TwoFactorDevice.objects.filter(user=user).delete()
         _audit(request, action.replace("-", "_"), f"{ACTIONS[action]} {user.email}", user)
         return Response({**user_row(users_qs().get(pk=user.pk), detail=True), **extra})
+
+
+class AccountCredentialView(APIView):
+    """Status of the account's latest temporary password (never the password)."""
+
+    permission_classes = [IsPlatformAdmin]
+
+    @extend_schema(tags=["admin"])
+    def get(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        return Response({"credential": credentials.latest_for(user)})
+
+
+class AccountCredentialResendView(APIView):
+    """Resend the temporary password SMS: same password while still valid and unsent, else a new one."""
+
+    permission_classes = [IsPlatformAdmin]
+
+    @extend_schema(tags=["admin"], request=None)
+    def post(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        _editable(request, user)
+        cred = TemporaryCredential.objects.filter(user=user).order_by("-created_at").first()
+        if cred is None or cred.channel != TemporaryCredential.Channel.SMS:
+            raise ValidationError(
+                {"detail": ["There is no temporary password SMS to resend. Use Reset password."]}
+            )
+        result = credentials.resend(cred, by=request.user, request=request)
+        return Response({**user_row(users_qs().get(pk=user.pk), detail=True), **result})
 
 
 class MembershipSerializer(serializers.Serializer):
