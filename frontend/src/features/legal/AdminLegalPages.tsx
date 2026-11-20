@@ -14,6 +14,7 @@ import {
   Loader2,
   Pencil,
   Plus,
+  RotateCcw,
   Save,
   Scale,
   Send,
@@ -364,7 +365,14 @@ function DocumentsTab() {
                 <td>{d.current ? <Badge tone="green">v{d.current.version}</Badge> : <span className="text-xs text-muted-foreground">Not published</span>}</td>
                 <td>{d.draft ? <Badge tone="amber">v{d.draft.version} draft</Badge> : "—"}</td>
                 <td className="tabular">{d.acceptances.toLocaleString()}</td>
-                <td>
+                <td className="whitespace-nowrap">
+                  {d.draft && (
+                    <Button asChild size="sm" className="mr-1">
+                      <Link to={`/admin/legal/versions/${d.draft.id}/edit`}>
+                        <Pencil /> Edit
+                      </Link>
+                    </Button>
+                  )}
                   <Button asChild size="sm" variant="outline">
                     <Link to={`/admin/legal/documents/${d.id}`}>Open</Link>
                   </Button>
@@ -680,7 +688,8 @@ export function AdminLegalDocumentPage() {
               </Button>
             )}
             <Button onClick={() => (d.draft ? navigate(`/admin/legal/versions/${d.draft.id}/edit`) : newDraft.mutate())} disabled={newDraft.isPending}>
-              {d.draft ? <Pencil /> : <FilePlus2 />} {d.draft ? `Edit draft v${d.draft.version}` : d.versions.length ? "New version" : "Write first version"}
+              {d.draft ? <Pencil /> : <FilePlus2 />}{" "}
+              {d.draft ? `Edit draft v${d.draft.version}` : d.versions.length ? "Edit / rewrite (new version)" : "Write first version"}
             </Button>
           </>
         }
@@ -865,6 +874,16 @@ export function AdminLegalEditorPage() {
     },
     onError: (e) => toast.error(errorText(e)),
   });
+  // Replace the whole draft (both languages) with TurfBari's standard wording; saved only on "Save draft".
+  const rewrite = useMutation({
+    mutationFn: () =>
+      api<{ title_en: string; title_bn: string; body_en: string; body_bn: string }>(`/admin/legal/documents/${v.data?.document.id}/standard-text/`),
+    onSuccess: (t) => {
+      setForm((f) => f && { ...f, ...t });
+      toast.success("Standard text loaded — edit it, then Save draft");
+    },
+    onError: (e) => toast.error(errorText(e)),
+  });
   const discard = useMutation({
     mutationFn: () => api(`/admin/legal/versions/${id}/`, { method: "DELETE" }),
     onSuccess: () => {
@@ -905,6 +924,16 @@ export function AdminLegalEditorPage() {
           <>
             <Button variant="ghost" className="text-destructive" onClick={() => window.confirm("Discard this draft?") && discard.mutate()}>
               <Trash2 /> Discard
+            </Button>
+            <Button
+              variant="outline"
+              disabled={rewrite.isPending}
+              onClick={() =>
+                window.confirm("Replace the text of this draft (English and Bengali) with TurfBari's standard wording? Unsaved edits are lost.") &&
+                rewrite.mutate()
+              }
+            >
+              {rewrite.isPending ? <Loader2 className="animate-spin" /> : <RotateCcw />} Rewrite with standard text
             </Button>
             <Button variant="outline" disabled={save.isPending} onClick={async () => (await saveFirst(), setPreview(true))}>
               <Eye /> Preview

@@ -478,3 +478,43 @@ def test_15_old_terms_and_booking_agreements_are_migrated():
     assert {r.version_id for r in rows} == {terms.pk, rules.pk}
     assert all(abs((r.accepted_at - booking.terms_agreed_at).total_seconds()) < 1 for r in rows)
     assert TenantMembership.objects.filter(turf=turf).exists() and turf.sector.slug == "football-turf"
+
+
+# 16 ----------------------------------------------------------------- standard text drafts
+def test_16_standard_text_drafts_exist_for_every_module_and_nothing_is_published():
+    importlib.import_module("apps.legal.migrations.0003_standard_drafts").add_drafts(global_apps, None)
+    from apps.legal import content
+    from apps.legal.standard_text import DOCS, standard_text
+
+    for doc in LegalDocument.objects.filter(sector__slug="football-turf") | LegalDocument.objects.filter(
+        sector__isnull=True
+    ):
+        draft_v = doc.versions.get(status="draft")
+        assert draft_v.title_en and draft_v.title_bn, doc
+        assert not content.is_blank(draft_v.body_en) and not content.is_blank(draft_v.body_bn), doc
+        assert draft_v.body_en == content.sanitize(draft_v.body_en)  # stored already clean
+    assert set(DOCS) == {c for c, _ in LegalDocument.Category.choices}
+    assert not LegalDocumentVersion.objects.filter(published_at__isnull=False).exists()
+    assert APIClient().get("/api/public/legal/").json()["documents"] == []
+    # Running it again doesn't add a second draft.
+    importlib.import_module("apps.legal.migrations.0003_standard_drafts").add_drafts(global_apps, None)
+    assert LegalDocumentVersion.objects.filter(document__category="terms", status="draft").count() == 1
+    # The football wording is never offered for another sport.
+    assert standard_text("sector_rules", "Badminton Courts") is None
+
+
+def test_17_admin_can_load_standard_text_and_publish_after_editing():
+    admin, _ = admin_client()
+    _, owner = make_turf()
+    text = admin.get(f"/api/admin/legal/documents/{doc_id('privacy')}/standard-text/").json()
+    assert "bKash" in text["body_en"] and "বিকাশ" in text["body_bn"]
+    assert (
+        client_for(owner).get(f"/api/admin/legal/documents/{doc_id('privacy')}/standard-text/").status_code
+        == 403
+    )
+    v = draft(
+        admin, "privacy", body_en=text["body_en"] + "<p>Our office: Dhaka.</p>", body_bn=text["body_bn"]
+    )
+    r = admin.post(f"/api/admin/legal/versions/{v['id']}/publish/", {"reacceptance": "all"}, format="json")
+    assert r.status_code == 200
+    assert "Our office: Dhaka." in APIClient().get("/api/public/legal/privacy/").json()["body_en"]

@@ -101,6 +101,7 @@ admin_urls = [
     path("legal/documents/", legal_admin.AdminDocumentsView.as_view()),
     path("legal/documents/<uuid:pk>/", legal_admin.AdminDocumentDetailView.as_view()),
     path("legal/documents/<uuid:pk>/versions/", legal_admin.AdminDocumentVersionsView.as_view()),
+    path("legal/documents/<uuid:pk>/standard-text/", legal_admin.AdminStandardTextView.as_view()),
     path("legal/versions/<int:pk>/", legal_admin.AdminVersionView.as_view()),
     path("legal/versions/<int:pk>/publish/", legal_admin.AdminVersionPublishView.as_view()),
     path("legal/versions/<int:pk>/unpublish/", legal_admin.AdminVersionUnpublishView.as_view()),

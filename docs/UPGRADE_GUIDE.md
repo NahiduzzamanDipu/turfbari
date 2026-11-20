@@ -370,3 +370,12 @@ Admin: `/api/admin/legal/` (overview), `sectors/`, `documents/`, `documents/<id>
    the other documents. Choose the re-acceptance scope carefully — "everyone" stops every owner at next sign-in.
 2. Note: the migrated Terms document asks owners/managers to accept it at their next sign-in (they never accepted it
    before; previously only customers did). Change its "Ask for agreement at" settings first if you don't want that.
+
+## Standard text (V4.1)
+Migration `legal.0003_standard_drafts` adds TurfBari's own wording (English + Bengali, written from how TurfBari
+works: bKash advance verified by the business, ৳500 minimum, 10-minute hold, prepaid SMS wallet, plans that never
+auto-renew, 3-day grace) as a **draft** to every module that has no draft yet. Nothing is published automatically.
+In Admin → Legal & Compliance → Documents each module has **Edit**; the editor has **Rewrite with standard text**
+(replaces the draft text with the standard wording; saved only on *Save draft*). Published documents are changed
+with **Edit / rewrite (new version)**. The wording in `apps/legal/standard_text.py` is not legal advice — review it
+before publishing. The football wording is never offered for other sectors.

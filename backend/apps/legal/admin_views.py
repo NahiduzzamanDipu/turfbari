@@ -21,6 +21,7 @@ from apps.common.permissions import IsPlatformAdmin
 
 from . import catalog, content, services
 from .models import Action, Audience, LegalAcceptance, LegalDocument, LegalDocumentVersion, Sector
+from .standard_text import standard_text
 from .views import acceptance_row, published_history, search_acceptances, sector_payload
 
 PLATFORM = AuditEvent.Category.PLATFORM
@@ -356,6 +357,24 @@ class AdminDocumentDetailView(APIView):
         services.bump_revision()
         _audit(request, "document_updated", f"Updated settings of {doc}", {"fields": sorted(attrs)})
         return Response(document_summary(doc))
+
+
+class AdminStandardTextView(APIView):
+    """TurfBari's standard wording for a module (for "Rewrite with standard text"); nothing is saved."""
+
+    permission_classes = [IsPlatformAdmin]
+
+    @extend_schema(tags=["admin"])
+    def get(self, request, pk):
+        doc = _document(pk)
+        text = standard_text(
+            doc.category,
+            doc.sector.name_en if doc.sector_id else None,
+            doc.sector.name_bn if doc.sector_id else None,
+        )
+        if text is None:
+            raise NotFound("There is no standard text for this document.")
+        return Response({k: content.sanitize(v) if k.startswith("body") else v for k, v in text.items()})
 
 
 # ------------------------------------------------------------------ versions
