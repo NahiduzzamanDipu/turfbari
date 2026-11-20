@@ -22,11 +22,12 @@ import { Link } from "react-router";
 import { useState } from "react";
 import type React from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/form";
+import { YouTubeDialog } from "@/components/content/YouTube";
 import { useMe } from "@/features/auth/auth";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { formatBDT } from "@/lib/utils";
+import { usePublicYoutubeVideo } from "./usePublicYoutubeVideo";
 
 /**
  * TurfBari's own site is about the product for turf owners. There is no public directory of turfs:
@@ -59,7 +60,7 @@ export function HomePage() {
   const signedIn = me.data?.authenticated;
   const plans = useQuery({ queryKey: ["public", "plans"], queryFn: () => api<PublicPlan[]>("/public/plans/"), staleTime: 5 * 60_000 });
   const smsPrice = useQuery({ queryKey: ["public", "sms-pricing"], queryFn: () => api<SmsPrice>("/public/sms-pricing/"), staleTime: 5 * 60_000 });
-  const youtube = useQuery({ queryKey: ["public", "youtube"], queryFn: () => api<{ video_id: string | null }>("/public/youtube/"), staleTime: 5 * 60_000 });
+  const youtube = usePublicYoutubeVideo();
   const faqs = useQuery({ queryKey: ["public", "faqs"], queryFn: () => api<HomepageFAQ[]>("/public/faqs/"), staleTime: 5 * 60_000 });
 
   return (
@@ -255,9 +256,9 @@ export function HomePage() {
           <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{faqLanguage === "bn" && faq.answer_bn ? faq.answer_bn : faq.answer_en}</p>
         </details>)}</div>
       </section> : null}
-      <Dialog open={aboutOpen && Boolean(youtube.data?.video_id)} onClose={() => setAboutOpen(false)} title="About Us" description="A short introduction to TURFBARI." wide>
-        {aboutOpen && youtube.data?.video_id && <div className="aspect-video overflow-hidden rounded-xl bg-black"><iframe className="size-full" src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtube.data.video_id)}?autoplay=1`} title="About TURFBARI" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen loading="lazy" /></div>}
-      </Dialog>
+      {aboutOpen && youtube.data?.video_id && (
+        <YouTubeDialog videoId={youtube.data.video_id} title="About TURFBARI" onClose={() => setAboutOpen(false)} />
+      )}
     </>
   );
 }

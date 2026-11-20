@@ -39,7 +39,7 @@ describe("homepage configuration sections", () => {
     render(<MemoryRouter><HomePage /></MemoryRouter>);
     expect(screen.queryByTitle("About TURFBARI")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "About Us" }));
-    expect(screen.getByTitle("About TURFBARI")).toHaveAttribute("src", "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1");
+    expect(screen.getByTitle("About TURFBARI")).toHaveAttribute("src", "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1");
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.queryByTitle("About TURFBARI")).not.toBeInTheDocument();
   });

@@ -64,8 +64,10 @@ def test_1_2_3_global_video_is_admin_only_and_same_on_every_page():
     )
     assert admin.put("/api/admin/api-config/youtube/", {"url": VIDEO}, format="json").status_code == 200
     assert page(a)["youtube_video_id"] == page(b)["youtube_video_id"] == "aqz-KE-bpKQ"
+    assert APIClient().get("/api/public/youtube/").json()["video_id"] == page(a)["youtube_video_id"]
     admin.put("/api/admin/api-config/youtube/", {"url": "https://youtu.be/dQw4w9WgXcQ"}, format="json")
     assert page(a)["youtube_video_id"] == page(b)["youtube_video_id"] == "dQw4w9WgXcQ"  # updated everywhere
+    assert APIClient().get("/api/public/youtube/").json()["video_id"] == page(b)["youtube_video_id"]
     owner_client = client_for(owner)
     assert (
         owner_client.put("/api/admin/api-config/youtube/", {"url": VIDEO}, format="json").status_code == 403

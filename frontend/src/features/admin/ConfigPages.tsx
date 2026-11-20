@@ -81,7 +81,10 @@ export function AdminApiPage() {
       {config.isError && <ErrorState error={config.error} onRetry={() => config.refetch()} />}
       {c && (
         <div className="grid gap-6 xl:grid-cols-2">
-          <YouTubeCard current={c.youtube} onSaved={() => qc.invalidateQueries({ queryKey: ["admin", "api-config"] })} />
+          <YouTubeCard current={c.youtube} onSaved={() => {
+            qc.invalidateQueries({ queryKey: ["admin", "api-config"] });
+            qc.invalidateQueries({ queryKey: ["public", "youtube"] });
+          }} />
           <BulkSmsCard current={c.bulksmsbd} onSaved={(b) => qc.setQueryData(["admin", "api-config"], { ...c, bulksmsbd: b })} />
           <BookingLimitCard current={c.booking.max_slots_per_customer} onSaved={() => qc.invalidateQueries({ queryKey: ["admin", "api-config"] })} />
           <PaymentsCard />

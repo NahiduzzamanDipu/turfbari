@@ -9,6 +9,7 @@ import { ErrorState, FormField, Input, Textarea } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, api } from "@/lib/api";
 import { YouTubeDialog, YouTubeIcon } from "@/components/content/YouTube";
+import { usePublicYoutubeVideo } from "./usePublicYoutubeVideo";
 import { addDays, fmtDay, fmtRange, todayISO } from "@/lib/format";
 import {
   clearDraft,
@@ -53,6 +54,8 @@ const clock = (iso: string) =>
  * everyone else as "Someone is booking". Statuses refresh every few seconds.
  */
 export function BookingPanel({ turf }: { turf: TurfDetail }) {
+  const youtube = usePublicYoutubeVideo();
+  const youtubeVideoId = youtube.data?.video_id;
   const qc = useQueryClient();
   const qcDraft = useMemo(() => loadDraft(turf.slug), [turf.slug]);
   const validDay = (d?: string) => (d && d >= todayISO() ? d : todayISO());
@@ -272,7 +275,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
             Terms &amp; Conditions
           </Link>
         )}
-        {turf.youtube_video_id && (
+        {youtubeVideoId && (
           <button
             type="button"
             onClick={() => setShowVideo(true)}
@@ -287,8 +290,8 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
     </CardHeader>
   );
   const video =
-    showVideo && turf.youtube_video_id ? (
-      <YouTubeDialog videoId={turf.youtube_video_id} title="বুকিং করার নিয়ম — How to book" onClose={() => setShowVideo(false)} />
+    showVideo && youtubeVideoId ? (
+      <YouTubeDialog videoId={youtubeVideoId} title="বুকিং করার নিয়ম — How to book" onClose={() => setShowVideo(false)} />
     ) : null;
 
   if (done) {
