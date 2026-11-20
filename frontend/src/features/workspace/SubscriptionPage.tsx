@@ -149,7 +149,7 @@ export function SubscriptionPage() {
                   )}
                 </div>
                 {standing.current.plan.description && <p className="max-w-xl text-[13px] leading-snug text-emerald-50">{standing.current.plan.description}</p>}
-                <dl className="grid gap-1 sm:grid-cols-2">
+                <dl className="grid grid-cols-2 gap-1">
                   <PlanInfo icon={<CalendarDays />} label="Start date" value={fmtPlainDate(standing.current.starts_on)} onDark={planCardState !== "none"} />
                   <PlanInfo icon={<CalendarClock />} label="Expiry date · paid through" value={fmtPlainDate(standing.paid_until)} emphasis onDark={planCardState !== "none"} />
                   <PlanInfo icon={<Clock />} label="Time remaining" value={standing.days_left === null ? "—" : `${Math.max(0, standing.days_left)} ${Math.max(0, standing.days_left) === 1 ? "day" : "days"}`} emphasis={standing.state === "expiring"} onDark={planCardState !== "none"} />
