@@ -304,7 +304,7 @@ class PromoCodeAdminViewSet(viewsets.ModelViewSet):
         state = "" if promo.is_active else ", switched off"
         record(
             action,
-            f"{verb} promo code {promo.code} ({promo.percent_off}% off{state})",
+            f"{verb} promo code {promo.code} ({promo.label}{state})",
             category=Category.PLATFORM,
             request=self.request,
             target=promo,
@@ -318,7 +318,52 @@ class PromoCodeAdminViewSet(viewsets.ModelViewSet):
         before = {k: str(getattr(serializer.instance, k)) for k in serializer.validated_data}
         self._record("platform.promo_updated", "Updated", serializer.save(), data={"before": before})
 
+    def get_queryset(self):
+        qs = PromoCode.objects.prefetch_related("plans")
+        if self.request.query_params.get("archived") != "1" and self.action == "list":
+            qs = qs.filter(is_archived=False)
+        return qs
+
+    @action(detail=True, methods=["get"])
+    def redemptions(self, request, pk=None):
+        """Every use of the code: plan invoices (existing turfs) and registrations."""
+        from apps.applications.models import RegistrationPayment
+
+        promo = self.get_object()
+        rows = [
+            {
+                "kind": "invoice",
+                "who": inv.turf.name,
+                "reference": inv.number,
+                "status": inv.status,
+                "discount": str(inv.discount),
+                "amount": str(inv.amount),
+                "at": inv.paid_at or inv.created_at,
+            }
+            for inv in promo.invoices.select_related("turf").order_by("-created_at")[:200]
+        ]
+        for r in promo.redemptions.select_related("application").order_by("-created_at")[:200]:
+            pay = RegistrationPayment.objects.filter(redemption=r).order_by("-created_at").first()
+            rows.append(
+                {
+                    "kind": "registration",
+                    "who": r.application.turf_name,
+                    "reference": r.application.reference,
+                    "status": r.status,
+                    "discount": str(r.discount),
+                    "amount": str(pay.amount_due) if pay else None,
+                    "at": r.finished_at or r.created_at,
+                    "reserved_until": r.reserved_until,
+                }
+            )
+        rows.sort(key=lambda x: x["at"], reverse=True)
+        return Response({"results": rows})
+
     def perform_destroy(self, instance):
+        if instance.redemptions.exists():
+            raise ValidationError(
+                {"code": [f"{instance.code} was used in registrations. Archive it instead."]}
+            )
         if instance.invoices.exists():
             msg = f"{instance.code} is already on invoices. Switch it off instead."
             raise ValidationError({"code": [msg]})

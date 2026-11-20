@@ -16,8 +16,6 @@ from django.db.models import Max
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from apps.common.money import to_money
-
 from .models import Invoice, PaymentTransaction, Plan, PromoCode, Subscription
 
 GRACE_DAYS = 3
@@ -311,40 +309,36 @@ def assign_plan(turf, plan: Plan, *, paid: bool, by=None, method="cash", referen
 
 
 # ------------------------------------------------------------- promo codes
-def normalize_code(code: str) -> str:
-    return (code or "").strip().upper()
+from . import promos  # noqa: E402  (shared promo rules: invoices + registrations)
+
+normalize_code = promos.normalize_code
 
 
 def promo_uses(promo: PromoCode, exclude_invoice=None) -> int:
-    """Uses = invoices holding the code that are paid or still open (an open one reserves its use)."""
-    qs = Invoice.objects.filter(promo_code=promo, status__in=[Invoice.Status.PAID, *Invoice.OPEN])
-    if exclude_invoice is not None:
-        qs = qs.exclude(pk=exclude_invoice.pk)
-    return qs.count()
+    """Uses = paid/open invoices + registration reservations still held."""
+    return promos.uses(promo, exclude_invoice=exclude_invoice)
 
 
-def check_promo(code: str, turf, *, exclude_invoice=None, lock=False) -> PromoCode:
-    """Return the usable promo code for this turf, or raise a ValidationError the owner can read."""
-    code = normalize_code(code)
-    qs = PromoCode.objects.select_for_update() if lock else PromoCode.objects
-    promo = qs.filter(code=code).first() if code else None
-    if promo is None or not promo.is_active:
-        raise ValidationError({"code": ["This promo code is not valid."]})
-    today = timezone.localdate()
-    if promo.valid_from and today < promo.valid_from:
-        raise ValidationError({"code": [f"This promo code starts on {promo.valid_from:%d %b %Y}."]})
-    if promo.valid_until and today > promo.valid_until:
-        raise ValidationError({"code": ["This promo code has expired."]})
-    if Invoice.objects.filter(turf=turf, promo_code=promo, status=Invoice.Status.PAID).exists():
-        raise ValidationError({"code": ["Your turf has already used this promo code."]})
-    if promo.max_uses is not None and promo_uses(promo, exclude_invoice) >= promo.max_uses:
-        raise ValidationError({"code": ["This promo code has been fully used."]})
-    return promo
+def check_promo(code: str, turf, *, exclude_invoice=None, lock=False, plan=None, price=None) -> PromoCode:
+    """Return the usable promo code for this turf's invoice, or raise a ValidationError the owner can read."""
+    try:
+        return promos.check(
+            code,
+            plan=plan,
+            price=price if price is not None else Decimal("0"),
+            turf=turf,
+            lock=lock,
+            exclude_invoice=exclude_invoice,
+        )
+    except ValidationError as exc:  # invoice screens show promo errors under "code"
+        raise ValidationError(
+            {"code": exc.detail.get("promo_code", ["This promo code is not valid."])}
+        ) from None
 
 
 def _reprice(invoice: Invoice, promo: PromoCode | None):
     base = invoice.amount + invoice.discount  # the plan price on this order
-    discount = to_money(base * Decimal(promo.percent_off) / 100) if promo else Decimal("0.00")
+    discount = promos.discount_for(promo, base) if promo else Decimal("0.00")
     invoice.discount, invoice.amount, invoice.promo_code = discount, base - discount, promo
     invoice.save(update_fields=["discount", "amount", "promo_code", "updated_at"])
     Subscription.objects.filter(pk=invoice.subscription_id).update(price=invoice.amount)
@@ -353,7 +347,14 @@ def _reprice(invoice: Invoice, promo: PromoCode | None):
 @transaction.atomic
 def apply_promo(invoice: Invoice, code: str, *, user=None) -> Invoice:
     invoice = _open_invoice(invoice)
-    promo = check_promo(code, invoice.turf, exclude_invoice=invoice, lock=True)
+    promo = check_promo(
+        code,
+        invoice.turf,
+        exclude_invoice=invoice,
+        lock=True,
+        plan=invoice.subscription.plan,
+        price=invoice.amount + invoice.discount,
+    )
     _reprice(invoice, promo)
     if invoice.amount == 0:  # 100% off: nothing to pay, but TurfBari still approves the plan change
         PaymentTransaction.objects.create(

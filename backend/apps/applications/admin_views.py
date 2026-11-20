@@ -176,7 +176,11 @@ class ApplicationAdminViewSet(
     def approve(self, request, pk=None):
         data = ApproveSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        result = approve_application(self.get_object(), reviewer=request.user, **data.validated_data)
+        application = self.get_object()
+        if application.payments.exists():
+            msg = "This registration has a bKash payment — approve it from Registration payments."
+            raise serializers.ValidationError({"status": [msg]})
+        result = approve_application(application, reviewer=request.user, **data.validated_data)
         delivery = _deliver(result["owner"], result["temporary_password"], request)
         record(
             "platform.application_approved",

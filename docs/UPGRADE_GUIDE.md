@@ -501,3 +501,56 @@ plan exactly like any other booking change (402 when the plan has lapsed).
 `POST …/preview/`, `GET …/<id>/`, `POST …/<id>/confirm/`, `…/cancel/`, `…/add-date/`, `…/reschedule/`.
 Bookings list accepts `kind=single|recurring`, `series=<id>`, `series_status=…`. Admin: `PUT /api/admin/api-config/recurring/`.
 No new environment variables.
+
+
+---
+
+# Version 7 — Promo codes & paid registration (bKash, verified by TurfBari)
+
+## Registration (public `/register-turf`)
+When a bKash receiving number is configured (Admin → API → Payments, or `TURFBARI_BKASH_NUMBER`), registration is a
+5-step flow: turf & owner details → plan → "Have a promo code?" + payment summary → bKash payment (number, account
+type, instructions, exact amount, copy buttons; sender number, amount sent, TrxID, note) → confirmation with a
+`REG-…` reference. Prices and discounts are always calculated by the server; the amount sent must equal the
+server-calculated payable amount; TrxIDs are unique across registrations, plan payments, SMS recharges and booking
+advances. Nothing is activated on submission. Progress (not payment details) survives a reload in the same tab.
+Without a bKash number the old "apply and we'll call you" form is used.
+
+Applicants follow progress at **`/registration-status`** with the reference + their mobile number (there is no
+account before approval, so no dashboard access). After a rejection that allows it, they can submit corrected payment
+details there; every earlier submission is kept.
+
+## Admin → Registration payments
+Searchable/filterable list (reference, turf, owner, phone/email, plan, promo, original/discount/payable, amount sent,
+sender, TrxID, date, status) with a live "waiting" badge and reports: requests, pending, approved, rejected, list
+value, discounts, **received revenue (approved only)**, registration conversion, promo usage by code.
+- **Approve** (atomic, idempotent): creates the owner account + turf (existing approval code), a plan invoice with the
+  discount and promo, a verified bKash payment record, activates the plan period, redeems the promo, records the
+  admin/time/note, and sends the login details by SMS (shown once if SMS is unavailable).
+- **Reject**: reason required (shown to the applicant); choose whether they may resubmit. Not allowed → the
+  registration is closed and the promo reservation released.
+- The old "Approve application" action is refused for registrations that have a payment.
+
+## Promo codes (Admin → Promo codes)
+Now: campaign name, percentage (with optional max discount) or fixed ৳ amount, minimum price, start/expiry, max total
+uses, max uses per account/person, new-registrations-only, eligible plans, reservation hours, on/off, archive, usage
+stats (paid uses, reserved, remaining, total discount) and full usage history. Existing codes keep working (as
+percentage codes). One rule engine serves both plan invoices and registrations.
+
+**Lifecycle:** typing a code only previews it. Submitting a registration **reserves** it (counts towards limits, under
+a row lock so parallel claims can't overshoot). Approval **redeems** it (counted through the paid invoice). Rejection
+without resubmission **releases** it; a reservation with no payment under review **expires** after its reservation
+hours (tick). Each payment stores an immutable snapshot of the promo, original price and final price.
+
+## Migrations / endpoints / settings
+`subscriptions.0007` (promo fields, PromoRedemption), `applications.0004/0005` (reference, plan, RegistrationPayment,
+new statuses), `common.0005` (bKash account type). Public: `GET /api/public/registration/options/`,
+`POST …/quote/`, `POST …/status/`, `POST …/resubmit/`; `POST /api/public/applications/` accepts `plan`,
+`promo_code`, `sender_number`, `amount_sent`, `trx_id`, `payment_note`, `expected_payable`. Admin:
+`GET /api/admin/registration-payments/`, `POST …/<id>/approve/`, `POST …/<id>/reject/`,
+`GET /api/admin/promo-codes/<id>/redemptions/`. New throttles: `registration_quote` 30/min,
+`registration_status` 20/min (applications stay 3/hour per address). No new environment variables.
+
+## After deploying
+Set the bKash receiving number and account type in Admin → API → Payments (instructions optional), create promo codes,
+and approve registrations from Admin → Registration payments after checking each TrxID in the bKash account.

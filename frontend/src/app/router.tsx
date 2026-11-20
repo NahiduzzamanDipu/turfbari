@@ -1,4 +1,5 @@
 import {
+  BadgeCheck,
   BarChart3,
   Building2,
   CalendarClock,
@@ -81,6 +82,7 @@ const legalWorkspace = () => import("@/features/legal/WorkspaceLegalPages");
 const ADMIN_NAV: NavItem[] = [
   { to: "/admin", label: "Overview", icon: <LayoutDashboard />, end: true },
   { to: "/admin/applications", label: "Applications", icon: <Inbox />, badge: "pending_applications" },
+  { to: "/admin/registration-payments", label: "Registration payments", icon: <BadgeCheck />, badge: "pending_registration_payments" },
   { to: "/admin/turfs", label: "Turfs", icon: <Building2 /> },
   { to: "/admin/billing", label: "Plans & payments", icon: <CreditCard />, badge: "pending_payments" },
   { to: "/admin/subscriptions", label: "Subscriptions", icon: <CalendarClock /> },
@@ -130,6 +132,7 @@ export const router = createBrowserRouter([
       { path: "/turfs/:slug", element: <TurfDetailPage /> },
       { path: "/register-turf", element: page(() => import("@/features/public/RegisterTurfPage"), "RegisterTurfPage") },
       { path: "/booking-status", element: page(() => import("@/features/public/BookingStatusPage"), "BookingStatusPage") },
+      { path: "/registration-status", element: page(() => import("@/features/public/RegistrationStatusPage"), "RegistrationStatusPage") },
       { path: "/status", element: page(() => import("@/features/system/SystemStatusPage"), "SystemStatusPage") },
       { path: "/terms", element: <Navigate to="/legal/terms" replace /> },
       { path: "/legal", element: page(legalPublic, "LegalIndexPage") },
@@ -151,6 +154,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: page(adminPages, "AdminDashboardPage") },
       { path: "applications", element: page(adminPages, "AdminApplicationsPage") },
+      { path: "registration-payments", element: page(() => import("@/features/admin/RegistrationPaymentsPage"), "AdminRegistrationPaymentsPage") },
       { path: "turfs", element: page(adminPages, "AdminTurfsPage") },
       { path: "billing", element: page(billingPages, "AdminBillingPage") },
       { path: "promo-codes", element: page(() => import("@/features/admin/PromoCodesPage"), "AdminPromoCodesPage") },

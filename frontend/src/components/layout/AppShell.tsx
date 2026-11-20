@@ -21,7 +21,13 @@ export interface NavItem {
   /** Live count shown as a badge (e.g. booking requests waiting). */
   badge?: keyof Pick<
     LiveState,
-    "pending_requests" | "pending_payments_to_verify" | "pending_bookings" | "pending_applications" | "pending_payments" | "pending_recharges"
+    | "pending_requests"
+    | "pending_payments_to_verify"
+    | "pending_bookings"
+    | "pending_applications"
+    | "pending_payments"
+    | "pending_recharges"
+    | "pending_registration_payments"
   >;
 }
 

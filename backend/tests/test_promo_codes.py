@@ -115,7 +115,10 @@ def test_valid_code_discounts_the_invoice_and_payment_uses_the_new_amount():
     assert (
         body["amount"] == "12000.00" and body["discount"] == "3000.00" and body["list_amount"] == "15000.00"
     )
-    assert body["promo_code"] == {"code": "WELCOME20", "percent_off": 20}
+    assert {k: body["promo_code"][k] for k in ("code", "percent_off")} == {
+        "code": "WELCOME20",
+        "percent_off": 20,
+    }
     assert Invoice.objects.get(pk=invoice["id"]).subscription.price == Decimal("12000.00")
     assert client.get("/api/workspace/subscription/").json()["open_invoice"]["amount"] == "12000.00"
 
@@ -144,9 +147,9 @@ def test_removing_the_code_restores_the_price_and_codes_do_not_stack():
 @pytest.mark.parametrize(
     "kwargs, message",
     [
-        ({"is_active": False}, "not valid"),
+        ({"is_active": False}, "not active"),
         ({"valid_until": timezone.localdate() - timedelta(days=1)}, "expired"),
-        ({"valid_from": timezone.localdate() + timedelta(days=3)}, "starts on"),
+        ({"valid_from": timezone.localdate() + timedelta(days=3)}, "not active yet"),
     ],
 )
 def test_unusable_codes_are_refused(kwargs, message):
@@ -169,7 +172,7 @@ def test_usage_limit_counts_open_and_paid_invoices_and_cancelling_releases():
     assert apply(a, a_invoice, "WELCOME20").status_code == 200
     b_invoice = order(b)
     full = apply(b, b_invoice, "WELCOME20")
-    assert full.status_code == 400 and "fully used" in str(full.json())
+    assert full.status_code == 400 and "usage limit" in str(full.json())
     a.post(f"/api/workspace/subscription/invoices/{a_invoice['id']}/cancel/")
     assert apply(b, b_invoice, "WELCOME20").status_code == 200
 

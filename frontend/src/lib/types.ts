@@ -467,7 +467,7 @@ export interface Invoice {
   amount: string;
   list_amount: string;
   discount: string;
-  promo_code: { code: string; percent_off: number } | null;
+  promo_code: { code: string; percent_off: number; label?: string } | null;
   status: "unpaid" | "pending_verification" | "paid" | "cancelled";
   status_label: string;
   paid_at: string | null;
@@ -479,14 +479,26 @@ export interface Invoice {
 export interface PromoCode {
   id: string;
   code: string;
-  percent_off: number;
+  campaign_name: string;
   description: string;
+  discount_type: "percent" | "fixed";
+  percent_off: number;
+  amount_off: string;
+  max_discount: string | null;
+  min_amount: string | null;
+  label: string;
   is_active: boolean;
+  is_archived: boolean;
   valid_from: string | null;
   valid_until: string | null;
   max_uses: number | null;
+  max_per_account: number;
+  new_registrations_only: boolean;
+  plans: string[];
+  reservation_hours: number;
   times_used: number;
   is_running: boolean;
+  stats: { times_used: number; redeemed: number; reserved: number; remaining: number | null; total_discount: string };
   created_at: string;
 }
 

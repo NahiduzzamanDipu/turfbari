@@ -45,6 +45,7 @@ class PlatformSettings(models.Model):
     # Subscription payments by bKash (blank number = TURFBARI_BKASH_NUMBER from the environment).
     subscription_bkash_number = models.CharField(max_length=20, blank=True)
     subscription_instructions = models.TextField(blank=True)
+    subscription_bkash_account_type = models.CharField(max_length=20, default="Personal")  # shown to payers
     subscription_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"))
     # TurfBari's own SMS to owners (wallet credited, plan approved/rejected).
     platform_owner_sms = models.BooleanField(default=True)

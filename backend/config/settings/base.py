@@ -239,6 +239,8 @@ REST_FRAMEWORK = {
         "public_booking": "5/min",
         "public_hold": "30/min",
         "public_application": "3/hour",
+        "registration_quote": "30/min",
+        "registration_status": "20/min",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
 }

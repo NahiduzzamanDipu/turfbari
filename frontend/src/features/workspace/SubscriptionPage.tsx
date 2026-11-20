@@ -224,7 +224,7 @@ export function SubscriptionPage() {
                       {formatBDT(inv.amount)}
                       {inv.promo_code && (
                         <span className="block text-xs text-primary">
-                          {inv.promo_code.code} · −{inv.promo_code.percent_off}%
+                          {inv.promo_code.code} · {inv.promo_code.label ?? `−${inv.promo_code.percent_off}%`}
                         </span>
                       )}
                     </td>
@@ -452,7 +452,7 @@ function PromoBox({ invoice, onChange }: { invoice: Invoice; onChange: () => voi
           <TicketPercent className="size-4 text-primary" />
           <span>
             Promo code <span className="font-mono font-semibold">{invoice.promo_code.code}</span> applied ·{" "}
-            {invoice.promo_code.percent_off}% off ·{" "}
+            {invoice.promo_code.label ?? `${invoice.promo_code.percent_off}% off`} ·{" "}
             <span className="tabular font-semibold">
               {formatBDT(invoice.list_amount)} − {formatBDT(invoice.discount)} = {formatBDT(invoice.amount)}
             </span>

@@ -6,6 +6,7 @@ from rest_framework.routers import SimpleRouter
 from apps.accounts import admin_views as accounts_admin
 from apps.accounts import two_factor
 from apps.accounts import views as auth
+from apps.applications import registration_views as reg
 from apps.applications.admin_views import AdminDashboardView, ApplicationAdminViewSet, TurfAdminViewSet
 from apps.audit import views as audit
 from apps.bookings import series_views as series
@@ -54,6 +55,10 @@ public_urls = [
     path("turfs/<slug:slug>/qr.svg", public.TurfQRCodeView.as_view()),
     path("bookings/lookup/", public.PublicBookingLookupView.as_view()),
     path("applications/", public.PublicApplicationView.as_view()),
+    path("registration/options/", reg.RegistrationOptionsView.as_view()),
+    path("registration/quote/", reg.RegistrationQuoteView.as_view()),
+    path("registration/status/", reg.RegistrationStatusView.as_view()),
+    path("registration/resubmit/", reg.RegistrationResubmitView.as_view()),
     path("legal/", legal.PublicLegalIndexView.as_view()),
     path("legal/required/", legal.PublicRequiredView.as_view()),
     path("legal/versions/<int:pk>/", legal.PublicVersionView.as_view()),
@@ -86,6 +91,9 @@ auth_urls = [
 
 admin_urls = [
     path("dashboard/", AdminDashboardView.as_view()),
+    path("registration-payments/", reg.AdminRegistrationPaymentsView.as_view()),
+    path("registration-payments/<uuid:pk>/approve/", reg.AdminRegistrationApproveView.as_view()),
+    path("registration-payments/<uuid:pk>/reject/", reg.AdminRegistrationRejectView.as_view()),
     path("turfs/<uuid:pk>/assign-plan/", subs.AssignPlanView.as_view()),
     path("turfs/<uuid:pk>/subscription-history/", subs_admin.AdminTurfSubscriptionHistoryView.as_view()),
     path("turfs/<uuid:pk>/extend-subscription/", subs_admin.AdminExtendSubscriptionView.as_view()),

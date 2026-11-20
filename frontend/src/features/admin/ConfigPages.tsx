@@ -337,6 +337,7 @@ interface PaymentSettings {
   recharge_max_amount: string;
   subscription_bkash_number: string;
   subscription_instructions: string;
+  subscription_bkash_account_type: string;
   subscription_fee_percent: string;
   platform_owner_sms: boolean;
 }
@@ -397,6 +398,15 @@ function PaymentsCard() {
             <legend className="mb-2 font-semibold">Subscription payments</legend>
             <FormField label="bKash number" hint="Blank = TURFBARI_BKASH_NUMBER" error={fields?.subscription_bkash_number}>
               {(id) => <Input id={id} type="tel" value={form.subscription_bkash_number} onChange={text("subscription_bkash_number")} />}
+            </FormField>
+            <FormField label="bKash account type" hint="Shown to people paying (registrations, plans)">
+              {(id) => (
+                <Select id={id} value={form.subscription_bkash_account_type} onChange={text("subscription_bkash_account_type")}>
+                  <option value="Personal">Personal (Send Money)</option>
+                  <option value="Agent">Agent (Cash Out)</option>
+                  <option value="Merchant">Merchant (Payment)</option>
+                </Select>
+              )}
             </FormField>
             <FormField label="Payment charge (%)" hint="Added to the plan price">
               {(id) => <Input id={id} type="number" step="0.01" min={0} max={20} value={form.subscription_fee_percent} onChange={text("subscription_fee_percent")} />}

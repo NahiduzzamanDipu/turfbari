@@ -788,6 +788,9 @@ class RechargeSettingsSerializer(serializers.Serializer):
     )
     subscription_bkash_number = serializers.CharField(max_length=20, required=False, allow_blank=True)
     subscription_instructions = serializers.CharField(max_length=2000, required=False, allow_blank=True)
+    subscription_bkash_account_type = serializers.ChoiceField(
+        choices=["Personal", "Agent", "Merchant"], required=False
+    )
     subscription_fee_percent = serializers.DecimalField(
         max_digits=5, decimal_places=2, min_value=Decimal("0"), max_value=Decimal("20"), required=False
     )
@@ -818,6 +821,7 @@ def payments_settings_payload(s: PlatformSettings) -> dict:
         "recharge_max_amount": str(s.recharge_max_amount),
         "subscription_bkash_number": s.subscription_bkash_number,
         "subscription_instructions": s.subscription_instructions,
+        "subscription_bkash_account_type": s.subscription_bkash_account_type,
         "subscription_fee_percent": str(s.subscription_fee_percent),
         "platform_owner_sms": s.platform_owner_sms,
     }

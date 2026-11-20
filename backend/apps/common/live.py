@@ -82,7 +82,7 @@ def _pending_recharges() -> int:
 
 
 def _admin_state() -> dict:
-    from apps.applications.models import TurfApplication
+    from apps.applications.models import RegistrationPayment, TurfApplication
     from apps.subscriptions.models import Invoice, PaymentTransaction, Subscription
     from apps.turfs.models import Turf
 
@@ -94,6 +94,7 @@ def _admin_state() -> dict:
         "version": _fingerprint(
             [
                 TurfApplication.objects.all(),
+                RegistrationPayment.objects.all(),
                 PaymentTransaction.objects.all(),
                 Invoice.objects.all(),
                 Subscription.objects.all(),
@@ -104,6 +105,9 @@ def _admin_state() -> dict:
         "pending_applications": pending_apps.count(),
         "pending_payments": pending_payments.count(),
         "pending_recharges": _pending_recharges(),
+        "pending_registration_payments": RegistrationPayment.objects.filter(
+            status=RegistrationPayment.Status.PENDING_VERIFICATION
+        ).count(),
     }
 
 

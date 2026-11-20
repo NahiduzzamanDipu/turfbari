@@ -21,6 +21,7 @@ export interface LiveState {
     created_at: string;
   } | null;
   pending_applications?: number;
+  pending_registration_payments?: number;
   pending_payments?: number;
   pending_recharges?: number;
 }

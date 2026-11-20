@@ -554,9 +554,16 @@ class PublicApplicationView(PublicAPIView):
             legal_services.parse_version_ids(request.data.get("accepted_versions")),
             field="agree_legal",
         )
+        from apps.applications import registration
+
+        with_payment = bool(request.data.get("plan")) and registration.payments_open()
         with transaction.atomic():
             application = data.save(sector=sector)
             legal_services.record_acceptances(
                 needed, action="registration", related_ref=f"application:{application.pk}", request=request
             )
+            if with_payment:  # plan + promo + bKash payment, verified by TurfBari before anything activates
+                registration.start(application, request.data, request=request)
+        if with_payment:
+            return Response(registration.status_payload(application), status=201)
         return Response({"detail": "Thanks! Our team will contact you within 2 working days."}, status=201)

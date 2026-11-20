@@ -81,13 +81,29 @@ class PromoCode(BaseModel):
     Each turf can pay with the same code only once.
     """
 
+    class DiscountType(models.TextChoices):
+        PERCENT = "percent", "Percentage"
+        FIXED = "fixed", "Fixed amount"
+
     code = models.CharField(max_length=30, unique=True)  # stored upper-case
-    percent_off = models.PositiveSmallIntegerField()  # 1-100
+    campaign_name = models.CharField(max_length=120, blank=True)  # internal
+    discount_type = models.CharField(max_length=8, choices=DiscountType.choices, default=DiscountType.PERCENT)
+    percent_off = models.PositiveSmallIntegerField(default=0)  # 1-100 for percentage codes
+    amount_off = MoneyField()  # ৳ for fixed-amount codes
+    max_discount = MoneyField(
+        null=True, blank=True, default=None
+    )  # cap for percentage codes (blank = no cap)
+    min_amount = MoneyField(null=True, blank=True, default=None)  # price must be at least this (blank = any)
     description = models.CharField(max_length=200, blank=True)
     is_active = models.BooleanField(default=True)
+    is_archived = models.BooleanField(default=False)  # retired: hidden from the active list, never usable
     valid_from = models.DateField(null=True, blank=True)
     valid_until = models.DateField(null=True, blank=True)  # inclusive
     max_uses = models.PositiveIntegerField(null=True, blank=True)  # blank = unlimited
+    max_per_account = models.PositiveSmallIntegerField(default=1)  # per turf / per registering person
+    new_registrations_only = models.BooleanField(default=False)
+    plans = models.ManyToManyField(Plan, blank=True, related_name="promo_codes")  # empty = every plan
+    reservation_hours = models.PositiveSmallIntegerField(default=72)  # registration hold before release
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
@@ -96,7 +112,46 @@ class PromoCode(BaseModel):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"{self.code} ({self.percent_off}%)"
+        return f"{self.code} ({self.label})"
+
+    @property
+    def label(self) -> str:
+        if self.discount_type == self.DiscountType.FIXED:
+            return f"৳{self.amount_off:,.0f} off"
+        cap = f", up to ৳{self.max_discount:,.0f}" if self.max_discount else ""
+        return f"{self.percent_off}% off{cap}"
+
+
+class PromoRedemption(BaseModel):
+    """A promo code claimed during turf registration: reserved while the payment awaits TurfBari's check,
+    redeemed when approved, released (rejected/withdrawn) or expired (hold ran out). Invoice uses of a code
+    are counted from invoices; these rows only count while RESERVED (a redeemed one has its paid invoice)."""
+
+    class Status(models.TextChoices):
+        RESERVED = "reserved", "Reserved"
+        REDEEMED = "redeemed", "Redeemed"
+        RELEASED = "released", "Released"
+        EXPIRED = "expired", "Expired"
+
+    promo = models.ForeignKey(PromoCode, on_delete=models.PROTECT, related_name="redemptions")
+    application = models.ForeignKey(
+        "applications.TurfApplication", on_delete=models.CASCADE, related_name="promo_redemptions"
+    )
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.RESERVED, db_index=True)
+    phone = models.CharField(max_length=20, db_index=True)  # normalised: one person = one phone/email
+    email = models.EmailField(db_index=True)
+    discount = MoneyField()
+    reserved_until = models.DateTimeField()
+    finished_at = models.DateTimeField(null=True, blank=True)
+    invoice = models.ForeignKey(
+        "Invoice", on_delete=models.SET_NULL, null=True, blank=True, related_name="registration_redemptions"
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.promo.code} for {self.email} ({self.status})"
 
 
 class Invoice(BaseModel):
