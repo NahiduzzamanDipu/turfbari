@@ -122,7 +122,7 @@ export function SubscriptionPage() {
             color: "#FFFFFF",
           } : undefined}
         >
-          <CardHeader className="gap-2 px-4 pt-4 pb-2">
+          <CardHeader className="gap-1.5 px-4 pt-3 pb-1">
             <CardTitle className="flex items-center justify-between gap-2 !text-white">
               <span className="flex items-center gap-2"><Sparkles className="size-4 text-lime-300" /> Current Plan</span>
               <Badge
@@ -134,13 +134,13 @@ export function SubscriptionPage() {
               >{planStatusLabel}</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className={cn("flex flex-col gap-2 px-4 pt-2 pb-3 text-sm", planCardState !== "none" && "!text-white")}>
+          <CardContent className={cn("flex flex-col gap-1.5 px-4 pt-1 pb-2 text-sm", planCardState !== "none" && "!text-white")}>
             {standing.current ? (
               <>
-                <div className="flex flex-wrap items-end justify-between gap-3">
+                <div className="flex flex-wrap items-end justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100">Your subscription</p>
-                    <p className="mt-1 break-words font-display text-2xl font-extrabold uppercase leading-tight sm:text-3xl">{standing.current.plan.name}</p>
+                    <p className="mt-0.5 break-words font-display text-2xl font-extrabold uppercase leading-tight">{standing.current.plan.name}</p>
                   </div>
                   {standing.current.plan.months > 1 && (
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-current/20 bg-background/10 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm">
@@ -148,14 +148,14 @@ export function SubscriptionPage() {
                     </span>
                   )}
                 </div>
-                {standing.current.plan.description && <p className="max-w-xl text-sm leading-relaxed text-emerald-50">{standing.current.plan.description}</p>}
-                <dl className="grid gap-1.5 sm:grid-cols-2">
+                {standing.current.plan.description && <p className="max-w-xl text-[13px] leading-snug text-emerald-50">{standing.current.plan.description}</p>}
+                <dl className="grid gap-1 sm:grid-cols-2">
                   <PlanInfo icon={<CalendarDays />} label="Start date" value={fmtPlainDate(standing.current.starts_on)} onDark={planCardState !== "none"} />
                   <PlanInfo icon={<CalendarClock />} label="Expiry date · paid through" value={fmtPlainDate(standing.paid_until)} emphasis onDark={planCardState !== "none"} />
                   <PlanInfo icon={<Clock />} label="Time remaining" value={standing.days_left === null ? "—" : `${Math.max(0, standing.days_left)} ${Math.max(0, standing.days_left) === 1 ? "day" : "days"}`} emphasis={standing.state === "expiring"} onDark={planCardState !== "none"} />
                   <PlanInfo icon={<CreditCard />} label="Billing period · plan price" value={`${standing.current.plan.months === 1 ? "Monthly" : `${standing.current.plan.months} months`} · ${formatBDT(standing.current.price)}`} onDark={planCardState !== "none"} />
                 </dl>
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/20 pt-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 border-t border-white/20 pt-1.5">
                   <p className="flex items-center gap-2 text-xs font-medium text-emerald-100"><ShieldCheck className="size-4 text-lime-300" /> No automatic renewal · paid plan</p>
                   {isOwner && planCardState !== "suspended" && standing.state === "expiring" && !open_invoice && <Button type="button" variant="accent" size="sm" className="min-h-11" onClick={() => document.getElementById("plan-options")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Request renewal <ArrowRight /></Button>}
                 </div>
@@ -188,7 +188,7 @@ export function SubscriptionPage() {
             )}
             {turf_status === "suspended" && <div role="status" className="flex items-start gap-3 rounded-xl border border-current/20 bg-background/10 p-3"><ShieldAlert className="mt-0.5 size-5 shrink-0" /><p>This turf account is suspended. The subscription dates above show the paid record; suspension is managed separately.</p></div>}
             {scheduled.map((p) => (
-              <p key={p.id} className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-2.5 py-2 text-xs text-emerald-50">
+              <p key={p.id} className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs text-emerald-50">
                 <Clock className="size-4" /> Next: {p.plan.name}, {fmtPlainDate(p.starts_on)} – {fmtPlainDate(p.ends_on)} (paid)
               </p>
             ))}
@@ -325,9 +325,9 @@ function PlanInfo({ icon, label, value, emphasis = false, onDark = false }: {
   icon: React.ReactNode; label: string; value: string; emphasis?: boolean; onDark?: boolean;
 }) {
   return (
-    <div className={cn("min-w-0 rounded-lg border p-2.5", onDark ? "border-white/20 bg-white/10 text-white" : "border-border bg-background/70 text-card-foreground")}>
-      <dt className={cn("flex items-center gap-2 text-xs font-medium", onDark ? "text-emerald-100" : "text-muted-foreground")}>{icon}<span>{label}</span></dt>
-      <dd className={cn("mt-1 break-words font-semibold tabular-nums", emphasis && (onDark ? "text-lime-300" : "text-primary"))}>{value}</dd>
+    <div className={cn("min-w-0 rounded-lg border p-2", onDark ? "border-white/20 bg-white/10 text-white" : "border-border bg-background/70 text-card-foreground")}>
+      <dt className={cn("flex items-center gap-1.5 text-[11px] font-medium leading-tight [&>svg]:size-3.5 [&>svg]:shrink-0", onDark ? "text-emerald-100" : "text-muted-foreground")}>{icon}<span>{label}</span></dt>
+      <dd className={cn("mt-0.5 break-words text-[13px] font-semibold leading-snug tabular-nums", emphasis && (onDark ? "text-lime-300" : "text-primary"))}>{value}</dd>
     </div>
   );
 }
