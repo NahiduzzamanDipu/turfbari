@@ -1,6 +1,22 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Clock, CreditCard, Loader2, ShieldCheck, Smartphone, TicketPercent, XCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CalendarClock,
+  CalendarDays,
+  Clock,
+  CreditCard,
+  Hourglass,
+  Loader2,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+  Smartphone,
+  TicketPercent,
+  XCircle,
+} from "lucide-react";
 import { useEffect, useState } from "react";
+import type React from "react";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/AppShell";
@@ -13,6 +29,7 @@ import { api } from "@/lib/api";
 import type { Invoice, Plan, SubscriptionOverview } from "@/lib/types";
 import { cn, formatBDT } from "@/lib/utils";
 import { errorText, useIsOwner } from "./hooks";
+import { resolvePlanCardState } from "./planCardState";
 import { STANDING_LABEL, STANDING_TONE, fmtPlainDate, useSubscription } from "./SubscriptionBanner";
 
 const INVOICE_TONE: Record<Invoice["status"], BadgeTone> = {
@@ -67,70 +84,105 @@ export function SubscriptionPage() {
 
   if (sub.isPending) return <Skeleton className="h-96" />;
   if (sub.isError) return <ErrorState error={sub.error} onRetry={() => sub.refetch()} />;
-  const { standing, plans, open_invoice, invoices, periods, payment_options } = sub.data;
+  const { standing, plans, open_invoice, invoices, periods, payment_options, turf_status } = sub.data;
   const scheduled = periods.filter((p) => p.state === "scheduled");
+  const planCardState = resolvePlanCardState({
+    turfStatus: turf_status,
+    standingState: standing.state,
+    hasCurrent: Boolean(standing.current),
+    invoiceStatus: open_invoice?.status ?? null,
+  });
+  const planCardTone = {
+    active: "border-emerald-400/30 bg-gradient-to-br from-primary via-primary to-emerald-950 text-primary-foreground shadow-xl shadow-primary/20",
+    expiring: "border-amber-300/40 bg-gradient-to-br from-amber-700 via-amber-800 to-stone-950 text-white shadow-xl shadow-amber-950/20",
+    grace: "border-rose-300/30 bg-gradient-to-br from-rose-800 via-rose-950 to-slate-950 text-white shadow-xl shadow-rose-950/20",
+    expired: "border-rose-300/30 bg-gradient-to-br from-rose-900 via-red-950 to-slate-950 text-white shadow-xl shadow-red-950/20",
+    none: "border-border bg-gradient-to-br from-muted via-card to-muted/50",
+    pending: "border-sky-300/30 bg-gradient-to-br from-sky-800 via-indigo-950 to-slate-950 text-white shadow-xl shadow-indigo-950/20",
+    suspended: "border-slate-400/30 bg-gradient-to-br from-slate-700 via-slate-900 to-zinc-950 text-white shadow-xl shadow-slate-950/20",
+  }[planCardState];
+  const planStatusLabel = turf_status === "suspended" ? "Suspended" :
+    !standing.current && open_invoice?.status === "pending_verification" ? "Pending approval" : STANDING_LABEL[standing.state];
+  const planStatusTone: BadgeTone = turf_status === "suspended" || standing.state === "expired" || standing.state === "grace"
+    ? "red" : planCardState === "pending" ? "blue" : STANDING_TONE[standing.state];
 
   return (
     <>
       <PageHeader title="Subscription" description="Your TurfBari plan. Plans never renew automatically — you choose and pay for each period." />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-        <Card>
+        <Card className={cn("overflow-hidden border transition-shadow duration-300 hover:shadow-2xl", planCardTone)}>
           <CardHeader>
             <CardTitle className="flex items-center justify-between gap-2">
-              Current plan
-              <Badge tone={STANDING_TONE[standing.state]}>{STANDING_LABEL[standing.state]}</Badge>
+              <span className="flex items-center gap-2"><Sparkles className="size-5" /> Current plan</span>
+              <Badge tone={planStatusTone} className="border border-current/20 bg-background/15 text-current backdrop-blur-sm">{planStatusLabel}</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3 text-sm">
+          <CardContent className="flex flex-col gap-5 text-sm">
             {standing.current ? (
               <>
-                <p className="font-display text-3xl font-extrabold uppercase">{standing.current.plan.name}</p>
-                <dl className="grid grid-cols-2 gap-3">
-                  <div>
-                    <dt className="text-muted-foreground">This period</dt>
-                    <dd className="font-medium">
-                      {fmtPlainDate(standing.current.starts_on)} – {fmtPlainDate(standing.current.ends_on)}
-                    </dd>
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-75">Your subscription</p>
+                    <p className="mt-1 break-words font-display text-3xl font-extrabold uppercase leading-tight sm:text-4xl">{standing.current.plan.name}</p>
                   </div>
-                  <div>
-                    <dt className="text-muted-foreground">Paid until</dt>
-                    <dd className="font-medium">{fmtPlainDate(standing.paid_until)}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">Days left</dt>
-                    <dd className={cn("tabular font-semibold", standing.state === "expiring" && "text-amber-600")}>
-                      {standing.days_left}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">Auto-renew</dt>
-                    <dd className="font-medium">Off — pay to continue</dd>
-                  </div>
+                  {standing.current.plan.months > 0 && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-current/20 bg-background/10 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm">
+                      <CalendarClock className="size-4" /> {standing.current.plan.months === 1 ? "Monthly" : `${standing.current.plan.months} months`}
+                    </span>
+                  )}
+                </div>
+                {standing.current.plan.description && <p className="max-w-xl text-sm leading-relaxed opacity-85">{standing.current.plan.description}</p>}
+                <dl className="grid gap-3 sm:grid-cols-2">
+                  <PlanInfo icon={<CalendarDays />} label="Start date" value={fmtPlainDate(standing.current.starts_on)} onDark={planCardState !== "none"} />
+                  <PlanInfo icon={<CalendarClock />} label="Expiry date · paid through" value={fmtPlainDate(standing.paid_until)} emphasis onDark={planCardState !== "none"} />
+                  <PlanInfo icon={<Clock />} label="Time remaining" value={standing.days_left === null ? "—" : `${Math.max(0, standing.days_left)} ${Math.max(0, standing.days_left) === 1 ? "day" : "days"}`} emphasis={standing.state === "expiring"} onDark={planCardState !== "none"} />
+                  <PlanInfo icon={<CreditCard />} label="Billing period · plan price" value={`${standing.current.plan.months === 1 ? "Monthly" : `${standing.current.plan.months} months`} · ${formatBDT(standing.current.price)}`} onDark={planCardState !== "none"} />
                 </dl>
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-current/20 pt-4">
+                  <p className="flex items-center gap-2 text-xs font-medium opacity-80"><ShieldCheck className="size-4" /> No automatic renewal · paid plan</p>
+                  {isOwner && planCardState !== "suspended" && standing.state === "expiring" && !open_invoice && <Button type="button" variant="accent" size="sm" className="min-h-11" onClick={() => document.getElementById("plan-options")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Request renewal <ArrowRight /></Button>}
+                </div>
               </>
             ) : (
-              <div className="flex items-start gap-3 rounded-lg bg-destructive/10 p-3 text-destructive">
-                <AlertTriangle className="mt-0.5 size-5 shrink-0" />
-                <p>
-                  {standing.state === "grace"
-                    ? `Your plan ended on ${fmtPlainDate(standing.paid_until)}. You can keep working until ${fmtPlainDate(standing.grace_until)}; renew before then to keep your booking page open.`
-                    : "You have no active plan. Your turf is hidden from players and new bookings are paused until you pay for a plan."}
-                </p>
+              <div className="flex flex-col items-start gap-4">
+                {planCardState === "pending" ? <Hourglass className="size-8" /> : <AlertTriangle className="size-8" />}
+                <div>
+                  <h4 className="text-xl font-bold">{planCardState === "suspended" ? "Turf account suspended" : planCardState === "pending" ? "Payment awaiting review" : standing.state === "grace" ? "Plan period has ended" : standing.state === "expired" ? "Subscription expired" : "Choose your first plan"}</h4>
+                  <p className="mt-1 max-w-xl opacity-80">
+                    {planCardState === "pending"
+                      ? "Your payment and plan request are pending administrator verification. This request is not active yet."
+                      : turf_status === "suspended"
+                        ? "This turf account is suspended. Contact TurfBari support for help with account access."
+                        : standing.state === "grace"
+                          ? `Your plan ended on ${fmtPlainDate(standing.paid_until)}. Service can continue until ${fmtPlainDate(standing.grace_until)}; request renewal to keep your booking page open.`
+                          : standing.state === "expired"
+                            ? `Your paid period ended ${fmtPlainDate(standing.paid_until)}. Request a renewal to restore plan access.`
+                            : "Select a plan below to submit a renewal request. It becomes active only after payment verification."}
+                  </p>
+                </div>
+                {isOwner && planCardState !== "pending" && planCardState !== "suspended" && <Button type="button" variant="accent" className="min-h-11" onClick={() => document.getElementById("plan-options")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Request a plan <ArrowRight /></Button>}
               </div>
             )}
+            {open_invoice?.status === "pending_verification" && standing.current && (
+              <div role="status" className="flex items-start gap-3 rounded-xl border border-current/20 bg-background/10 p-3 backdrop-blur-sm">
+                <Hourglass className="mt-0.5 size-5 shrink-0" />
+                <p><strong>Plan request pending approval.</strong> {open_invoice.subscription.plan.name} will not become active until the administrator verifies payment.</p>
+              </div>
+            )}
+            {turf_status === "suspended" && <div role="status" className="flex items-start gap-3 rounded-xl border border-current/20 bg-background/10 p-3"><ShieldAlert className="mt-0.5 size-5 shrink-0" /><p>This turf account is suspended. The subscription dates above show the paid record; suspension is managed separately.</p></div>}
             {scheduled.map((p) => (
-              <p key={p.id} className="flex items-center gap-2 rounded-md bg-secondary px-3 py-2">
+              <p key={p.id} className="flex items-center gap-2 rounded-md border border-current/20 bg-background/10 px-3 py-2">
                 <Clock className="size-4" /> Next: {p.plan.name}, {fmtPlainDate(p.starts_on)} – {fmtPlainDate(p.ends_on)} (paid)
               </p>
             ))}
             {standing.state === "expiring" && !open_invoice && (
-              <p className="text-amber-700 dark:text-amber-400">Your plan ends soon. Choose a plan below to renew it.</p>
+              <p className="flex items-center gap-2 rounded-lg border border-current/20 bg-background/10 px-3 py-2 text-sm"><AlertTriangle className="size-4" />Your plan ends soon. Request a renewal below.</p>
             )}
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="plan-options" className="scroll-mt-24">
           <CardHeader>
             <CardTitle>{standing.current ? "Renew or change plan" : "Choose a plan"}</CardTitle>
           </CardHeader>
@@ -419,6 +471,17 @@ function PayInvoice({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function PlanInfo({ icon, label, value, emphasis = false, onDark = false }: {
+  icon: React.ReactNode; label: string; value: string; emphasis?: boolean; onDark?: boolean;
+}) {
+  return (
+    <div className={cn("min-w-0 rounded-xl border p-3", onDark ? "border-current/15 bg-background/10" : "border-border bg-background/70")}>
+      <dt className="flex items-center gap-2 text-xs font-medium opacity-75">{icon}<span>{label}</span></dt>
+      <dd className={cn("mt-1 break-words font-semibold tabular-nums", emphasis && "text-amber-300")}>{value}</dd>
+    </div>
   );
 }
 

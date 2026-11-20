@@ -106,6 +106,7 @@ class SubscriptionOverviewView(WorkspaceSubscriptionMixin, APIView):
         return Response(
             {
                 "standing": standing_payload(turf),
+                "turf_status": turf.status,
                 "periods": SubscriptionSerializer(subs.filter(status="active"), many=True).data,
                 "open_invoice": InvoiceSerializer(open_invoice).data if open_invoice else None,
                 "invoices": InvoiceSerializer(invoices, many=True).data,

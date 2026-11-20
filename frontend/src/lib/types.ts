@@ -515,6 +515,7 @@ export interface SubscriptionStanding {
 
 export interface SubscriptionOverview {
   standing: SubscriptionStanding;
+  turf_status: "active" | "suspended" | "archived";
   periods: SubscriptionPeriod[];
   open_invoice: Invoice | null;
   invoices: Invoice[];
