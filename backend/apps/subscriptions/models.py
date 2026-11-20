@@ -35,9 +35,15 @@ class Plan(BaseModel):
     price = MoneyField()
     description = models.CharField(max_length=200, blank=True)
     is_active = models.BooleanField(default=True)
+    is_public = models.BooleanField(default=True)
+    featured = models.BooleanField(default=False)
+    display_order = models.PositiveSmallIntegerField(default=0)
+    features = models.JSONField(default=list, blank=True)
+    limits = models.JSONField(default=dict, blank=True)
+    sms_enabled = models.BooleanField(default=True)
 
     class Meta:
-        ordering = ["months"]
+        ordering = ["display_order", "months"]
 
     def __str__(self) -> str:
         return self.name
@@ -65,6 +71,7 @@ class Subscription(BaseModel):
     )
     # new | renewal | upgrade | downgrade, decided when the owner asks (compared with the plan they had).
     change_type = models.CharField(max_length=10, blank=True)
+    plan_snapshot = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["-ends_on", "-created_at"]
@@ -72,6 +79,21 @@ class Subscription(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.turf} · {self.plan} ({self.status})"
+
+    def save(self, *args, **kwargs):
+        if not self.plan_snapshot and self.plan_id:
+            plan = self.plan
+            self.plan_snapshot = {
+                "name": plan.name,
+                "period": plan.period,
+                "months": plan.months,
+                "price": str(self.price if self.price is not None else plan.price),
+                "description": plan.description,
+                "features": plan.features,
+                "limits": plan.limits,
+                "sms_enabled": plan.sms_enabled,
+            }
+        super().save(*args, **kwargs)
 
 
 class PromoCode(BaseModel):

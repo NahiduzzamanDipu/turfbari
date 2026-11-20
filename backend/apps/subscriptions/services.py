@@ -118,6 +118,16 @@ def create_order(turf, plan: Plan, *, created_by=None, note: str = "") -> Invoic
         created_by=created_by,
         note=note,
         change_type=change_type_for(turf, plan),
+        plan_snapshot={
+            "name": plan.name,
+            "period": plan.period,
+            "months": plan.months,
+            "price": str(plan.price),
+            "description": plan.description,
+            "features": plan.features,
+            "limits": plan.limits,
+            "sms_enabled": plan.sms_enabled,
+        },
     )
     return Invoice.objects.create(turf=turf, subscription=subscription, amount=plan.price)
 

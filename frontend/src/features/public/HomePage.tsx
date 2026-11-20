@@ -13,13 +13,20 @@ import {
   Tags,
   Users,
   Wallet,
+  CirclePlay,
+  CheckCircle2,
+  Star,
+  Headphones,
 } from "lucide-react";
 import { Link } from "react-router";
+import { useState } from "react";
 import type React from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/form";
 import { useMe } from "@/features/auth/auth";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { formatBDT } from "@/lib/utils";
 
 /**
  * TurfBari's own site is about the product for turf owners. There is no public directory of turfs:
@@ -41,6 +48,8 @@ const STEPS = [
 ];
 
 export function HomePage() {
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [faqLanguage, setFaqLanguage] = useState<"en" | "bn">("en");
   const me = useMe();
   const contact = useQuery({
     queryKey: ["public", "contact"],
@@ -48,6 +57,10 @@ export function HomePage() {
     staleTime: 5 * 60_000,
   });
   const signedIn = me.data?.authenticated;
+  const plans = useQuery({ queryKey: ["public", "plans"], queryFn: () => api<PublicPlan[]>("/public/plans/"), staleTime: 5 * 60_000 });
+  const smsPrice = useQuery({ queryKey: ["public", "sms-pricing"], queryFn: () => api<SmsPrice>("/public/sms-pricing/"), staleTime: 5 * 60_000 });
+  const youtube = useQuery({ queryKey: ["public", "youtube"], queryFn: () => api<{ video_id: string | null }>("/public/youtube/"), staleTime: 5 * 60_000 });
+  const faqs = useQuery({ queryKey: ["public", "faqs"], queryFn: () => api<HomepageFAQ[]>("/public/faqs/"), staleTime: 5 * 60_000 });
 
   return (
     <>
@@ -82,6 +95,11 @@ export function HomePage() {
                 </Button>
               </>
             )}
+            {youtube.data?.video_id && (
+              <Button type="button" variant="outline" size="lg" onClick={() => setAboutOpen(true)}>
+                <CirclePlay aria-hidden="true" className="text-red-600" /> About Us
+              </Button>
+            )}
           </div>
           <p className="mt-6 text-sm text-muted-foreground">
             Booked a slot already?{" "}
@@ -93,9 +111,9 @@ export function HomePage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-12" aria-labelledby="features">
-        <h2 id="features" className="mb-6 font-display text-3xl font-extrabold uppercase">
-          Everything a turf needs
-        </h2>
+        <p className="mb-2 text-sm font-bold uppercase tracking-wider text-primary">Built for day-to-day operations</p>
+        <h2 id="features" className="mb-3 font-display text-3xl font-extrabold uppercase">Why Choose TURFBARI?</h2>
+        <p className="mb-6 text-muted-foreground">Everything your turf business needs, organized in one simple platform.</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
             <div key={f.title} className="glass rounded-xl p-5">
@@ -125,6 +143,57 @@ export function HomePage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section id="plans" className="scroll-mt-24 border-y bg-muted/30" aria-labelledby="plans-title">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <div className="mx-auto mb-8 max-w-2xl text-center">
+            <p className="text-sm font-bold uppercase tracking-wider text-primary">Simple prepaid subscriptions</p>
+            <h2 id="plans-title" className="mt-2 font-display text-3xl font-extrabold uppercase">Choose the Right Plan for Your Turf</h2>
+            <p className="mt-3 text-muted-foreground">Flexible plans designed to help turf businesses manage bookings, customers, payments, and daily operations.</p>
+          </div>
+          {plans.isPending ? <p className="text-center text-sm text-muted-foreground" role="status">Loading available plans…</p> : plans.data?.length ? (
+            <div className="grid items-stretch gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {plans.data.map((p) => <article key={p.id} className={`relative flex flex-col rounded-2xl border bg-card p-6 shadow-sm ${p.featured ? "border-primary ring-2 ring-primary/20" : ""}`}>
+                {p.featured && <span className="absolute -top-3 right-5 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground"><Star className="size-3" /> Featured</span>}
+                <h3 className="font-display text-2xl font-extrabold">{p.name}</h3>
+                <p className="mt-1 min-h-10 text-sm text-muted-foreground">{p.description || `${p.months} month prepaid period`}</p>
+                <p className="mt-5 text-3xl font-extrabold tabular">{formatBDT(p.price)}<span className="ml-2 text-sm font-medium text-muted-foreground">/ {p.months} month{p.months === 1 ? "" : "s"}</span></p>
+                <ul className="my-5 flex-1 space-y-2 text-sm">
+                  {p.features.map((feature) => <li key={feature} className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />{feature}</li>)}
+                  <li className="flex gap-2"><CheckCircle2 className={`mt-0.5 size-4 shrink-0 ${p.sms_enabled ? "text-primary" : "text-muted-foreground"}`} />SMS {p.sms_enabled ? "available with prepaid wallet" : "not included"}</li>
+                  {Object.entries(p.limits).filter(([, v]) => v !== null && v !== "" && v !== false).map(([label, value]) => <li key={label} className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" /><span className="capitalize">{label.replaceAll("_", " ")}: {String(value)}</span></li>)}
+                  {!p.features.length && !Object.keys(p.limits).length && <li className="text-muted-foreground">Plan details are available from TURFBARI support.</li>}
+                </ul>
+                <Button asChild className="w-full"><Link to={signedIn ? "/workspace/subscription" : `/register-turf?plan=${encodeURIComponent(p.period)}`}>{signedIn ? "Request this plan" : "Choose Plan"}</Link></Button>
+              </article>)}
+            </div>
+          ) : <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">There are no public plans available right now. Please contact TURFBARI for plan information.</p>}
+          {plans.isError && <p role="alert" className="mt-3 text-center text-sm text-destructive">Couldn’t load plans. Please try again later.</p>}
+          <p className="mt-5 text-center text-xs text-muted-foreground">Subscriptions are prepaid. They do not renew automatically; plan changes require TURFBARI approval.</p>
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-6xl gap-6 px-4 py-14 md:grid-cols-2" aria-labelledby="sms-price-title">
+        <div className="rounded-2xl bg-primary p-7 text-primary-foreground sm:p-9">
+          <p className="inline-flex items-center gap-2 text-sm font-semibold"><MessageSquareText className="size-4" /> Prepaid messaging</p>
+          <h2 id="sms-price-title" className="mt-3 font-display text-3xl font-extrabold uppercase">Affordable SMS Communication</h2>
+          {smsPrice.data?.configured && smsPrice.data.price_per_segment ? <>
+            <p className="mt-5 text-4xl font-extrabold tabular">৳{new Intl.NumberFormat("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(Number(smsPrice.data.price_per_segment))} <span className="text-base font-medium">per SMS part</span></p>
+            <p className="mt-2 text-sm text-primary-foreground/80">Booking confirmations, customer updates, reminders and promotional messages use your prepaid SMS wallet. Recharge before sending.</p>
+            <div className="mt-5 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">{smsPrice.data.examples.map((row) => <div key={row.segments} className="rounded-lg bg-white/10 px-3 py-2">{row.segments} part{row.segments > 1 ? "s" : ""}<span className="float-right font-semibold">৳{new Intl.NumberFormat("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(Number(row.cost))}</span></div>)}</div>
+            <p className="mt-3 text-xs text-primary-foreground/75">Bengali and longer messages may use multiple parts depending on encoding and length. The final segment count and charge are shown before sending. Messages are not sent when wallet balance is insufficient; bookings continue normally.</p>
+          </> : <p className="mt-4 text-sm text-primary-foreground/85">SMS service pricing is being configured. Contact TURFBARI for current rates. Messages use a prepaid wallet, and the applicable cost is shown before sending.</p>}
+        </div>
+        <div className="rounded-2xl border bg-card p-7 sm:p-9">
+          <div className="inline-flex rounded-lg bg-accent p-2 text-accent-foreground"><Headphones className="size-5" /></div>
+          <h2 className="mt-3 font-display text-3xl font-extrabold uppercase">Support &amp; Personal Training</h2>
+          <p className="mt-3 text-muted-foreground">After your subscription is activated, TURFBARI support staff can guide you through the workspace and its day-to-day tools. Availability and response times can vary.</p>
+          <ol className="mt-5 space-y-2 text-sm text-muted-foreground">
+            {["Choose a plan and submit your registration payment for verification.", "Once approved, your account is activated.", "Arrange an onboarding session with the support team.", "Learn profile setup, slots and pricing, bookings, payment verification, QR sharing, SMS wallet, staff and reports.", "Contact support again when you need help."].map((step, i) => <li key={step} className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">{i + 1}</span>{step}</li>)}
+          </ol>
+          <div className="mt-6 flex flex-wrap gap-3">{contact.data?.enabled && <Button asChild><a href="#contact">Contact Support</a></Button>}<Button asChild variant="outline"><Link to="/register-turf">Get Started</Link></Button></div>
+        </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pb-16">
@@ -179,9 +248,23 @@ export function HomePage() {
           </div>
         </section>
       )}
+      {faqs.data?.length ? <section className="mx-auto max-w-4xl px-4 py-14" aria-labelledby="faq-title">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-bold uppercase tracking-wider text-primary">Helpful answers</p><h2 id="faq-title" className="mt-2 font-display text-3xl font-extrabold uppercase">Frequently Asked Questions</h2></div><div className="flex gap-2" role="group" aria-label="FAQ language"><Button size="sm" variant={faqLanguage === "en" ? "default" : "outline"} onClick={() => setFaqLanguage("en")}>English</Button><Button size="sm" variant={faqLanguage === "bn" ? "default" : "outline"} onClick={() => setFaqLanguage("bn")}>বাংলা</Button></div></div>
+        <div className="space-y-3">{faqs.data.map((faq) => <details key={faq.id} className="group rounded-xl border bg-card px-5 py-4">
+          <summary className="cursor-pointer list-none pr-7 font-semibold marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{faqLanguage === "bn" && faq.question_bn ? faq.question_bn : faq.question_en}<span aria-hidden="true" className="float-right text-primary group-open:rotate-45">＋</span></summary>
+          <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{faqLanguage === "bn" && faq.answer_bn ? faq.answer_bn : faq.answer_en}</p>
+        </details>)}</div>
+      </section> : null}
+      <Dialog open={aboutOpen && Boolean(youtube.data?.video_id)} onClose={() => setAboutOpen(false)} title="About Us" description="A short introduction to TURFBARI." wide>
+        {aboutOpen && youtube.data?.video_id && <div className="aspect-video overflow-hidden rounded-xl bg-black"><iframe className="size-full" src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtube.data.video_id)}?autoplay=1`} title="About TURFBARI" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen loading="lazy" /></div>}
+      </Dialog>
     </>
   );
 }
+
+interface PublicPlan { id: string; period: string; name: string; months: number; price: string; description: string; featured: boolean; features: string[]; limits: Record<string, string | number | boolean | null>; sms_enabled: boolean }
+interface SmsPrice { configured: boolean; price_per_segment: string | null; examples: { segments: number; cost: string }[] }
+interface HomepageFAQ { id: string; question_en: string; answer_en: string; question_bn: string; answer_bn: string }
 
 interface ContactDetails {
   enabled: boolean;

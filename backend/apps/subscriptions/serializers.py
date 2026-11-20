@@ -8,12 +8,49 @@ from .services import normalize_code, payable, promo_uses, standing
 class PlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = Plan
-        fields = ["id", "period", "name", "months", "price", "description", "is_active"]
-        read_only_fields = ["id", "period", "months"]
+        fields = [
+            "id",
+            "period",
+            "name",
+            "months",
+            "price",
+            "description",
+            "is_active",
+            "is_public",
+            "featured",
+            "display_order",
+            "features",
+            "limits",
+            "sms_enabled",
+        ]
+        read_only_fields = ["id", "period"]
+
+    def validate_features(self, value):
+        if not isinstance(value, list) or any(not isinstance(item, str) or len(item) > 180 for item in value):
+            raise serializers.ValidationError("Features must be a list of short text items.")
+        return [item.strip() for item in value if item.strip()]
+
+    def validate_limits(self, value):
+        if not isinstance(value, dict) or any(not isinstance(k, str) or len(k) > 50 for k in value):
+            raise serializers.ValidationError("Limits must be a simple key/value object.")
+        if any(v is not None and not isinstance(v, (str, int, float, bool)) for v in value.values()):
+            raise serializers.ValidationError("Each limit value must be text, a number, a boolean, or null.")
+        if "managers" in value:
+            manager_limit = value["managers"]
+            if manager_limit is not None and (
+                isinstance(manager_limit, bool) or not isinstance(manager_limit, int) or manager_limit < 0
+            ):
+                raise serializers.ValidationError({"managers": "Set a non-negative whole number or null."})
+        return value
 
     def validate_price(self, value):
         if value <= 0:
             raise serializers.ValidationError("Price must be more than zero.")
+        return value
+
+    def validate_months(self, value):
+        if not 1 <= value <= 36:
+            raise serializers.ValidationError("Billing duration must be between 1 and 36 months.")
         return value
 
 
@@ -43,7 +80,8 @@ class TransactionSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    plan = PlanSerializer(read_only=True)
+    plan = serializers.SerializerMethodField()
+    plan_snapshot = serializers.JSONField(read_only=True)
     state = serializers.SerializerMethodField()
 
     class Meta:
@@ -51,6 +89,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "plan",
+            "plan_snapshot",
             "status",
             "state",
             "starts_on",
@@ -60,6 +99,24 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             "created_at",
             "change_type",
         ]
+
+    def get_plan(self, obj):
+        snapshot = obj.plan_snapshot or {}
+        return {
+            "id": str(obj.plan_id),
+            "period": snapshot.get("period", obj.plan.period),
+            "name": snapshot.get("name", obj.plan.name),
+            "months": snapshot.get("months", obj.plan.months),
+            "price": snapshot.get("price", str(obj.price)),
+            "description": snapshot.get("description", obj.plan.description),
+            "is_active": obj.plan.is_active,
+            "is_public": obj.plan.is_public,
+            "featured": obj.plan.featured,
+            "display_order": obj.plan.display_order,
+            "features": snapshot.get("features", obj.plan.features),
+            "limits": snapshot.get("limits", obj.plan.limits),
+            "sms_enabled": snapshot.get("sms_enabled", obj.plan.sms_enabled),
+        }
 
     def get_state(self, obj):
         """pending_payment | cancelled | scheduled | current | ended"""

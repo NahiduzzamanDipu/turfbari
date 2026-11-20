@@ -22,11 +22,15 @@ Django / DRF / MySQL-compatible database (XAMPP MariaDB or MySQL 8) backend, Rea
 | Activity & audit log | Every important action is recorded with who, when and from which IP: bookings (created, changed, confirmed/cancelled, online requests), payments and refunds, customers, fields, hours, pricing, settings, pictures, team changes, expenses, subscription orders/payments, sign-ins (incl. failed) and password changes. Owners: Workspace → **Activity** (own turf only; managers can't open it). Super Admin: **Audit log** (all turfs + platform actions, filters, search) |
 | Two-factor sign-in | Super Admins can turn on authenticator-app codes (Google/Microsoft Authenticator, Authy) under **My account**: QR set-up, 10 one-time recovery codes (copy/download), regenerate, turn off (password + code). Sign-in then asks for the code; codes can't be replayed, 5 wrong codes or 5 minutes end the attempt, rate-limited |
 | Public page colours | Workspace → Settings → **Public page colours**: six presets (TurfBari green, Ocean, Sunset, Crimson, Royal, Midnight) or a custom main colour, with live preview. Applied only to that turf's public page; colours too light for white button text are rejected |
+| SaaS homepage | Public homepage shows active public plans, admin-authored benefits and limits, configured SMS segment pricing and cost examples, the global About Us video, support/onboarding steps, configured contact information and published bilingual FAQs. Plan buttons open registration with the selected billing period preselected |
+| Plan configuration | Super Admin → **Plans & payments** controls billing duration, active/public status, homepage order, featured flag, benefits, limits and SMS entitlement. Subscription records preserve plan and price snapshots; plan edits affect new orders only. The configured manager cap and SMS inclusion are enforced on the backend |
+| SMS plan access | Tenant SMS checks platform account controls and the active subscription's SMS entitlement snapshot. Public pricing comes from effective-dated SMS rates; the initial baseline is ৳0.35 per segment and administrators can schedule new rates |
+| Homepage content | Super Admin → **Homepage FAQs** manages bilingual questions, ordering and publication. Super Admin → **Onboarding & training** tracks active accounts, plan, activation date, support assignment, schedule, notes, covered topics and change history |
 | Safety | No double bookings (row lock per field, proven by a concurrent test), tenant isolation (other turfs' IDs → 404), owner-only actions enforced in the API, suspended turfs are read-only, public serializers are whitelists |
 
 Not built yet: SMS/WhatsApp reminders (email only today), two-factor sign-in for owners and managers (Super Admins only today), and automatic database backups for the Docker stack.
 
-Tests: 34 backend (`pytest`) + 9 frontend (`vitest`).
+Tests: 296 backend (`pytest`) + 31 frontend (`vitest`) at the last full run.
 
 ## Repository layout
 

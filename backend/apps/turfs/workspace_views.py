@@ -18,7 +18,15 @@ from apps.audit.services import Category, record
 from apps.common.tenancy import IsTenantMember, TenantViewSet
 
 from .images import process_gallery_photo, process_profile_picture
-from .models import MANAGER_PERMISSIONS, OperatingHours, PricingRule, TenantMembership, TurfField, TurfPhoto
+from .models import (
+    MANAGER_PERMISSIONS,
+    OperatingHours,
+    PricingRule,
+    TenantMembership,
+    Turf,
+    TurfField,
+    TurfPhoto,
+)
 from .pricing import recompute_min_price
 from .serializers import (
     FieldSerializer,
@@ -211,6 +219,20 @@ class ManagersView(APIView):
         v = data.validated_data
         User = get_user_model()
         email = v["email"].strip().lower()
+        turf = Turf.objects.select_for_update().get(pk=request.tenant.pk)
+        if TenantMembership.objects.filter(turf=turf, user__email__iexact=email, is_active=True).exists():
+            raise ValidationError({"email": ["This person already has access to your turf."]})
+        from apps.subscriptions.services import standing
+
+        current_subscription = standing(turf).current
+        snapshot = current_subscription.plan_snapshot if current_subscription else {}
+        limits = (snapshot or {}).get("limits", {})
+        manager_limit = limits.get("managers") if isinstance(limits, dict) else None
+        active_managers = TenantMembership.objects.filter(
+            turf=turf, is_active=True, role=TenantMembership.Role.MANAGER
+        ).count()
+        if manager_limit is not None and active_managers >= int(manager_limit):
+            raise ValidationError({"plan_limit": ["Your current plan's manager limit has been reached."]})
         user = User.objects.filter(email=email).first()
         password = None
         if user is None:

@@ -65,18 +65,21 @@ def plans() -> list[dict]:
             "months": p.months,
             "price": str(p.price),
             "description": p.description,
+            "features": p.features,
+            "limits": p.limits,
+            "featured": p.featured,
         }
-        for p in Plan.objects.filter(is_active=True).order_by("months")
+        for p in Plan.objects.filter(is_active=True, is_public=True).order_by("display_order", "months")
     ]
 
 
 def _plan(value) -> Plan:
     from django.core.exceptions import ValidationError as DjangoValidationError
 
-    plan = Plan.objects.filter(is_active=True, period=value).first() if value else None
+    plan = Plan.objects.filter(is_active=True, is_public=True, period=value).first() if value else None
     if plan is None and value:
         try:
-            plan = Plan.objects.filter(is_active=True, pk=value).first()
+            plan = Plan.objects.filter(is_active=True, is_public=True, pk=value).first()
         except (ValueError, DjangoValidationError):
             plan = None
     if plan is None:

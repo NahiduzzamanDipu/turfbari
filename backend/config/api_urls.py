@@ -17,6 +17,7 @@ from apps.common.live import LiveView
 from apps.expenses.views import ExpenseViewSet
 from apps.legal import admin_views as legal_admin
 from apps.legal import views as legal
+from apps.homepage import api as homepage
 from apps.notifications import campaigns as sms_campaigns
 from apps.notifications import usage as sms_usage
 from apps.notifications import views as sms
@@ -46,6 +47,10 @@ workspace_router.register("expenses", ExpenseViewSet, basename="ws-expenses")
 workspace_router.register("photos", setup.PhotoViewSet, basename="ws-photos")
 
 public_urls = [
+    path("plans/", homepage.PublicPlansView.as_view()),
+    path("sms-pricing/", homepage.PublicSmsPricingView.as_view()),
+    path("youtube/", homepage.PublicYoutubeView.as_view()),
+    path("faqs/", homepage.PublicFAQsView.as_view()),
     path("contact/", platform.PublicContactView.as_view()),
     path("locations/", public.LocationsView.as_view()),
     path("amenities/", public.AmenitiesView.as_view()),
@@ -91,6 +96,10 @@ auth_urls = [
 ]
 
 admin_urls = [
+    path("homepage/faqs/", homepage.AdminFAQsView.as_view()),
+    path("homepage/faqs/<uuid:pk>/", homepage.AdminFAQsView.as_view()),
+    path("onboarding/", homepage.AdminOnboardingView.as_view()),
+    path("onboarding/<uuid:pk>/", homepage.AdminOnboardingView.as_view()),
     path("dashboard/", AdminDashboardView.as_view()),
     path("registration-payments/", reg.AdminRegistrationPaymentsView.as_view()),
     path("registration-payments/<uuid:pk>/approve/", reg.AdminRegistrationApproveView.as_view()),

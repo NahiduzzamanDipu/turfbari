@@ -89,9 +89,24 @@ def control_for(turf) -> SmsAccountControl:
 
 def blocked_by_admin(turf, kind: str) -> str | None:
     """Block reason if TurfBari turned this account's SMS (or this type) off, else None."""
+    from apps.subscriptions.models import Subscription
+
     control = control_for(turf)
     if not control.all_enabled:
         return SmsMessage.BlockReason.ACCOUNT_DISABLED
+    today = timezone.localdate()
+    paid_period = (
+        Subscription.objects.filter(
+            turf=turf,
+            status=Subscription.Status.ACTIVE,
+            starts_on__lte=today,
+            ends_on__gte=today,
+        )
+        .order_by("ends_on")
+        .first()
+    )
+    if paid_period and not (paid_period.plan_snapshot or {}).get("sms_enabled", paid_period.plan.sms_enabled):
+        return SmsMessage.BlockReason.PLAN_DISABLED
     switch = KIND_SWITCH.get(kind)
     if switch and not getattr(control, switch):
         return SmsMessage.BlockReason.TYPE_DISABLED

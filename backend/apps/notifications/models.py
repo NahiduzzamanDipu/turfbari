@@ -56,6 +56,7 @@ class SmsMessage(BaseModel):
         TYPE_DISABLED = "type_disabled", "This SMS type is turned off by TurfBari"
         NO_PRICING = "no_pricing", "SMS price not set by TurfBari yet"
         MONTHLY_LIMIT = "monthly_limit", "Monthly SMS limit reached"
+        PLAN_DISABLED = "plan_disabled", "SMS not included in this plan"
         CANCELLED = "cancelled", "Campaign cancelled"
 
     turf = models.ForeignKey(

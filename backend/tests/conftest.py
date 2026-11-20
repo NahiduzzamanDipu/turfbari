@@ -50,7 +50,6 @@ def _sms_outbox():
 @pytest.fixture(autouse=True)
 def _sms_pricing(db):
     """A configured SMS price (BDT per segment), as TurfBari's admin would set in production."""
-    from datetime import timedelta
     from decimal import Decimal
 
     from django.utils import timezone
@@ -61,5 +60,5 @@ def _sms_pricing(db):
         price_per_segment=Decimal("0.35"),
         masking_price_per_segment=Decimal("0.60"),
         bulk_price_per_segment=Decimal("0.30"),
-        effective_from=timezone.now() - timedelta(days=1),
+        effective_from=timezone.now(),
     )

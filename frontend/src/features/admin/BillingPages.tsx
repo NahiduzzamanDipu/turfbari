@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge, type BadgeTone, Checkbox, Dialog, EmptyState, ErrorState, FormField, Input, Select, Table } from "@/components/ui/form";
+import { Badge, type BadgeTone, Checkbox, Dialog, EmptyState, ErrorState, FormField, Input, Select, Table, Textarea } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { errorText } from "@/features/workspace/hooks";
 import { STANDING_LABEL, STANDING_TONE, fmtPlainDate } from "@/features/workspace/SubscriptionBanner";
@@ -186,7 +186,7 @@ export function AdminBillingPage() {
               </div>
               <p className="tabular text-2xl font-bold">{formatBDT(p.price)}</p>
               <p className="text-xs text-muted-foreground">
-                {p.months} month{p.months > 1 ? "s" : ""} · {p.is_active ? "Offered to owners" : "Hidden"}
+                {p.months} month{p.months > 1 ? "s" : ""} · {p.is_active ? "Active" : "Inactive"} · {p.is_public ? "Public" : "Private"}{p.featured ? " · Featured" : ""}
               </p>
             </div>
           ))}
@@ -297,10 +297,19 @@ export function AdminBillingPage() {
 
 function EditPlanDialog({ plan, onClose }: { plan: Plan | null; onClose: () => void }) {
   const qc = useQueryClient();
-  const [form, setForm] = useState<Pick<Plan, "name" | "price" | "description" | "is_active"> | null>(null);
-  const current = form ?? (plan ? { name: plan.name, price: plan.price, description: plan.description, is_active: plan.is_active } : null);
+  type PlanForm = Pick<Plan, "name" | "price" | "description" | "months" | "is_active" | "is_public" | "featured" | "display_order" | "sms_enabled"> & { features_text: string; limits_text: string };
+  const [form, setForm] = useState<PlanForm | null>(null);
+  const current: PlanForm | null = form ?? (plan ? { name: plan.name, price: plan.price, description: plan.description, months: plan.months,
+    is_active: plan.is_active, is_public: plan.is_public, featured: plan.featured, display_order: plan.display_order, sms_enabled: plan.sms_enabled,
+    features_text: (plan.features ?? []).join("\n"), limits_text: JSON.stringify(plan.limits ?? {}, null, 2) } : null);
   const save = useMutation({
-    mutationFn: () => api(`/admin/plans/${plan?.id}/`, { method: "PATCH", json: current }),
+    mutationFn: () => {
+      let limits: Record<string, unknown>;
+      try { limits = JSON.parse(current?.limits_text || "{}"); }
+      catch { throw new Error("Limits must be valid JSON."); }
+      const { features_text, limits_text, ...fields } = current!;
+      return api(`/admin/plans/${plan?.id}/`, { method: "PATCH", json: { ...fields, features: features_text.split("\n").map((s) => s.trim()).filter(Boolean), limits } });
+    },
     onSuccess: () => {
       toast.success("Plan updated. New orders use the new price.");
       qc.invalidateQueries({ queryKey: ["admin", "plans"] });
@@ -317,7 +326,7 @@ function EditPlanDialog({ plan, onClose }: { plan: Plan | null; onClose: () => v
         onClose();
       }}
       title={`Edit ${plan?.name ?? ""} plan`}
-      description="Changes apply to new orders only; paid periods keep their price."
+      description="Changes apply to new orders only; paid periods keep their snapshots. The managers limit and SMS inclusion are enforced."
     >
       {current && (
         <form
@@ -333,10 +342,25 @@ function EditPlanDialog({ plan, onClose }: { plan: Plan | null; onClose: () => v
           <FormField label="Price (৳)">
             {(id) => <Input id={id} required type="number" min={1} step="0.01" value={current.price} onChange={(e) => setForm({ ...current, price: e.target.value })} />}
           </FormField>
+          <FormField label="Billing duration (months)">
+            {(id) => <Input id={id} required type="number" min={1} max={36} value={current.months} onChange={(e) => setForm({ ...current, months: Number(e.target.value) })} />}
+          </FormField>
           <FormField label="Short description">
             {(id) => <Input id={id} maxLength={200} value={current.description} onChange={(e) => setForm({ ...current, description: e.target.value })} />}
           </FormField>
-          <Checkbox label="Offer this plan to owners" checked={current.is_active} onChange={(e) => setForm({ ...current, is_active: e.target.checked })} />
+          <Checkbox label="Active for new subscriptions" checked={current.is_active} onChange={(e) => setForm({ ...current, is_active: e.target.checked })} />
+          <Checkbox label="Show on public homepage and registration" checked={current.is_public} onChange={(e) => setForm({ ...current, is_public: e.target.checked })} />
+          <Checkbox label="Mark as featured plan" checked={current.featured} onChange={(e) => setForm({ ...current, featured: e.target.checked })} />
+          <Checkbox label="Include paid SMS sending" checked={current.sms_enabled} onChange={(e) => setForm({ ...current, sms_enabled: e.target.checked })} />
+          <FormField label="Homepage order">
+            {(id) => <Input id={id} type="number" min={0} max={1000} value={current.display_order} onChange={(e) => setForm({ ...current, display_order: Number(e.target.value) })} />}
+          </FormField>
+          <FormField label="Plan features (one per line)">
+            {(id) => <Textarea id={id} rows={5} value={current.features_text} onChange={(e) => setForm({ ...current, features_text: e.target.value })} placeholder="Booking management\nPublic booking page" />}
+          </FormField>
+          <FormField label="Feature limits (JSON)">
+            {(id) => <Textarea id={id} rows={4} value={current.limits_text} onChange={(e) => setForm({ ...current, limits_text: e.target.value })} placeholder={'{"managers": 3, "monthly_sms": 500}'} />}
+          </FormField>
           <Button type="submit" disabled={save.isPending} className="self-end">
             Save plan
           </Button>

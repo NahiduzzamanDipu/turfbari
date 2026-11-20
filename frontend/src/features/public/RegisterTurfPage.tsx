@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, CheckCircle2, Copy, Loader2, ShieldCheck, TicketPercent, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { LegalAcceptBox } from "@/components/legal/Legal";
 import { Button } from "@/components/ui/button";
@@ -112,11 +112,13 @@ export function copy(text: string, what: string) {
 const STEPS = ["Your turf", "Plan", "Promo & total", "Pay with bKash", "Done"];
 
 export function RegisterTurfPage() {
+  const [searchParams] = useSearchParams();
+  const requestedPlan = searchParams.get("plan") ?? "";
   const draft = loadDraft();
   const locations = useLocations();
   const [form, setForm] = useState(draft?.form ?? EMPTY);
   const [step, setStep] = useState(draft?.step && draft.step < 4 ? draft.step : 0);
-  const [plan, setPlan] = useState(draft?.plan ?? "");
+  const [plan, setPlan] = useState(draft?.plan || requestedPlan);
   const [promoInput, setPromoInput] = useState(draft?.promo ?? "");
   const [applied, setApplied] = useState(draft?.promo ?? "");
   const [pay, setPay] = useState({ sender_number: "", amount_sent: "", trx_id: "", payment_note: "" });

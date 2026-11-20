@@ -429,6 +429,12 @@ export interface Plan {
   price: string;
   description: string;
   is_active: boolean;
+  is_public: boolean;
+  featured: boolean;
+  display_order: number;
+  features: string[];
+  limits: Record<string, string | number | boolean | null>;
+  sms_enabled: boolean;
 }
 
 export interface SubscriptionPeriod {
