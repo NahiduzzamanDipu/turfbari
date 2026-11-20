@@ -1,5 +1,7 @@
 """Subscription API for owners (workspace), the Super Admin, and the payment gateway callbacks."""
 
+from decimal import Decimal
+
 from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -48,9 +50,23 @@ MANUAL_METHODS = {
 }
 
 
+def payment_accounts() -> dict:
+    from apps.common.models import PlatformSettings
+
+    accounts = dict(settings.SUBSCRIPTION_PAYMENT_ACCOUNTS)
+    if number := PlatformSettings.load().subscription_bkash_number:
+        accounts["bkash"] = number  # set in Admin -> API -> Payments; wins over the environment
+    return accounts
+
+
 def payment_options() -> dict:
-    accounts = settings.SUBSCRIPTION_PAYMENT_ACCOUNTS
+    from apps.common.models import PlatformSettings
+
+    s = PlatformSettings.load()
+    accounts = payment_accounts()
     return {
+        "instructions": s.subscription_instructions,
+        "fee_percent": str(s.subscription_fee_percent),
         "online": gateway.enabled(),
         "online_sandbox": gateway.enabled() and settings.SSLCOMMERZ_SANDBOX,
         "manual": [
@@ -128,9 +144,12 @@ class ManualPaymentSerializer(serializers.Serializer):
         error_messages={"invalid": "Enter the transaction ID exactly as shown in your payment SMS."},
     )
     sender_number = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    amount_sent = serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=Decimal("0"), required=False
+    )
 
     def validate_method(self, value):
-        if not settings.SUBSCRIPTION_PAYMENT_ACCOUNTS.get(value):
+        if not payment_accounts().get(value):
             raise serializers.ValidationError("This payment method is not available.")
         return value
 
@@ -240,7 +259,9 @@ class SSLCommerzCallbackView(APIView):
             return Response({"received": bool(tx)})
         result = (
             "success"
-            if tx and tx.status == PaymentTransaction.Status.VERIFIED
+            if tx
+            and tx.status
+            in (PaymentTransaction.Status.VERIFIED, PaymentTransaction.Status.PENDING_VERIFICATION)
             else ("cancelled" if self.outcome == "cancel" else "failed")
         )
         return HttpResponseRedirect(f"{settings.FRONTEND_URL}/workspace/subscription?payment={result}")
@@ -308,9 +329,13 @@ class PaymentAdminViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     filter_backends = []
 
     def get_queryset(self):
-        qs = PaymentTransaction.objects.select_related(
-            "invoice__turf", "invoice__subscription__plan", "submitted_by"
-        ).exclude(status=PaymentTransaction.Status.INITIATED)
+        qs = (
+            PaymentTransaction.objects.select_related(
+                "invoice__turf", "invoice__subscription__plan", "submitted_by"
+            )
+            .prefetch_related("invoice__turf__memberships__user")
+            .exclude(status=PaymentTransaction.Status.INITIATED)
+        )
         if status := self.request.query_params.get("status"):
             qs = qs.filter(status=status)
         return qs

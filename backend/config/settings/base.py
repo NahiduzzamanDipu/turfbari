@@ -230,6 +230,8 @@ REST_FRAMEWORK = {
         "user": "600/min",
         "login": "10/min",
         "password_reset": "5/min",
+        "sms_send": "20/min",
+        "sms_recharge": "10/hour",
         "two_factor": "10/min",
         "two_factor_resend": "3/min",
         "public_booking": "5/min",

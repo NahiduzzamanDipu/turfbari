@@ -48,6 +48,9 @@ def make_turf(name="Alpha Turf", email="alpha@example.com", listed=True):
     turf.is_listed = listed
     turf.bkash_number = "01711000000"
     turf.save()
+    from apps.notifications.wallet import credit
+
+    credit(turf, 100, key=f"test-fund:{turf.pk}", note="Test starting balance")
     return turf, owner
 
 

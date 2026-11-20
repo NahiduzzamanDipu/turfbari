@@ -145,6 +145,20 @@ class BookingWriteSerializer(serializers.Serializer):
     advance_method = serializers.ChoiceField(choices=Payment.Method.choices, default=Payment.Method.CASH)
 
 
+def sms_outcome(message) -> dict | None:
+    """What happened to the customer SMS, so the owner sees it next to the booking."""
+    if message is None:
+        return None
+    message.refresh_from_db()
+    return {
+        "status": message.status,
+        "label": message.get_status_display(),
+        "reason": message.provider_message,
+        "block_reason": message.block_reason or None,
+        "charged": str(message.charged_amount),
+    }
+
+
 class StatusSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Booking.Status.choices)
 
@@ -230,7 +244,9 @@ class BookingViewSet(TenantViewSet):
             target=booking,
             data={"status": booking.status, "total": str(booking.total), "discount": str(booking.discount)},
         )
-        return Response(BookingDetailSerializer(self.get_queryset().get(pk=booking.pk)).data, status=201)
+        sms = payments.notify_owner_booking(booking)
+        body = BookingDetailSerializer(self.get_queryset().get(pk=booking.pk)).data
+        return Response(body | {"sms": sms_outcome(sms)}, status=201)
 
     @extend_schema(request=BookingWriteSerializer, responses=BookingDetailSerializer)
     def update(self, request, *args, **kwargs):
@@ -296,6 +312,8 @@ class BookingViewSet(TenantViewSet):
                     update_fields=["status", "rejection_reason", "reviewed_by", "reviewed_at", "updated_at"]
                 )
             payments.notify_cancelled(booking, before.status)
+            if booking.status == Booking.Status.CONFIRMED and before.status == Booking.Status.PENDING:
+                payments.notify_owner_booking(booking)  # a staff-made pending booking confirmed
         record(
             "booking.status",
             f"{old_status} → {booking.get_status_display()}: {booking_label(booking)}",

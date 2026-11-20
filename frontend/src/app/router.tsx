@@ -12,6 +12,7 @@ import {
   HeartPulse,
   History,
   Inbox,
+  Landmark,
   LayoutDashboard,
   Palette,
   PlugZap,
@@ -23,6 +24,7 @@ import {
   TicketPercent,
   UserCog,
   Users,
+  Wallet,
   Wrench,
 } from "lucide-react";
 import { type ComponentType, lazy, Suspense } from "react";
@@ -65,6 +67,7 @@ const activityPages = () => import("@/features/audit/ActivityLog");
 const accountPage = () => import("@/features/auth/AccountPage");
 const operationsPages = () => import("@/features/workspace/OperationsPages");
 const setupPages = () => import("@/features/workspace/SetupPages");
+const walletAdmin = () => import("@/features/admin/WalletAdminPages");
 const configPages = () => import("@/features/admin/ConfigPages");
 const platformPages = () => import("@/features/admin/PlatformPages");
 const smsPages = () => import("@/features/sms/SmsPages");
@@ -78,7 +81,9 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/admin/promo-codes", label: "Promo codes", icon: <TicketPercent /> },
   { to: "/admin/accounts", label: "Accounts", icon: <UserCog /> },
   { to: "/admin/sms", label: "SMS", icon: <MessageSquareText /> },
+  { to: "/admin/sms-wallet", label: "SMS wallets", icon: <Wallet />, badge: "pending_recharges" },
   { to: "/admin/sms-usage", label: "SMS usage", icon: <BarChart3 /> },
+  { to: "/admin/finance", label: "Finance", icon: <Landmark /> },
   { to: "/admin/api", label: "API", icon: <PlugZap /> },
   { to: "/admin/terms", label: "Terms & Rules", icon: <FileText /> },
   { to: "/admin/health", label: "Health", icon: <HeartPulse /> },
@@ -140,6 +145,8 @@ export const router = createBrowserRouter([
       { path: "accounts", element: page(() => import("@/features/admin/AccountsPage"), "AdminAccountsPage") },
       { path: "sms", element: page(smsPages, "AdminSmsPage") },
       { path: "sms-usage", element: page(smsPages, "AdminSmsUsagePage") },
+      { path: "sms-wallet", element: page(walletAdmin, "AdminSmsWalletPage") },
+      { path: "finance", element: page(walletAdmin, "AdminFinancePage") },
       { path: "api", element: page(configPages, "AdminApiPage") },
       { path: "terms", element: page(configPages, "AdminTermsPage") },
       { path: "subscriptions", element: page(platformPages, "AdminSubscriptionsPage") },

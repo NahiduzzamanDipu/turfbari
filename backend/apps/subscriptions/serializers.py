@@ -37,6 +37,8 @@ class TransactionSerializer(serializers.ModelSerializer):
             "note",
             "created_at",
             "reviewed_at",
+            "amount_sent",
+            "fee",
         ]
 
 
@@ -46,7 +48,18 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subscription
-        fields = ["id", "plan", "status", "state", "starts_on", "ends_on", "price", "note", "created_at"]
+        fields = [
+            "id",
+            "plan",
+            "status",
+            "state",
+            "starts_on",
+            "ends_on",
+            "price",
+            "note",
+            "created_at",
+            "change_type",
+        ]
 
     def get_state(self, obj):
         """pending_payment | cancelled | scheduled | current | ended"""
@@ -165,12 +178,39 @@ class AdminPaymentSerializer(TransactionSerializer):
     invoice_number = serializers.CharField(source="invoice.number", read_only=True)
     turf_name = serializers.CharField(source="invoice.turf.name", read_only=True)
     plan_name = serializers.CharField(source="invoice.subscription.plan.name", read_only=True)
+    plan_months = serializers.IntegerField(source="invoice.subscription.plan.months", read_only=True)
+    change_type = serializers.CharField(source="invoice.subscription.change_type", read_only=True)
     submitted_by_email = serializers.CharField(source="submitted_by.email", read_only=True, default=None)
+    payable = serializers.SerializerMethodField()
+    current = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
 
     class Meta(TransactionSerializer.Meta):
         fields = TransactionSerializer.Meta.fields + [
             "invoice_number",
             "turf_name",
             "plan_name",
+            "plan_months",
+            "change_type",
             "submitted_by_email",
+            "payable",
+            "current",
+            "owner",
         ]
+
+    def get_payable(self, obj):
+        return str(obj.invoice.amount + (obj.fee or 0))
+
+    def get_current(self, obj):
+        from .services import standing
+
+        s = standing(obj.invoice.turf)
+        return {
+            "plan": s.current.plan.name if s.current else None,
+            "paid_until": s.paid_until,
+            "state": s.state,
+        }
+
+    def get_owner(self, obj):
+        m = next((m for m in obj.invoice.turf.memberships.all() if m.role == "owner" and m.is_active), None)
+        return {"name": m.user.full_name, "email": m.user.email, "phone": m.user.phone} if m else None

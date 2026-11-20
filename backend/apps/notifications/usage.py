@@ -45,6 +45,12 @@ def summary(qs) -> dict:
     return agg
 
 
+def cell(value):
+    """Spreadsheet-safe CSV cell: text starting with = + - @ is prefixed so Excel won't run it."""
+    text = str(value)
+    return "'" + text if text[:1] in ("=", "+", "-", "@", chr(9), chr(13)) else text
+
+
 def parse_day(value: str | None, field: str) -> date | None:
     if not value:
         return None
@@ -208,7 +214,7 @@ class AdminSmsUsageView(APIView):
         for r in rows:
             writer.writerow(
                 [
-                    r["turf"]["name"],
+                    cell(r["turf"]["name"]),
                     r["sent"],
                     r["failed"],
                     r["pending"],

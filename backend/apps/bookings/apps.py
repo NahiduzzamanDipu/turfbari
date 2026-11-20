@@ -7,7 +7,7 @@ class BookingsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
 
     def ready(self):
-        from apps.notifications import tick
+        from apps.notifications import campaigns, tick
 
         from . import payments
 
@@ -15,5 +15,6 @@ class BookingsConfig(AppConfig):
             [
                 ("expire_payment_holds", payments.expire_lapsed),
                 ("booking_reminders", payments.booking_reminders),
+                ("sms_campaigns", campaigns.finish_campaigns),
             ]
         )

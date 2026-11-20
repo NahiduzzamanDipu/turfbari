@@ -22,6 +22,7 @@ export interface LiveState {
   } | null;
   pending_applications?: number;
   pending_payments?: number;
+  pending_recharges?: number;
 }
 
 export const LIVE_POLL_MS = 5_000;

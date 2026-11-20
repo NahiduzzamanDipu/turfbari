@@ -20,7 +20,6 @@ from django.db import transaction
 from apps.audit.services import Category, record
 
 from .models import Invoice, PaymentTransaction
-from .services import mark_paid
 
 log = logging.getLogger(__name__)
 TIMEOUT = 20
@@ -165,9 +164,11 @@ def settle(tran_id: str, val_id: str | None, outcome: str) -> PaymentTransaction
         tx.note = "Gateway validation did not match this payment."
         tx.save(update_fields=["status", "note", "gateway_response", "updated_at"])
         return tx
-    tx.status = PaymentTransaction.Status.VERIFIED
+    # The gateway confirmed the money; the plan still changes only when a TurfBari admin approves.
+    tx.status = PaymentTransaction.Status.PENDING_VERIFICATION
     tx.reference = str(data.get("bank_tran_id") or val_id)[:60]
-    tx.save(update_fields=["status", "reference", "gateway_response", "updated_at"])
+    tx.note = "Paid online (SSLCommerz validated) — approve to activate the plan"
+    tx.save(update_fields=["status", "reference", "note", "gateway_response", "updated_at"])
     invoice = tx.invoice
     if invoice.status == Invoice.Status.CANCELLED:
         # The owner switched plan while this checkout was open, but the money did arrive: honour it.
@@ -175,7 +176,9 @@ def settle(tran_id: str, val_id: str | None, outcome: str) -> PaymentTransaction
         invoice.save(update_fields=["status", "updated_at"])
         invoice.subscription.status = invoice.subscription.Status.PENDING_PAYMENT
         invoice.subscription.save(update_fields=["status", "updated_at"])
-    mark_paid(invoice)
+    if invoice.status == Invoice.Status.UNPAID:
+        invoice.status = Invoice.Status.PENDING_VERIFICATION
+        invoice.save(update_fields=["status", "updated_at"])
     record(
         "subscription.paid_online",
         f"Paid ৳{tx.amount} online for invoice {invoice.number} ({tx.reference})",

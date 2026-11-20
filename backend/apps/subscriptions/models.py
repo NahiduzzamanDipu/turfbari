@@ -63,6 +63,8 @@ class Subscription(BaseModel):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
+    # new | renewal | upgrade | downgrade, decided when the owner asks (compared with the plan they had).
+    change_type = models.CharField(max_length=10, blank=True)
 
     class Meta:
         ordering = ["-ends_on", "-created_at"]
@@ -171,6 +173,9 @@ class PaymentTransaction(BaseModel):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
+    # Manual bKash payments: what the owner says they sent and the payment charge included in it.
+    amount_sent = MoneyField(null=True, blank=True, default=None)
+    fee = MoneyField()
 
     class Meta:
         ordering = ["-created_at"]

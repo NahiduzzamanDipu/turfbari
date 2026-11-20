@@ -188,7 +188,7 @@ def test_a_turf_can_pay_with_a_code_only_once():
     assert again.status_code == 400 and "already used" in str(again.json())
 
 
-def test_full_discount_activates_the_plan_without_payment():
+def test_full_discount_still_needs_admin_approval():
     turf, owner = make_turf()
     client = client_for(owner)
     promo("FREE100", 100)
@@ -196,8 +196,11 @@ def test_full_discount_activates_the_plan_without_payment():
     turf.subscriptions.update(status="cancelled")
     invoice = order(client, "monthly")
     body = apply(client, invoice, "FREE100").json()
-    assert body["amount"] == "0.00" and body["status"] == "paid"
-    assert body["transactions"][0]["method"] == "promo"
+    assert body["amount"] == "0.00" and body["status"] == "pending_verification"
+    assert body["transactions"][0]["method"] == "promo" and standing(turf).state != "active"
+    admin, _ = admin_client()
+    tx = body["transactions"][0]["id"]
+    assert admin.post(f"/api/admin/payments/{tx}/verify/").status_code == 200
     assert standing(turf).state == "active"
 
 

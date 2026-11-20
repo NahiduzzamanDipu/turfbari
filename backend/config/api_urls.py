@@ -13,8 +13,10 @@ from apps.bookings import workspace_views as ws
 from apps.common import platform_views as platform
 from apps.common.live import LiveView
 from apps.expenses.views import ExpenseViewSet
+from apps.notifications import campaigns as sms_campaigns
 from apps.notifications import usage as sms_usage
 from apps.notifications import views as sms
+from apps.notifications import wallet_views as sms_wallet
 from apps.subscriptions import admin_tools as subs_admin
 from apps.subscriptions import views as subs
 from apps.turfs import design_views as design
@@ -88,6 +90,15 @@ admin_urls = [
     path("sms/", sms.AdminSmsOverviewView.as_view()),
     path("sms/messages/", sms.AdminSmsMessagesView.as_view()),
     path("sms/usage/", sms_usage.AdminSmsUsageView.as_view()),
+    path("sms/pricing/", sms_wallet.AdminPricingView.as_view()),
+    path("sms/recharges/", sms_wallet.AdminRechargeListView.as_view()),
+    path("sms/recharges/<uuid:pk>/<slug:decision>/", sms_wallet.AdminRechargeDecisionView.as_view()),
+    path("sms/wallets/", sms_wallet.AdminWalletsView.as_view()),
+    path("sms/messages/<uuid:pk>/refund/", sms_wallet.AdminSmsRefundView.as_view()),
+    path("turfs/<uuid:pk>/sms/", sms_wallet.AdminTurfSmsView.as_view()),
+    path("turfs/<uuid:pk>/sms/adjust/", sms_wallet.AdminWalletAdjustView.as_view()),
+    path("finance/", sms_wallet.AdminFinanceView.as_view()),
+    path("api-config/payments/", sms_wallet.AdminPaymentSettingsView.as_view()),
     path("sms/messages/<uuid:pk>/retry/", sms.AdminSmsRetryView.as_view()),
     path("sms/test/", sms.AdminSmsTestView.as_view()),
     path("sms/templates/", sms.AdminSmsTemplatesView.as_view()),
@@ -120,6 +131,15 @@ workspace_urls = [
     path("sms/", sms.WorkspaceSmsView.as_view()),
     path("sms/settings/", sms.WorkspaceSmsSettingsView.as_view()),
     path("sms/usage/", sms_usage.WorkspaceSmsUsageView.as_view()),
+    path("sms/wallet/", sms_wallet.WalletView.as_view()),
+    path("sms/wallet/ledger/", sms_wallet.LedgerView.as_view()),
+    path("sms/wallet/recharge/", sms_wallet.RechargeView.as_view()),
+    path("sms/retry-blocked/", sms_wallet.RetryBlockedView.as_view()),
+    path("sms/messages/<uuid:pk>/retry/", sms_wallet.RetryBlockedView.as_view()),
+    path("sms/send/", sms_campaigns.SingleSmsView.as_view()),
+    path("sms/campaigns/", sms_campaigns.CampaignListView.as_view()),
+    path("sms/campaigns/preview/", sms_campaigns.CampaignPreviewView.as_view()),
+    path("sms/campaigns/<uuid:pk>/", sms_campaigns.CampaignDetailView.as_view()),
     path("subscription/", subs.SubscriptionOverviewView.as_view()),
     path("subscription/order/", subs.SubscriptionOrderView.as_view()),
     path("subscription/invoices/<uuid:pk>/manual-payment/", subs.InvoiceManualPaymentView.as_view()),

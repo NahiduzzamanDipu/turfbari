@@ -21,7 +21,7 @@ from .test_subscriptions import admin_client
 
 pytestmark = pytest.mark.django_db
 VIDEO = "https://www.youtube.com/watch?v=aqz-KE-bpKQ"
-LIMIT_BN = "একজন গ্রাহক সর্বোচ্চ ২টি স্লট বুক করতে পারবেন।"
+LIMIT_BN = "একজন গ্রাহক প্রতিদিন সর্বোচ্চ ২টি স্লট বুক করতে পারবেন।"
 
 
 def page(turf):

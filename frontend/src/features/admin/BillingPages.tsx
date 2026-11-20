@@ -218,7 +218,7 @@ export function AdminBillingPage() {
               <thead>
                 <tr>
                   <th>Turf</th>
-                  <th>Plan</th>
+                  <th>Request</th>
                   <th>Method</th>
                   <th>Transaction</th>
                   <th className="text-right">Amount</th>
@@ -231,10 +231,15 @@ export function AdminBillingPage() {
                   <tr key={t.id}>
                     <td className="font-medium">
                       {t.turf_name}
+                      {t.owner && <span className="block text-xs text-muted-foreground">{t.owner.name || t.owner.email} · {t.owner.phone || t.owner.email}</span>}
                       <span className="block text-xs text-muted-foreground">{fmtDateTime(t.created_at)}</span>
                     </td>
                     <td>
-                      {t.plan_name}
+                      <span className="capitalize">{t.change_type || "plan"}</span> → {t.plan_name} ({t.plan_months} mo)
+                      <span className="block text-xs text-muted-foreground">
+                        Now: {t.current.plan ?? "no plan"}
+                        {t.current.paid_until && ` until ${t.current.paid_until}`}
+                      </span>
                       <span className="block font-mono text-xs text-muted-foreground">{t.invoice_number}</span>
                     </td>
                     <td>{t.method_label}</td>
@@ -242,7 +247,14 @@ export function AdminBillingPage() {
                       {t.reference || "—"}
                       {t.sender_number && <span className="block text-muted-foreground">from {t.sender_number}</span>}
                     </td>
-                    <td className="tabular text-right">{formatBDT(t.amount)}</td>
+                    <td className="tabular text-right">
+                      {formatBDT(t.payable)}
+                      {t.amount_sent && (
+                        <span className={`block text-xs ${Number(t.amount_sent) + 1 < Number(t.payable) ? "text-destructive" : "text-muted-foreground"}`}>
+                          sent {formatBDT(t.amount_sent)}
+                        </span>
+                      )}
+                    </td>
                     <td>
                       <Badge tone={TX_TONE[t.status] ?? "neutral"}>{t.status_label}</Badge>
                     </td>

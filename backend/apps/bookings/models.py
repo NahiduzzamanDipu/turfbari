@@ -30,6 +30,8 @@ class Customer(BaseModel):
     class Meta:
         ordering = ["name"]
         constraints = [models.UniqueConstraint(fields=["turf", "phone"], name="uniq_customer_phone_per_turf")]
+        # The per-customer daily booking limit looks a phone up across all turfs.
+        indexes = [models.Index(fields=["phone"], name="customer_phone_idx")]
 
     def __str__(self) -> str:
         return f"{self.name} ({self.phone})"

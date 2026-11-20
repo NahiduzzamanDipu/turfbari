@@ -93,7 +93,7 @@ def _sms(booking: Booking, kind: str, **extra) -> None:
 
     turf = booking.turf
     if not turf_sms_settings(turf).get(kind, False):
-        return
+        return None
     start, end = timezone.localtime(booking.start), timezone.localtime(booking.end)
     body = render(
         kind,
@@ -105,7 +105,7 @@ def _sms(booking: Booking, kind: str, **extra) -> None:
         name=booking.customer.name,
         **extra,
     )
-    queue_sms(
+    return queue_sms(
         to=booking.customer.phone,
         body=body,
         kind=kind,
@@ -258,13 +258,29 @@ def booking_reminders(now=None) -> dict:
     return {"booking_reminders": queued}
 
 
+def notify_owner_booking(booking: Booking):
+    """Customer SMS for a booking the turf made itself (walk-in / phone). Same dedupe key family as the
+    online confirmation, so a booking can never get two confirmation SMS. Returns the SmsMessage."""
+    if booking.status != Booking.Status.CONFIRMED:
+        return None
+    from apps.notifications.models import SmsMessage
+
+    key_online = f"booking:{booking.pk}:booking_confirmed"
+    if SmsMessage.objects.filter(dedupe_key=key_online).exists():
+        return None
+    return _sms(booking, "owner_booking_confirmed")
+
+
 def notify_cancelled(booking: Booking, previous_status: str) -> None:
     if previous_status == Booking.Status.CONFIRMED and booking.status == Booking.Status.CANCELLED:
         _sms(booking, "booking_cancelled")
 
 
 # ------------------------------------------------------------------ customer limit & terms
-LIMIT_MESSAGE_BN = "একজন গ্রাহক সর্বোচ্চ {n}টি স্লট বুক করতে পারবেন। আপনার বুকিং সীমা পূর্ণ হয়েছে।"
+LIMIT_MESSAGE_BN = (
+    "একজন গ্রাহক প্রতিদিন সর্বোচ্চ {n}টি স্লট বুক করতে পারবেন। আজকের জন্য আপনার বুকিং সীমা পূর্ণ হয়েছে। "
+    "আগামীকাল আবার বুক করতে পারবেন।"
+)
 
 
 def bn_digits(n: int) -> str:
@@ -286,30 +302,40 @@ def slot_count_for(field, start, end) -> int:
     return max(1, -(-minutes // length))
 
 
-def active_slots_for_phone(phone: str, now=None) -> int:
-    """Upcoming slots this phone holds on ANY turf: confirmed, plus pending ones still holding their
-    slot. Past, cancelled, rejected and expired bookings don't count."""
+def day_bounds(day):
+    """[start, end) of a Bangladesh (Asia/Dhaka) calendar day as aware datetimes (no UTC dates)."""
+    from datetime import datetime, time
+
+    tz = timezone.get_current_timezone()
+    start = timezone.make_aware(datetime.combine(day, time.min), tz)
+    return start, start + timedelta(days=1)
+
+
+def slots_on_day(phone: str, day, now=None) -> int:
+    """Slots this phone holds on one Dhaka calendar day, on ANY turf: confirmed, completed and pending
+    requests still holding their slot. A booking belongs to the day it starts. Rejected, cancelled,
+    expired and lapsed requests don't count."""
     from django.db.models import Sum
 
-    now = now or timezone.now()
+    start, end = day_bounds(day)
     total = (
         Booking.objects.blocking(now)
-        .filter(
-            customer__phone=phone, end__gt=now, status__in=[Booking.Status.PENDING, Booking.Status.CONFIRMED]
-        )
+        .filter(customer__phone=phone, start__gte=start, start__lt=end)
         .aggregate(n=Sum("slot_count"))["n"]
     )
     return int(total or 0)
 
 
-def enforce_customer_limit(phone: str, new_slots: int) -> None:
-    """Call inside the booking transaction. Locks the phone's row so parallel requests queue."""
+def enforce_customer_limit(phone: str, new_slots: int, start) -> None:
+    """Daily limit (default 2 slots per mobile number per Bangladesh calendar day, across all turfs).
+    Call inside the booking transaction: the phone's lock row serialises parallel requests."""
     from apps.common.models import CustomerLock, PlatformSettings
 
     CustomerLock.objects.get_or_create(phone=phone)
     CustomerLock.objects.select_for_update().get(phone=phone)
     limit = PlatformSettings.load().max_slots_per_customer
-    if active_slots_for_phone(phone) + new_slots > limit:
+    day = timezone.localtime(start).date()
+    if slots_on_day(phone, day) + new_slots > limit:
         raise ValidationError(
             {"phone": [LIMIT_MESSAGE_BN.format(n=bn_digits(limit))], "code": ["booking_limit"]}
         )

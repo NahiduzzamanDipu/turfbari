@@ -450,6 +450,8 @@ export interface PaymentTx {
   note: string;
   created_at: string;
   reviewed_at: string | null;
+  amount_sent?: string | null;
+  fee?: string;
 }
 
 export interface Invoice {
@@ -502,6 +504,8 @@ export interface SubscriptionOverview {
     online: boolean;
     online_sandbox: boolean;
     manual: { method: string; label: string; account: string }[];
+    instructions?: string;
+    fee_percent?: string;
   };
 }
 
@@ -509,7 +513,12 @@ export interface AdminPayment extends PaymentTx {
   invoice_number: string;
   turf_name: string;
   plan_name: string;
+  plan_months: number;
+  change_type: string;
   submitted_by_email: string | null;
+  payable: string;
+  current: { plan: string | null; paid_until: string | null; state: string };
+  owner: { name: string; email: string; phone: string } | null;
 }
 
 export interface WorkspacePhoto extends PublicPhoto {

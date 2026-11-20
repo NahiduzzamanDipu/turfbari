@@ -70,3 +70,14 @@ describe("Booking draft storage", () => {
     expect(loadDraft("old")).toBeNull();
   });
 });
+
+describe("SMS part counter (matches the server)", () => {
+  it("counts English and Bengali parts like BulkSMSBD bills them", async () => {
+    const { smsSegments } = await import("@/features/sms/WalletPages");
+    expect(smsSegments("a".repeat(160)).segments).toBe(1);
+    expect(smsSegments("a".repeat(161)).segments).toBe(2);
+    expect(smsSegments("ক".repeat(70))).toMatchObject({ unicode: true, segments: 1 });
+    expect(smsSegments("ক".repeat(71)).segments).toBe(2);
+    expect(smsSegments("ক".repeat(140)).segments).toBe(3);
+  });
+});

@@ -313,7 +313,7 @@ class PublicBookingRequestView(PublicAPIView):
                     {"start": ["Someone else is booking this slot right now. Please choose another."]}
                 )
             slots = payments.slot_count_for(field, start, end)
-            payments.enforce_customer_limit(phone, slots)
+            payments.enforce_customer_limit(phone, slots, start)
             customer = get_or_create_customer(turf, name=v["name"], phone=phone, email=v.get("email", ""))
             booking = reserve_slot(
                 turf=turf,

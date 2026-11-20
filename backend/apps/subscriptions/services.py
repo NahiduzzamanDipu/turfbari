@@ -114,9 +114,38 @@ def create_order(turf, plan: Plan, *, created_by=None, note: str = "") -> Invoic
     for invoice in open_invoices:
         cancel_order(invoice)
     subscription = Subscription.objects.create(
-        turf=turf, plan=plan, price=plan.price, created_by=created_by, note=note
+        turf=turf,
+        plan=plan,
+        price=plan.price,
+        created_by=created_by,
+        note=note,
+        change_type=change_type_for(turf, plan),
     )
     return Invoice.objects.create(turf=turf, subscription=subscription, amount=plan.price)
+
+
+def change_type_for(turf, plan: Plan) -> str:
+    """new / renewal / upgrade / downgrade compared with the plan the turf has now (or had last)."""
+    current = (
+        current_subscription(turf) or paid_periods(turf).select_related("plan").order_by("-ends_on").first()
+    )
+    if current is None:
+        return "new"
+    if current.plan_id == plan.pk:
+        return "renewal"
+    # Plans differ by length (and price): longer or pricier = upgrade, shorter or cheaper = downgrade.
+    if plan.months != current.plan.months:
+        return "upgrade" if plan.months > current.plan.months else "downgrade"
+    return "upgrade" if plan.price > current.plan.price else "downgrade"
+
+
+def payable(invoice: Invoice) -> tuple[Decimal, Decimal]:
+    """(fee, total) the owner must send by bKash: invoice amount plus TurfBari's payment charge."""
+    from apps.common.models import PlatformSettings
+
+    pct = PlatformSettings.load().subscription_fee_percent
+    fee = (invoice.amount * pct / 100).quantize(Decimal("0.01"))
+    return fee, invoice.amount + fee
 
 
 def cancel_order(invoice: Invoice):
@@ -165,8 +194,20 @@ def _open_invoice(invoice: Invoice) -> Invoice:
 
 
 @transaction.atomic
-def submit_manual_payment(invoice, *, method, reference, sender_number="", user=None) -> PaymentTransaction:
+def submit_manual_payment(
+    invoice, *, method, reference, sender_number="", user=None, amount_sent=None
+) -> PaymentTransaction:
+    """Records what the owner says they paid. Nothing changes on the plan until an admin verifies it."""
     invoice = _open_invoice(invoice)
+    fee, total = payable(invoice)
+    if amount_sent is not None and amount_sent < total - 1:
+        raise ValidationError(
+            {
+                "amount_sent": [
+                    f"Send at least ৳{total:,.2f} (plan ৳{invoice.amount:,.2f} + charge ৳{fee:,.2f})."
+                ]
+            }
+        )
     reference = reference.strip().upper()
     claimed = PaymentTransaction.objects.filter(
         method=method, reference__iexact=reference, channel=PaymentTransaction.Channel.MANUAL
@@ -182,6 +223,8 @@ def submit_manual_payment(invoice, *, method, reference, sender_number="", user=
         reference=reference,
         sender_number=sender_number.strip(),
         submitted_by=user,
+        amount_sent=amount_sent,
+        fee=fee,
     )
     invoice.status = Invoice.Status.PENDING_VERIFICATION
     invoice.save(update_fields=["status", "updated_at"])
@@ -197,12 +240,53 @@ def review_payment(tx: PaymentTransaction, *, approve: bool, reviewer, note: str
     tx.reviewed_by, tx.reviewed_at, tx.note = reviewer, timezone.now(), note[:255]
     tx.save(update_fields=["status", "reviewed_by", "reviewed_at", "note", "updated_at"])
     if approve:
-        mark_paid(tx.invoice)
+        subscription = mark_paid(tx.invoice)
+        notify_owner_plan(tx.invoice.turf, subscription, approved=True, key=f"subtx:{tx.pk}:approved")
     else:
         Invoice.objects.filter(pk=tx.invoice_id, status=Invoice.Status.PENDING_VERIFICATION).update(
             status=Invoice.Status.UNPAID
         )
+        notify_owner_plan(
+            tx.invoice.turf,
+            tx.invoice.subscription,
+            approved=False,
+            key=f"subtx:{tx.pk}:rejected",
+            reason=note,
+        )
     return tx
+
+
+PLAN_APPROVED_BN = "TURFBARI: আপনার {plan} সাবস্ক্রিপশন {what} হয়েছে। মেয়াদ: {start} থেকে {end}। ধন্যবাদ।"
+PLAN_REJECTED_BN = "TURFBARI: আপনার {plan} প্ল্যানের পেমেন্ট যাচাই করা যায়নি, তাই সাবস্ক্রিপশন পরিবর্তন হয়নি।{reason}"
+
+
+def notify_owner_plan(turf, subscription, *, approved: bool, key: str, reason: str = "") -> None:
+    """SMS to the owner from TurfBari's own (platform) SMS — never charged to the turf's wallet."""
+    from apps.common.models import PlatformSettings
+    from apps.notifications.models import SmsKind
+    from apps.notifications.services import queue_sms
+    from apps.notifications.tick import owner_phones
+
+    if not PlatformSettings.load().platform_owner_sms:
+        return
+    if approved:
+        what = {"renewal": "রিনিউ", "upgrade": "আপগ্রেড", "downgrade": "পরিবর্তন"}.get(
+            subscription.change_type, "চালু"
+        )
+        body = PLAN_APPROVED_BN.format(
+            plan=subscription.plan.name,
+            what=what,
+            start=f"{subscription.starts_on:%d/%m/%Y}",
+            end=f"{subscription.ends_on:%d/%m/%Y}",
+        )
+        kind = SmsKind.SUBSCRIPTION_APPROVED
+    else:
+        body = PLAN_REJECTED_BN.format(
+            plan=subscription.plan.name, reason=f" কারণ: {reason}।" if reason else ""
+        )
+        kind = SmsKind.SUBSCRIPTION_REJECTED
+    for phone in owner_phones(turf):
+        queue_sms(to=phone, body=body, kind=kind, turf=turf, dedupe_key=f"{key}:{phone[-10:]}")
 
 
 @transaction.atomic
@@ -271,18 +355,19 @@ def apply_promo(invoice: Invoice, code: str, *, user=None) -> Invoice:
     invoice = _open_invoice(invoice)
     promo = check_promo(code, invoice.turf, exclude_invoice=invoice, lock=True)
     _reprice(invoice, promo)
-    if invoice.amount == 0:  # 100% off: nothing to pay, the period starts now
+    if invoice.amount == 0:  # 100% off: nothing to pay, but TurfBari still approves the plan change
         PaymentTransaction.objects.create(
             invoice=invoice,
             method=PaymentTransaction.Method.PROMO,
             channel=PaymentTransaction.Channel.PROMO,
             amount=Decimal("0.00"),
-            status=PaymentTransaction.Status.VERIFIED,
+            status=PaymentTransaction.Status.PENDING_VERIFICATION,
             reference=promo.code,
             submitted_by=user,
-            reviewed_at=timezone.now(),
+            note=f"100% promo code {promo.code}",
         )
-        mark_paid(invoice)
+        invoice.status = Invoice.Status.PENDING_VERIFICATION
+        invoice.save(update_fields=["status", "updated_at"])
     invoice.refresh_from_db()
     return invoice
 

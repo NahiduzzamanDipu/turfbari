@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type SmsOutcome, showSmsOutcome } from "@/lib/smsOutcome";
 import { CalendarCheck2, ChevronLeft, ChevronRight, Loader2, Phone, Wrench } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
@@ -102,7 +103,7 @@ export function SlotBoardPage() {
   const book = useMutation({
     mutationFn: () => {
       const { discount_value: _value, discount_mode: _mode, ...fields } = form;
-      return api("/workspace/bookings/", {
+      return api<{ sms?: SmsOutcome | null }>("/workspace/bookings/", {
         method: "POST",
         json: {
           field: fieldId,
@@ -114,8 +115,9 @@ export function SlotBoardPage() {
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: (r) => {
       toast.success(`Booked ${fmtRange(chosen[0]!.start, chosen.at(-1)!.end)} for ${form.team_name || form.customer_name}`);
+      showSmsOutcome(r.sms);
       setForm(EMPTY_FORM);
       resetSelection();
       refresh();

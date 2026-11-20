@@ -1,6 +1,7 @@
 """Abstract base models shared by every TurfBari app."""
 
 import uuid
+from decimal import Decimal
 
 from django.db import models
 
@@ -32,7 +33,21 @@ class PlatformSettings(models.Model):
 
     youtube_video_id = models.CharField(max_length=11, blank=True)  # "how to book" video on every turf page
     youtube_url = models.CharField(max_length=300, blank=True)  # as pasted, for display only
+    # Booking slots one mobile number may hold per Bangladesh calendar day (across all turfs).
     max_slots_per_customer = models.PositiveSmallIntegerField(default=2)
+    # SMS wallet recharge by bKash "Send Money" to TurfBari (admin verifies, then credits).
+    recharge_enabled = models.BooleanField(default=True)
+    recharge_bkash_number = models.CharField(max_length=20, blank=True)
+    recharge_instructions = models.TextField(blank=True)
+    recharge_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("1.90"))
+    recharge_min_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("100.00"))
+    recharge_max_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    # Subscription payments by bKash (blank number = TURFBARI_BKASH_NUMBER from the environment).
+    subscription_bkash_number = models.CharField(max_length=20, blank=True)
+    subscription_instructions = models.TextField(blank=True)
+    subscription_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"))
+    # TurfBari's own SMS to owners (wallet credited, plan approved/rejected).
+    platform_owner_sms = models.BooleanField(default=True)
     terms_enabled = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
 

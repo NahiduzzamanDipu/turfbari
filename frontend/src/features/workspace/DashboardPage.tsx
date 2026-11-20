@@ -116,26 +116,52 @@ export function DashboardPage() {
   );
 }
 
-/** One line of this turf's SMS usage (owners and managers allowed to see SMS). */
+/** SMS wallet + this month's usage; warns when SMS are waiting for balance or turned off. */
 function DashboardSmsLine() {
   const can = useCan("view_sms");
-  const usage = useQuery({
-    queryKey: ["ws", "sms", "usage"],
+  const wallet = useQuery({
+    queryKey: ["ws", "sms", "wallet"],
     queryFn: () =>
-      api<{ this_month: { sent: number; failed: number; pending: number }; all_time: { sent: number } }>("/workspace/sms/usage/"),
+      api<{ balance: string; blocked: Record<string, number>; sms_disabled: boolean; disabled_message_bn: string | null; insufficient_message_bn: string | null }>(
+        "/workspace/sms/wallet/",
+      ),
     enabled: can,
   });
-  if (!can || !usage.data) return null;
-  const m = usage.data.this_month;
+  const usage = useQuery({
+    queryKey: ["ws", "sms", "usage"],
+    queryFn: () => api<{ this_month: { sent: number; failed: number } }>("/workspace/sms/usage/"),
+    enabled: can,
+  });
+  if (!can || !wallet.data) return null;
+  const w = wallet.data;
+  const waiting = w.blocked.insufficient_balance ?? 0;
   return (
-    <Link to="/workspace/sms" className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm hover:bg-secondary">
-      <span>
-        SMS this month: <strong className="tabular">{m.sent}</strong> sent
-        {m.failed > 0 && <span className="text-destructive"> · {m.failed} failed</span>}
-        {m.pending > 0 && <span className="text-muted-foreground"> · {m.pending} waiting</span>}
-        <span className="text-muted-foreground"> · {usage.data.all_time.sent} all time</span>
-      </span>
-      <span className="font-semibold text-primary">SMS usage →</span>
-    </Link>
+    <>
+      {(w.sms_disabled || waiting > 0) && (
+        <Link
+          to="/workspace/sms"
+          lang="bn"
+          className="mb-4 flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+        >
+          <AlertCircle className="size-5 shrink-0" />
+          <span>
+            {w.sms_disabled ? w.disabled_message_bn : `${w.insufficient_message_bn} (${waiting} SMS অপেক্ষায়)`} →
+          </span>
+        </Link>
+      )}
+      <Link to="/workspace/sms" className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm hover:bg-secondary">
+        <span>
+          SMS Wallet: <strong className="tabular">৳{Number(w.balance).toFixed(2)}</strong>
+          {usage.data && (
+            <span className="text-muted-foreground">
+              {" "}
+              · {usage.data.this_month.sent} SMS sent this month
+              {usage.data.this_month.failed > 0 && ` · ${usage.data.this_month.failed} failed`}
+            </span>
+          )}
+        </span>
+        <span className="font-semibold text-primary">SMS & wallet →</span>
+      </Link>
+    </>
   );
 }

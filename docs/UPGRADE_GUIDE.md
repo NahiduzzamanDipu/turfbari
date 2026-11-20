@@ -194,3 +194,103 @@ Removed: `workspace/design/video/`.
 1. Admin → **API**: paste the booking-guide video; optionally save the BulkSMSBD key and sender ID there.
 2. Admin → **Terms & Rules**: write and publish the first version (until then no checkbox is shown).
 3. Tell owners to confirm their bKash number in Settings (the turf's own mobile is used until they do).
+
+---
+
+# Version 3 — prepaid SMS wallet, bKash recharge, campaigns, daily limit, approvals
+
+## SMS wallet (every turf)
+- Each turf has its own wallet (starts at ৳0). The balance changes only through **immutable ledger entries**
+  (`WalletTransaction`: recharge, admin credit, adjustment, SMS charge, SMS refund) with unique idempotency keys; a
+  database check forbids negative balances. Corrections are new entries, never edits.
+- **Prices** (Admin → SMS wallets → Pricing): BDT per billable SMS part for non-masking, masking and bulk, each with an
+  effective time. Every charge stores the price it used. No price set = turf SMS are blocked ("no price").
+- **Parts**: Bengali/Unicode 70 characters (67 per part when longer), English 160 (153).
+- **Charging policy**: the cost is taken in the same database transaction that hands the SMS to BulkSMSBD, so two
+  parallel sends can never overdraw a wallet. If BulkSMSBD clearly refuses it, the amount is refunded at once with a
+  separate entry. If BulkSMSBD doesn't answer (timeout), the charge stays and the message is marked *Check*; an admin
+  refunds it after checking the BulkSMSBD panel. Each provider call has its own charge key, so a retry or a second
+  run can never charge the same call twice; messages never handed to BulkSMSBD are never charged.
+- **Not enough balance**: nothing is sent or charged; the SMS is stored as *Blocked* with the reason, the owner sees the
+  Bengali warning on the dashboard and SMS page, and can *Send waiting SMS* after recharging. Bookings are never rolled
+  back or blocked because of SMS.
+- TurfBari's own SMS (sign-in codes, plan notices, recharge/plan confirmations) never touch a turf wallet; their cost is
+  recorded as a platform expense (Finance page).
+
+## bKash wallet recharge
+Owner: SMS → Recharge Wallet → amount → the app shows the credit, the extra bKash charge (default **1.9%**,
+configurable) and the total, plus TurfBari's bKash number → the owner sends the money and submits sender, total sent,
+TrxID and a note. Credit is added **only** when an admin approves (Admin → SMS wallets → Recharge requests); the charge
+is recorded separately and never becomes wallet money. One credit per request, TrxIDs are unique, approval/rejection
+are audited and the owner gets an SMS from TurfBari's own SMS. Settings: Admin → API → Payments to TurfBari.
+
+## Single SMS and bulk campaigns (owner SMS page)
+- **Send SMS**: number, message, live character/part counter, estimated cost, balance, confirmation dialog.
+- **Bulk SMS**: recipients from the turf's own bookings (date range, statuses), all saved customers, typed numbers or a
+  CSV (phone/mobile + optional name, max 300 KB); placeholders `{{customer_name}} {{turf_name}} {{booking_date}}
+  {{booking_time}} {{booking_id}} {{customer_phone}}`; preview with sample messages, valid/invalid/duplicate counts,
+  total parts, cost and balance; confirmation; one campaign per idempotency key; the first batch goes at once and the
+  rest in batches via the tick; stop/cancel (unsent messages are dropped and never charged); history with
+  sent/failed/parts/cost.
+- Customer lists never cross turfs (every query is filtered by the signed-in turf).
+
+## Admin SMS controls (per account)
+Admin → SMS wallets → Accounts → Manage: all SMS on/off and, separately, booking confirmation, booking made by the
+turf, rejection/cancellation, reminder, single and bulk SMS; monthly limit; wallet credit/take-back with a reason;
+ledger; blocked reasons. Changes apply immediately and are audited. Turned-off SMS are stored as *Blocked* (no charge)
+and the owner sees *"আপনার অ্যাকাউন্টের SMS সেবা বর্তমানে প্রশাসক কর্তৃক বন্ধ রাখা হয়েছে…"*. TurfBari's own SMS are
+controlled separately.
+
+## Daily booking limit
+At most **2 slots per mobile number per Bangladesh calendar day** (Asia/Dhaka; a booking belongs to the day it starts),
+across all turfs; the next day starts fresh. Counts confirmed, played and pending requests that still hold their slot;
+rejected, cancelled and expired don't. Enforced on the server under a per-phone row lock (tested with parallel
+requests); configurable in Admin → API. The booking form states the rule; the exact remaining count is not shown
+publicly so nobody can look up another number's bookings.
+
+## Bookings made by the turf send SMS
+A booking the turf creates as *confirmed* (or a staff-made pending booking that is later confirmed) sends the customer
+the Bengali confirmation, charged to the wallet and logged. It shares the dedupe key family with the online
+confirmation, so a booking never gets two. The owner sees whether the SMS went or why not (e.g. low balance); the
+booking always stands.
+
+## Subscriptions need admin approval
+Owners order a renewal / upgrade / downgrade (labelled automatically), see the payable amount (plan price + optional
+payment charge %), TurfBari's bKash number and instructions, and submit sender, amount sent and TrxID. Nothing changes
+until an admin verifies it in **Plans & payments** (owner, current plan and expiry, requested plan and period, payable
+vs sent, TrxID). Approval extends from the current expiry, records who/when and SMS the owner; rejection leaves the plan
+unchanged and SMS the owner. **SSLCommerz payments and 100% promo codes now also wait for approval.** Duplicate TrxIDs
+are refused. History and audit records are kept.
+
+## Finance (Admin → Finance)
+Wallet balances held, SMS charged (net of refunds), approved / pending / rejected recharges, bKash charges collected
+(kept separate), subscription payments received / pending / rejected, TurfBari's own SMS cost, top spenders.
+Unverified money is never shown as received.
+
+## Performance (measured locally, same data)
+| | Before | After |
+|---|---|---|
+| Tap a slot → shown as selected | 200–247 ms (waited for the reservation and a full list reload behind a loading skeleton) | 16–36 ms (immediate; reverts if the server refuses) |
+| Reservation confirmed by the server | — | 139–200 ms, in the background |
+| Slot list API | 7 queries, ~10 ms | unchanged |
+| Reservation (hold) API | 12 queries, ~13 ms | unchanged |
+| Turf page DOM ready (dev server) | — | 256 ms |
+
+Root cause of the delay: the slot list's cache key included the hold token, so every selection discarded the list and
+downloaded it again before the tap showed. Added index: `Customer.phone` (for the cross-turf daily limit).
+
+## Migrations
+`notifications.0004_sms_wallet`, `common.0002_sms_wallet`, `subscriptions.0006_approval_flow`,
+`bookings.0006_customer_phone_index` — all additive.
+
+## New endpoints
+Workspace: `sms/wallet/`, `sms/wallet/ledger/`, `sms/wallet/recharge/` (GET quote, POST submit),
+`sms/retry-blocked/`, `sms/messages/<id>/retry/`, `sms/send/`, `sms/campaigns/` (+ `preview/`, `<id>/` GET/DELETE).
+Admin: `sms/pricing/`, `sms/recharges/` (+ `<id>/approve|reject/`), `sms/wallets/`, `sms/messages/<id>/refund/`,
+`turfs/<id>/sms/` (GET/PUT controls), `turfs/<id>/sms/adjust/`, `finance/`, `api-config/payments/`.
+
+## After deploying
+1. Admin → SMS wallets → **Pricing**: set the per-part prices (until then turf SMS are blocked).
+2. Admin → API → **Payments to TurfBari**: the recharge bKash number (and optionally the subscription bKash number and
+   charge).
+3. Owners recharge their wallets; approve the requests in Admin → SMS wallets.

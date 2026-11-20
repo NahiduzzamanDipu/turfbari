@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Copy, Hourglass, Loader2, Send, TimerOff } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,12 +81,16 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
     saveDraft(turf.slug, { fieldId, day });
   }, [turf.slug, fieldId, day]);
 
+  const tokenRef = useRef(token);
+  tokenRef.current = token;
+  const slotsKey = ["public", "availability", turf.slug, fieldId, day] as const;
   const slots = useQuery({
-    queryKey: ["public", "availability", turf.slug, fieldId, day, token],
+    queryKey: slotsKey,
     queryFn: () =>
       api<PublicAvailability>(`/public/turfs/${turf.slug}/availability/?field=${fieldId}&date=${day}`, {
-        headers: token ? { "X-Hold-Token": token, ...visitorHeaders } : visitorHeaders,
+        headers: tokenRef.current ? { "X-Hold-Token": tokenRef.current, ...visitorHeaders } : visitorHeaders,
       }),
+    placeholderData: keepPreviousData,
     enabled: Boolean(fieldId),
     refetchInterval: 8_000, // live: others' selections and bookings show up within seconds (paused when hidden)
     staleTime: 0,
@@ -131,12 +135,15 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
   }, [secondsLeft === 0]);
 
   const heldHere = myHold && myHold.field === fieldId && myHold.start.slice(0, 10) === day ? myHold : null;
-  const range = useMemo(() => {
+  // Optimistic: the tapped range shows as selected at once; the server confirms (or we revert).
+  const [pending, setPending] = useState<{ from: number; to: number } | null>(null);
+  const serverRange = useMemo(() => {
     if (!heldHere) return null;
     const from = list.findIndex((s) => s.start.slice(0, 16) === heldHere.start.slice(0, 16));
     const to = list.findIndex((s) => s.end.slice(0, 16) === heldHere.end.slice(0, 16));
     return from >= 0 && to >= from ? { from, to } : null;
   }, [heldHere, list]);
+  const range = pending ?? serverRange;
   const chosen = range ? list.slice(range.from, range.to + 1) : [];
   const total = chosen.reduce((sum, s) => sum + Number(s.price ?? 0), 0);
   const payment = turf.payment;
@@ -153,12 +160,28 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
         headers: visitorHeaders,
         json: { field: fieldId, start: list[r.from]!.start, end: list[r.to]!.end, token: token ?? "" },
       }),
+    onMutate: (r) => setPending(r),
     onSuccess: (h) => {
       setNotice(null);
       saveToken(h.token);
-      void refresh();
+      // Patch the list we already have instead of reloading it: this hold is now "yours".
+      qc.setQueryData<PublicAvailability>(slotsKey, (old) =>
+        old
+          ? {
+              ...old,
+              my_hold: h,
+              slots: old.slots.map((s) => {
+                const mine = s.start >= h.start && s.end <= h.end && h.field === fieldId;
+                if (mine) return { ...s, state: "yours", available: true };
+                return s.state === "yours" ? { ...s, state: "free", available: true } : s;
+              }),
+            }
+          : old,
+      );
+      setPending(null);
     },
     onError: (e) => {
+      setPending(null); // revert the optimistic selection
       setNotice(e instanceof ApiError ? e.message : "Couldn't select that slot. Try again.");
       void refresh();
     },
@@ -167,8 +190,10 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
   const release = useMutation({
     mutationFn: () =>
       api<void>(`/public/turfs/${turf.slug}/hold/`, { method: "DELETE", headers: token ? { "X-Hold-Token": token, ...visitorHeaders } : visitorHeaders }),
+    onMutate: () => setPending({ from: -1, to: -2 }), // shows nothing selected right away
     onSettled: () => {
       saveToken(null);
+      setPending(null);
       void refresh();
     },
   });
@@ -432,7 +457,10 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
                       !clickable && state === "free" && "opacity-60",
                     )}
                   >
-                    <span className="block font-medium">{fmtRange(s.start, s.end)}</span>
+                    <span className="flex items-center gap-1 font-medium">
+                      {fmtRange(s.start, s.end)}
+                      {selected && hold.isPending && <Loader2 className="size-3 animate-spin" aria-label="Reserving" />}
+                    </span>
                     {selected ? (
                       <span className="text-xs opacity-90">Held for you</span>
                     ) : STATE_LABEL[state] ? (
@@ -494,6 +522,9 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
                 {(id) => <Input id={id} value={form.team_name} onChange={(e) => setForm({ ...form, team_name: e.target.value })} />}
               </FormField>
             </div>
+            <p className="text-xs text-muted-foreground" lang="bn">
+              একজন গ্রাহক প্রতিদিন সর্বোচ্চ {turf.max_slots_per_customer}টি স্লট বুক করতে পারবেন (সব টার্ফ মিলিয়ে)।
+            </p>
             <FormField label="Notes (optional)">
               {(id) => <Textarea id={id} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />}
             </FormField>

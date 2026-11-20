@@ -1,4 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type SmsOutcome, showSmsOutcome } from "@/lib/smsOutcome";
 import { CalendarX2, ChevronLeft, ChevronRight, Loader2, Pencil, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
@@ -432,10 +433,11 @@ function BookingFormDialog({
       };
       return booking
         ? api<Booking>(`/workspace/bookings/${booking.id}/`, { method: "PUT", json: body })
-        : api<Booking>("/workspace/bookings/", { method: "POST", json: body });
+        : api<Booking & { sms?: SmsOutcome | null }>("/workspace/bookings/", { method: "POST", json: body });
     },
     onSuccess: (b) => {
       toast.success(booking ? "Booking updated" : `Booking ${b.reference} created`);
+      if (!booking) showSmsOutcome((b as Booking & { sms?: SmsOutcome | null }).sms);
       qc.invalidateQueries({ queryKey: ["ws"] });
       onSaved(b);
     },

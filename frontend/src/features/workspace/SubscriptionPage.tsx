@@ -232,7 +232,15 @@ function PayInvoice({
   const [method, setMethod] = useState(options.manual[0]?.method ?? "");
   const [reference, setReference] = useState("");
   const [sender, setSender] = useState("");
+  const [amountSent, setAmountSent] = useState("");
   const account = options.manual.find((m) => m.method === method);
+  // Payable = plan price + TurfBari's payment charge (set by the admin; the server re-checks it).
+  const feePct = Number(options.fee_percent ?? 0);
+  const fee = Math.round(Number(invoice.amount) * feePct) / 100;
+  const payableTotal = Number(invoice.amount) + fee;
+  const changeLabel = { new: "New plan", renewal: "Renewal", upgrade: "Upgrade", downgrade: "Downgrade" }[
+    (invoice.subscription as { change_type?: string }).change_type ?? ""
+  ];
   const lastRejected = invoice.transactions.find((t) => t.status === "rejected");
   const reviewing = invoice.transactions.find((t) => t.status === "pending_verification");
 
@@ -246,10 +254,10 @@ function PayInvoice({
     mutationFn: () =>
       api(`/workspace/subscription/invoices/${invoice.id}/manual-payment/`, {
         method: "POST",
-        json: { method, reference, sender_number: sender },
+        json: { method, reference, sender_number: sender, amount_sent: amountSent || String(payableTotal) },
       }),
     onSuccess: () => {
-      toast.success("Payment submitted. TurfBari will verify it shortly.");
+      toast.success("Payment submitted. Your plan changes only after TurfBari verifies it.");
       setReference("");
       refresh();
     },
@@ -347,13 +355,21 @@ function PayInvoice({
                         {method === "bank" ? "Transfer to: " : `Send money to ${account.label} `}
                         <span className="font-mono font-semibold">{account.account}</span>
                         <span className="block text-xs text-muted-foreground">
-                          Amount: {formatBDT(invoice.amount)} · Reference: {invoice.number}
+                          {changeLabel && <>{changeLabel} · </>}Plan {formatBDT(invoice.amount)}
+                          {fee > 0 && <> + charge {formatBDT(fee)} ({options.fee_percent}%)</>} = <strong>{formatBDT(payableTotal)}</strong> · Reference:{" "}
+                          {invoice.number}
                         </span>
+                        {options.instructions && <span className="mt-1 block whitespace-pre-line text-xs">{options.instructions}</span>}
                       </div>
                     )}
                     <FormField label="Transaction ID (TrxID)" error={manual.error ? errorText(manual.error) : undefined}>
                       {(id) => (
                         <Input id={id} required placeholder="e.g. 9BG7XK2LQ1" className="font-mono uppercase" value={reference} onChange={(e) => setReference(e.target.value)} />
+                      )}
+                    </FormField>
+                    <FormField label="Amount sent (৳)">
+                      {(id) => (
+                        <Input id={id} type="number" step="0.01" required placeholder={payableTotal.toFixed(2)} value={amountSent} onChange={(e) => setAmountSent(e.target.value)} />
                       )}
                     </FormField>
                     {method !== "bank" && (

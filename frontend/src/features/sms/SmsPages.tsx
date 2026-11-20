@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge, type BadgeTone, Checkbox, EmptyState, ErrorState, FormField, Input, Select, Table, Textarea } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveMembership } from "@/features/auth/auth";
+import { BulkSmsSection, SingleSmsCard, WalletCard } from "./WalletPages";
 import { errorText } from "@/features/workspace/hooks";
 import { ApiError, api } from "@/lib/api";
 import type { Paginated } from "@/lib/types";
@@ -260,6 +261,7 @@ export function WorkspaceSmsPage() {
       {summary.isError && <ErrorState error={summary.error} onRetry={() => summary.refetch()} />}
       {summary.data && usage && s && (
         <div className="flex flex-col gap-6">
+          <WalletCard />
           {!summary.data.platform_sms_on && (
             <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
               SMS sending is not switched on for TurfBari yet, so messages are logged as “Not sent”. Your settings below are kept.
@@ -303,8 +305,7 @@ export function WorkspaceSmsPage() {
               {!isOwner && <p className="mt-3 text-xs text-muted-foreground">Only the turf owner can change these.</p>}
             </CardContent>
           </Card>
-          <SmsUsageCard />
-          <MessageLog base="/workspace/sms/" />
+          <SmsTabs />
         </div>
       )}
     </>
@@ -842,5 +843,43 @@ export function AdminSmsUsagePage() {
         </div>
       )}
     </>
+  );
+}
+
+/** Send, bulk, usage and the log as tabs (keeps the long SMS page manageable). */
+function SmsTabs() {
+  const isOwner = useActiveMembership()?.role === "owner";
+  const tabs = [
+    ["send", "Send SMS"],
+    ...(isOwner ? [["bulk", "Bulk SMS"]] : []),
+    ["usage", "Usage"],
+    ["log", "Message log"],
+  ] as const;
+  const [tab, setTab] = useState<string>("send");
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap gap-2" role="tablist">
+        {tabs.map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={
+              tab === key
+                ? "rounded-full border border-primary bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
+                : "rounded-full border px-3 py-1.5 text-sm font-medium hover:bg-secondary"
+            }
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {tab === "send" && <SingleSmsCard />}
+      {tab === "bulk" && <BulkSmsSection />}
+      {tab === "usage" && <SmsUsageCard />}
+      {tab === "log" && <MessageLog base="/workspace/sms/" onRetry={undefined} />}
+    </div>
   );
 }

@@ -360,6 +360,13 @@ def test_online_payment_flow_is_validated_server_side():
         ipn = APIClient().post("/api/payments/sslcommerz/ipn/", {"tran_id": tran_id, "val_id": "v2"})
     assert r["Location"].endswith("/workspace/subscription?payment=success")
     assert ipn.status_code == 200
+    # Money validated by the gateway, but the plan changes only after a TurfBari admin approves.
+    assert Invoice.objects.get(pk=invoice["id"]).status == "pending_verification"
+    assert not Subscription.objects.filter(turf=turf, status="active", plan__period="yearly").exists()
+    online = PaymentTransaction.objects.get(tran_id=tran_id)
+    assert online.status == "pending_verification" and online.reference == "BANK123"
+    admin, _ = admin_client()
+    assert admin.post(f"/api/admin/payments/{online.pk}/verify/").status_code == 200
     assert Invoice.objects.get(pk=invoice["id"]).status == "paid"
     assert Subscription.objects.filter(turf=turf, status="active", plan__period="yearly").count() == 1
 

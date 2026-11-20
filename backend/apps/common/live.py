@@ -75,6 +75,12 @@ def _workspace_state(turf) -> dict:
     }
 
 
+def _pending_recharges() -> int:
+    from apps.notifications.models import SmsRechargeRequest
+
+    return SmsRechargeRequest.objects.filter(status=SmsRechargeRequest.Status.PENDING).count()
+
+
 def _admin_state() -> dict:
     from apps.applications.models import TurfApplication
     from apps.subscriptions.models import Invoice, PaymentTransaction, Subscription
@@ -97,6 +103,7 @@ def _admin_state() -> dict:
         "scope": "admin",
         "pending_applications": pending_apps.count(),
         "pending_payments": pending_payments.count(),
+        "pending_recharges": _pending_recharges(),
     }
 
 

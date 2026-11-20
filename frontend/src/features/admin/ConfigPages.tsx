@@ -83,6 +83,7 @@ export function AdminApiPage() {
           <YouTubeCard current={c.youtube} onSaved={() => qc.invalidateQueries({ queryKey: ["admin", "api-config"] })} />
           <BulkSmsCard current={c.bulksmsbd} onSaved={(b) => qc.setQueryData(["admin", "api-config"], { ...c, bulksmsbd: b })} />
           <BookingLimitCard current={c.booking.max_slots_per_customer} onSaved={() => qc.invalidateQueries({ queryKey: ["admin", "api-config"] })} />
+          <PaymentsCard />
         </div>
       )}
     </>
@@ -313,7 +314,7 @@ function BookingLimitCard({ current, onSaved }: { current: number; onSaved: () =
             save.mutate();
           }}
         >
-          <FormField label="Upcoming slots one mobile number can hold" hint="Across all turfs. Pending requests count; expired, rejected and cancelled don't." className="flex-1">
+          <FormField label="Slots one mobile number can book per day" hint="Per Bangladesh calendar day, across all turfs. Pending requests count; expired, rejected and cancelled don't." className="flex-1">
             {(id) => <Input id={id} type="number" min={1} max={20} step={1} value={value} onChange={(e) => setValue(e.target.value)} />}
           </FormField>
           <Button type="submit" disabled={save.isPending || Number(value) === current}>
@@ -499,5 +500,98 @@ export function AdminTermsPage() {
         </div>
       )}
     </>
+  );
+}
+
+interface PaymentSettings {
+  recharge_enabled: boolean;
+  recharge_bkash_number: string;
+  recharge_instructions: string;
+  recharge_fee_percent: string;
+  recharge_min_amount: string;
+  recharge_max_amount: string;
+  subscription_bkash_number: string;
+  subscription_instructions: string;
+  subscription_fee_percent: string;
+  platform_owner_sms: boolean;
+}
+
+/** bKash numbers and charges for SMS wallet recharges and subscription payments. */
+function PaymentsCard() {
+  const qc = useQueryClient();
+  const data = useQuery({ queryKey: ["admin", "payment-settings"], queryFn: () => api<PaymentSettings>("/admin/api-config/payments/") });
+  const [form, setForm] = useState<PaymentSettings | null>(null);
+  useEffect(() => {
+    if (data.data && !form) setForm(data.data);
+  }, [data.data, form]);
+  const save = useMutation({
+    mutationFn: () => api<PaymentSettings>("/admin/api-config/payments/", { method: "PUT", json: form }),
+    onSuccess: (d) => {
+      qc.setQueryData(["admin", "payment-settings"], d);
+      setForm(d);
+      toast.success("Payment settings saved");
+    },
+    onError: (e) => toast.error(errorText(e)),
+  });
+  const fields = save.error instanceof ApiError ? save.error.fields : null;
+  if (!form) return <Skeleton className="h-64" />;
+  const text = (k: keyof PaymentSettings) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value });
+  return (
+    <Card className="xl:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <span className="rounded bg-[#e2136e] px-1.5 py-0.5 text-xs font-bold text-white">bKash</span> Payments to TurfBari
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="grid gap-6 lg:grid-cols-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            save.mutate();
+          }}
+        >
+          <fieldset className="grid gap-3 sm:grid-cols-2">
+            <legend className="mb-2 font-semibold">SMS wallet recharge</legend>
+            <div className="sm:col-span-2">
+              <Checkbox label="Owners can recharge their SMS wallet" checked={form.recharge_enabled} onChange={(e) => setForm({ ...form, recharge_enabled: e.target.checked })} />
+            </div>
+            <FormField label="bKash number" error={fields?.recharge_bkash_number}>
+              {(id) => <Input id={id} type="tel" value={form.recharge_bkash_number} onChange={text("recharge_bkash_number")} />}
+            </FormField>
+            <FormField label="Extra bKash charge (%)" error={fields?.recharge_fee_percent}>
+              {(id) => <Input id={id} type="number" step="0.01" min={0} max={20} value={form.recharge_fee_percent} onChange={text("recharge_fee_percent")} />}
+            </FormField>
+            <FormField label="Minimum recharge (৳)">{(id) => <Input id={id} type="number" step="0.01" min={1} value={form.recharge_min_amount} onChange={text("recharge_min_amount")} />}</FormField>
+            <FormField label="Maximum recharge (৳, 0 = none)">{(id) => <Input id={id} type="number" step="0.01" min={0} value={form.recharge_max_amount} onChange={text("recharge_max_amount")} />}</FormField>
+            <FormField label="Instructions shown to owners" className="sm:col-span-2">
+              {(id) => <Textarea id={id} rows={3} value={form.recharge_instructions} onChange={text("recharge_instructions")} />}
+            </FormField>
+          </fieldset>
+          <fieldset className="grid gap-3 sm:grid-cols-2">
+            <legend className="mb-2 font-semibold">Subscription payments</legend>
+            <FormField label="bKash number" hint="Blank = TURFBARI_BKASH_NUMBER" error={fields?.subscription_bkash_number}>
+              {(id) => <Input id={id} type="tel" value={form.subscription_bkash_number} onChange={text("subscription_bkash_number")} />}
+            </FormField>
+            <FormField label="Payment charge (%)" hint="Added to the plan price">
+              {(id) => <Input id={id} type="number" step="0.01" min={0} max={20} value={form.subscription_fee_percent} onChange={text("subscription_fee_percent")} />}
+            </FormField>
+            <FormField label="Instructions shown to owners" className="sm:col-span-2">
+              {(id) => <Textarea id={id} rows={3} value={form.subscription_instructions} onChange={text("subscription_instructions")} />}
+            </FormField>
+            <div className="sm:col-span-2">
+              <Checkbox
+                label="Send owners SMS when TurfBari approves/rejects a recharge or plan (from TurfBari's own SMS, free for them)"
+                checked={form.platform_owner_sms}
+                onChange={(e) => setForm({ ...form, platform_owner_sms: e.target.checked })}
+              />
+            </div>
+          </fieldset>
+          <Button type="submit" className="lg:col-span-2 lg:justify-self-end" disabled={save.isPending}>
+            Save payment settings
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

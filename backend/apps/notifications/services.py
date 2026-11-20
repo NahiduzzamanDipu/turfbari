@@ -18,6 +18,7 @@ from django.conf import settings
 from django.db import IntegrityError, close_old_connections, transaction
 from django.utils import timezone
 
+from . import wallet
 from .models import SmsAttempt, SmsConfig, SmsKind, SmsMessage, SmsTemplate
 from .providers import bd_msisdn, get_provider, segment_count
 
@@ -36,6 +37,9 @@ DEFAULT_TEMPLATES = {
         "বুকিং আইডি: {reference}। যোগাযোগ: {phone}"
     ),
     SmsKind.BOOKING_CANCELLED: "{turf}: {date} {time}-এর বুকিং ({reference}) বাতিল করা হয়েছে। যোগাযোগ: {phone}",
+    SmsKind.OWNER_BOOKING_CONFIRMED: (
+        "TURFBARI: আপনার {turf}-এ {date} তারিখ {time} সময়ের বুকিং কনফার্ম হয়েছে। বুকিং আইডি: {reference}। ধন্যবাদ।"
+    ),
     SmsKind.BOOKING_REMINDER: (
         "মনে করিয়ে দিচ্ছি: {date} {time}-এ {turf}-এ আপনার খেলা। বুকিং আইডি: {reference}। — TURFBARI"
     ),
@@ -52,6 +56,7 @@ PLACEHOLDERS = {
     SmsKind.BOOKING_CONFIRMED: {"turf", "date", "time", "reference", "phone", "name"},
     SmsKind.PAYMENT_REJECTED: {"turf", "date", "time", "reference", "phone", "name", "reason"},
     SmsKind.BOOKING_CANCELLED: {"turf", "date", "time", "reference", "phone", "name"},
+    SmsKind.OWNER_BOOKING_CONFIRMED: {"turf", "date", "time", "reference", "phone", "name"},
     SmsKind.BOOKING_REMINDER: {"turf", "date", "time", "reference", "phone", "name"},
     SmsKind.SUBSCRIPTION_REMINDER: {"turf", "plan", "date", "days", "url"},
     SmsKind.SUBSCRIPTION_EXPIRED: {"turf", "plan", "date", "url"},
@@ -62,6 +67,7 @@ TURF_SMS_DEFAULTS = {
     "booking_confirmed": True,
     "payment_rejected": True,
     "booking_cancelled": True,
+    "owner_booking_confirmed": True,
     "booking_reminder": False,
     "reminder_hours": 3,
 }
@@ -100,6 +106,10 @@ PLATFORM_KINDS = {
     SmsKind.SUBSCRIPTION_EXPIRED,
     SmsKind.PASSWORD_RESET,
     SmsKind.TEST,
+    SmsKind.WALLET_CREDITED,
+    SmsKind.WALLET_RECHARGE_REJECTED,
+    SmsKind.SUBSCRIPTION_APPROVED,
+    SmsKind.SUBSCRIPTION_REJECTED,
 }
 
 
@@ -125,6 +135,7 @@ def queue_sms(
     related_ref: str = "",
     created_by=None,
     auto_dispatch: bool = True,
+    campaign=None,
 ) -> SmsMessage | None:
     """Add an SMS to the outbox. Returns the existing row if `dedupe_key` was already used."""
     if dedupe_key and (existing := SmsMessage.objects.filter(dedupe_key=dedupe_key).first()):
@@ -145,6 +156,21 @@ def queue_sms(
         and month_usage(turf) >= config.per_turf_monthly_limit
     ):
         status, reason = SmsMessage.Status.SKIPPED, "This turf used its SMS allowance for the month"
+    segments = segment_count(body)
+    block, price = "", wallet.price_for(kind)
+    tenant = turf is not None and kind not in PLATFORM_KINDS
+    if status == SmsMessage.Status.QUEUED and tenant:
+        limit = wallet.control_for(turf).monthly_limit
+        if admin_block := wallet.blocked_by_admin(turf, kind):
+            block = admin_block
+        elif limit and month_usage(turf) >= limit:
+            block = SmsMessage.BlockReason.MONTHLY_LIMIT
+        elif price is None:
+            block = SmsMessage.BlockReason.NO_PRICING
+        elif wallet.wallet_for(turf).balance < wallet.money(price * segments):
+            block = SmsMessage.BlockReason.INSUFFICIENT_BALANCE
+        if block:
+            status, reason = SmsMessage.Status.BLOCKED, SmsMessage.BlockReason(block).label
     try:
         with transaction.atomic():
             message = SmsMessage.objects.create(
@@ -155,8 +181,11 @@ def queue_sms(
                 scope=SmsMessage.Scope.PLATFORM if kind in PLATFORM_KINDS else SmsMessage.Scope.TENANT,
                 status=status,
                 provider_message=reason,
+                block_reason=block,
+                price_per_segment=price,
+                campaign=campaign,
                 dedupe_key=dedupe_key,
-                segments=segment_count(body),
+                segments=segments,
                 booking=booking,
                 related_ref=related_ref[:60],
                 created_by=created_by,
@@ -204,14 +233,43 @@ def deliver(message_id) -> SmsMessage | None:
         )
         if message is None:
             return None  # already sent, being sent, given up, or skipped
+        tenant = message.scope == SmsMessage.Scope.TENANT and message.turf_id is not None
+        # Provider calls are numbered from the attempt log (never reused, even after a manual retry);
+        # the charge for each call is keyed on this number, so it can't be taken twice.
+        attempt_no = message.attempt_log.count() + 1
+        if tenant:
+            block = wallet.blocked_by_admin(message.turf, message.kind)
+            if block is None and message.price_per_segment is None:
+                block = SmsMessage.BlockReason.NO_PRICING
+            if block is None:
+                try:
+                    wallet.charge(message, attempt_no)
+                except wallet.InsufficientBalance:
+                    block = SmsMessage.BlockReason.INSUFFICIENT_BALANCE
+            if block:  # nothing goes to BulkSMSBD and nothing is charged
+                message.status, message.block_reason = SmsMessage.Status.BLOCKED, block
+                message.provider_message, message.next_attempt_at = SmsMessage.BlockReason(block).label, None
+                message.save(
+                    update_fields=[
+                        "status",
+                        "block_reason",
+                        "provider_message",
+                        "next_attempt_at",
+                        "updated_at",
+                    ]
+                )
+                return message
         message.status = SmsMessage.Status.SENDING
         message.attempts += 1
         message.save(update_fields=["status", "attempts", "updated_at"])
 
     result = get_provider().send(message.to, message.body, sender_id())
+    if tenant and not result.ok and result.code != "timeout":
+        # BulkSMSBD clearly did not take it: give the money back (a timeout keeps the charge for review).
+        wallet.refund(message, attempt_no, f"Refund: not sent ({result.code} {result.message})")
     SmsAttempt.objects.create(
         message=message,
-        number=message.attempts,
+        number=attempt_no,
         ok=result.ok,
         provider_code=result.code[:20],
         provider_message=result.message[:255],
@@ -245,9 +303,40 @@ def deliver(message_id) -> SmsMessage | None:
             "updated_at",
         ]
     )
+    if tenant:
+        message.charged_amount = wallet.net_charged(message)
+    elif result.ok:  # TurfBari's own message: recorded as a platform expense, no turf wallet involved
+        message.charged_amount = wallet.money((wallet.price_for(message.kind) or 0) * message.segments)
+    message.save(update_fields=["charged_amount"])
     if not result.ok:
         log.warning("SMS %s to %s failed: %s %s", message.pk, message.masked_to, result.code, result.message)
     return message
+
+
+def retry_blocked(message: SmsMessage, *, user=None) -> SmsMessage:
+    """Owner/admin "retry" for a blocked SMS (e.g. after a recharge): re-check, then send."""
+    with transaction.atomic():
+        message = SmsMessage.objects.select_for_update().get(pk=message.pk)
+        if (
+            message.status != SmsMessage.Status.BLOCKED
+            or message.block_reason == SmsMessage.BlockReason.CANCELLED
+        ):
+            return message
+        if message.price_per_segment is None:
+            message.price_per_segment = wallet.price_for(message.kind)
+        message.status, message.block_reason, message.provider_message = SmsMessage.Status.QUEUED, "", ""
+        message.next_attempt_at = timezone.now()
+        message.save(
+            update_fields=[
+                "status",
+                "block_reason",
+                "provider_message",
+                "next_attempt_at",
+                "price_per_segment",
+                "updated_at",
+            ]
+        )
+    return deliver(message.pk) or message
 
 
 def retry_due(limit: int = 50) -> dict:
@@ -279,6 +368,11 @@ def manual_retry(message: SmsMessage, *, user=None) -> SmsMessage:
         message = SmsMessage.objects.select_for_update().get(pk=message.pk)
         if message.status not in (SmsMessage.Status.FAILED, SmsMessage.Status.UNKNOWN):
             return message
+        if message.status == SmsMessage.Status.UNKNOWN and message.turf_id:
+            # The admin checked BulkSMSBD and it never went out: return that attempt's charge first.
+            last = message.attempt_log.order_by("-number").first()
+            if last:
+                wallet.refund(message, last.number, "Refund: admin confirmed it was not sent", user=user)
         message.status = SmsMessage.Status.QUEUED
         message.attempts = min(message.attempts, MAX_ATTEMPTS - 1)
         message.next_attempt_at = timezone.now()
