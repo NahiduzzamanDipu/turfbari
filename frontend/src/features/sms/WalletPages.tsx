@@ -47,7 +47,7 @@ interface WalletInfo {
   disabled_message_bn: string | null;
   blocked: Record<string, number>;
   insufficient_message_bn: string | null;
-  recharge: { enabled: boolean; bkash_number: string | null; instructions: string; fee_percent: string; min_amount: string; max_amount: string | null };
+  recharge: { enabled: boolean; switched_off?: boolean; bkash_number: string | null; instructions: string; fee_percent: string; min_amount: string; max_amount: string | null };
   recharges: RechargeRow[];
 }
 
@@ -118,13 +118,12 @@ export function WalletCard() {
                   {showLedger ? "Hide" : "Show"} transactions
                 </Button>
                 {isOwner && (
-                  <Button disabled={!d.recharge.enabled} onClick={() => setRecharging(true)}>
+                  <Button onClick={() => setRecharging(true)}>
                     <Wallet /> Recharge Wallet
                   </Button>
                 )}
               </div>
             </div>
-            {!d.recharge.enabled && isOwner && <p className="text-xs text-muted-foreground">Wallet recharge isn't open right now — contact TurfBari.</p>}
             {lastRejected && (
               <p className="rounded-md bg-destructive/10 p-2 text-sm text-destructive">
                 Recharge of {bdt(lastRejected.wallet_amount)} (TrxID {lastRejected.trx_id}) was rejected
@@ -230,6 +229,21 @@ function RechargeDialog({ info, onClose }: { info: WalletInfo; onClose: () => vo
   });
   const fields = submit.error instanceof ApiError ? submit.error.fields : null;
   const set = (k: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value });
+  if (!info.recharge.enabled) {
+    return (
+      <Dialog open onClose={onClose} title="Recharge SMS Wallet">
+        <div className="flex flex-col gap-3 text-sm">
+          <p>
+            {info.recharge.switched_off
+              ? "TurfBari has paused wallet recharges for now."
+              : "TurfBari hasn't set the bKash number for recharges yet."}{" "}
+            Please contact TurfBari to add SMS credit.
+          </p>
+          <Button onClick={onClose}>OK</Button>
+        </div>
+      </Dialog>
+    );
+  }
   return (
     <Dialog open onClose={onClose} title="Recharge SMS Wallet" description="Send the total by bKash Send Money, then submit the details. Credit is added after TurfBari checks the payment.">
       <form

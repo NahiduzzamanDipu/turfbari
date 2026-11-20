@@ -57,11 +57,26 @@ def recharge_quote(amount: Decimal, s: PlatformSettings | None = None) -> dict:
     return {"wallet_amount": amount, "fee_percent": s.recharge_fee_percent, "fee": fee, "total": amount + fee}
 
 
+def recharge_number(s: PlatformSettings | None = None) -> str:
+    """Where owners send recharges: the number set for recharges, else TurfBari's subscription bKash number
+    (Admin -> API, or TURFBARI_BKASH_NUMBER), so recharge works without extra setup."""
+    from django.conf import settings
+
+    s = s or PlatformSettings.load()
+    return (
+        s.recharge_bkash_number
+        or s.subscription_bkash_number
+        or settings.SUBSCRIPTION_PAYMENT_ACCOUNTS.get("bkash", "")
+    )
+
+
 def recharge_settings(s: PlatformSettings | None = None) -> dict:
     s = s or PlatformSettings.load()
+    number = recharge_number(s)
     return {
-        "enabled": bool(s.recharge_enabled and s.recharge_bkash_number),
-        "bkash_number": s.recharge_bkash_number or None,
+        "enabled": bool(s.recharge_enabled and number),
+        "switched_off": not s.recharge_enabled,
+        "bkash_number": number or None,
         "instructions": s.recharge_instructions,
         "fee_percent": str(s.recharge_fee_percent),
         "min_amount": str(s.recharge_min_amount),
@@ -220,7 +235,7 @@ class RechargeView(APIView):
     @extend_schema(tags=["workspace"], request=RechargeSerializer)
     def post(self, request):
         s = PlatformSettings.load()
-        if not (s.recharge_enabled and s.recharge_bkash_number):
+        if not (s.recharge_enabled and recharge_number(s)):
             raise ValidationError(
                 {"non_field_errors": ["Wallet recharge is not open right now. Contact TurfBari."]}
             )

@@ -550,3 +550,27 @@ def test_dates_use_bangladesh_calendar_not_utc():
         start == datetime(2026, 11, 19, 18, 0, tzinfo=start.tzinfo).astimezone(start.tzinfo)
         or start.hour == 0
     )
+
+
+@override_settings(
+    SUBSCRIPTION_PAYMENT_ACCOUNTS={"bkash": "01700000000", "nagad": "", "rocket": "", "bank": ""}
+)
+def test_recharge_uses_turfbaris_bkash_number_when_no_recharge_number_is_set():
+    settings_(recharge_bkash_number="", subscription_bkash_number="")
+    _, owner = make_turf()
+    client = client_for(owner)
+    info = client.get("/api/workspace/sms/wallet/").json()["recharge"]
+    assert info["enabled"] is True and info["bkash_number"] == "01700000000"
+    ok = client.post(
+        "/api/workspace/sms/wallet/recharge/",
+        {
+            "wallet_amount": "200",
+            "amount_sent": "203.80",
+            "sender_number": "01712345678",
+            "trx_id": "RCH0000009",
+        },
+        format="json",
+    )
+    assert ok.status_code == 201
+    settings_(recharge_enabled=False)
+    assert client.get("/api/workspace/sms/wallet/").json()["recharge"]["switched_off"] is True
