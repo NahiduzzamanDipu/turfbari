@@ -114,9 +114,9 @@ export function SubscriptionPage() {
     <>
       <PageHeader title="Subscription" description="Your TurfBari plan. Plans never renew automatically — you choose and pay for each period." />
 
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+      <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <Card
-          className={cn("h-fit overflow-hidden rounded-2xl transition-shadow duration-200 hover:shadow-lg", planCardTone)}
+          className={cn("flex h-full flex-col rounded-2xl transition-shadow duration-200 hover:shadow-lg", planCardTone)}
           style={planCardState === "active" ? {
             background: "linear-gradient(135deg, #064E3B 0%, #087F5B 100%)",
             color: "#FFFFFF",
@@ -134,7 +134,7 @@ export function SubscriptionPage() {
               >{planStatusLabel}</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className={cn("flex flex-col gap-3 px-4 pt-2 pb-4 text-sm", planCardState !== "none" && "!text-white")}>
+          <CardContent className={cn("flex flex-1 flex-col gap-2.5 px-4 pt-2 pb-4 text-sm", planCardState !== "none" && "!text-white")}>
             {standing.current ? (
               <>
                 <div className="flex flex-wrap items-end justify-between gap-3">
@@ -149,13 +149,13 @@ export function SubscriptionPage() {
                   )}
                 </div>
                 {standing.current.plan.description && <p className="max-w-xl text-sm leading-relaxed text-emerald-50">{standing.current.plan.description}</p>}
-                <dl className="grid gap-2 sm:grid-cols-2">
+                <dl className="grid gap-1.5 sm:grid-cols-2">
                   <PlanInfo icon={<CalendarDays />} label="Start date" value={fmtPlainDate(standing.current.starts_on)} onDark={planCardState !== "none"} />
                   <PlanInfo icon={<CalendarClock />} label="Expiry date · paid through" value={fmtPlainDate(standing.paid_until)} emphasis onDark={planCardState !== "none"} />
                   <PlanInfo icon={<Clock />} label="Time remaining" value={standing.days_left === null ? "—" : `${Math.max(0, standing.days_left)} ${Math.max(0, standing.days_left) === 1 ? "day" : "days"}`} emphasis={standing.state === "expiring"} onDark={planCardState !== "none"} />
                   <PlanInfo icon={<CreditCard />} label="Billing period · plan price" value={`${standing.current.plan.months === 1 ? "Monthly" : `${standing.current.plan.months} months`} · ${formatBDT(standing.current.price)}`} onDark={planCardState !== "none"} />
                 </dl>
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/20 pt-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/20 pt-2.5">
                   <p className="flex items-center gap-2 text-xs font-medium text-emerald-100"><ShieldCheck className="size-4 text-lime-300" /> No automatic renewal · paid plan</p>
                   {isOwner && planCardState !== "suspended" && standing.state === "expiring" && !open_invoice && <Button type="button" variant="accent" size="sm" className="min-h-11" onClick={() => document.getElementById("plan-options")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Request renewal <ArrowRight /></Button>}
                 </div>
@@ -198,11 +198,11 @@ export function SubscriptionPage() {
           </CardContent>
         </Card>
 
-        <Card id="plan-options" className="scroll-mt-24">
+        <Card id="plan-options" className="flex h-full flex-col scroll-mt-24">
           <CardHeader>
             <CardTitle>{standing.current ? "Renew or change plan" : "Choose a plan"}</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3">
+          <CardContent className="flex flex-1 flex-col gap-3">
             <LegalAcceptBox
               id="agree-plan-legal"
               docs={legalDocs}
