@@ -124,10 +124,19 @@ def test_valid_code_discounts_the_invoice_and_payment_uses_the_new_amount():
 
     pay = client.post(
         f"/api/workspace/subscription/invoices/{invoice['id']}/manual-payment/",
-        {"method": "bkash", "reference": "PROMO12345"},
+        {
+            "method": "bkash",
+            "reference": "PROMO12345",
+            "sender_number": "01711111111",
+            "amount_sent": "12000.00",
+        },
         format="json",
     )
     assert pay.status_code == 201 and pay.json()["amount"] == "12000.00"
+    queue = admin_client()[0].get("/api/admin/payments/?status=pending_verification").json()["results"]
+    request = next(item for item in queue if item["reference"] == "PROMO12345")
+    assert request["promo_code"] == "WELCOME20"
+    assert request["discount"] == "3000.00" and request["list_amount"] == "15000.00"
     assert AuditEvent.objects.filter(action="subscription.promo_applied", turf=turf).exists()
 
 

@@ -92,7 +92,12 @@ def test_unpaid_turf_is_paused_until_manual_payment_verified():
 
     paid = client.post(
         f"/api/workspace/subscription/invoices/{invoice['id']}/manual-payment/",
-        {"method": "bkash", "reference": "9bg7xk2lq1", "sender_number": "01711111111"},
+        {
+            "method": "bkash",
+            "reference": "9bg7xk2lq1",
+            "sender_number": "01711111111",
+            "amount_sent": "15000.00",
+        },
         format="json",
     )
     assert paid.status_code == 201, paid.json()
@@ -122,9 +127,52 @@ def test_manual_payment_rules():
     bad_ref = client.post(url, {"method": "bkash", "reference": "x"}, format="json")
     assert bad_ref.status_code == 400
 
-    first = client.post(url, {"method": "bkash", "reference": "TRX1234567"}, format="json")
+    missing_details = client.post(url, {"method": "bkash", "reference": "TRX1234567"}, format="json")
+    assert missing_details.status_code == 400
+    bad_amount = client.post(
+        url,
+        {
+            "method": "bkash",
+            "reference": "TRX1234567",
+            "sender_number": "01711111111",
+            "amount_sent": "1499.00",
+        },
+        format="json",
+    )
+    assert bad_amount.status_code == 400
+    bad_sender = client.post(
+        url,
+        {
+            "method": "bkash",
+            "reference": "TRX1234567",
+            "sender_number": "01234567890",
+            "amount_sent": "1500.00",
+        },
+        format="json",
+    )
+    assert bad_sender.status_code == 400
+
+    first = client.post(
+        url,
+        {
+            "method": "bkash",
+            "reference": "TRX1234567",
+            "sender_number": "01711111111",
+            "amount_sent": "1500.00",
+        },
+        format="json",
+    )
     assert first.status_code == 201
-    again = client.post(url, {"method": "bkash", "reference": "TRX1234567"}, format="json")
+    again = client.post(
+        url,
+        {
+            "method": "bkash",
+            "reference": "TRX1234567",
+            "sender_number": "01711111111",
+            "amount_sent": "1500.00",
+        },
+        format="json",
+    )
     assert again.status_code == 400  # invoice is under review now
 
     # Rejected -> invoice reopens; the same TrxID can't be reused by another turf while claimed.
@@ -137,11 +185,25 @@ def test_manual_payment_rules():
     other_invoice = create_order(other_turf, Plan.objects.get(period="monthly"))
     tx2 = client_for(other_owner).post(
         f"/api/workspace/subscription/invoices/{other_invoice.id}/manual-payment/",
-        {"method": "bkash", "reference": "TRX1234567"},
+        {
+            "method": "bkash",
+            "reference": "TRX1234567",
+            "sender_number": "01711111111",
+            "amount_sent": "1500.00",
+        },
         format="json",
     )
     assert tx2.status_code == 201  # rejected IDs are released
-    third = client.post(url, {"method": "bkash", "reference": "TRX1234567"}, format="json")
+    third = client.post(
+        url,
+        {
+            "method": "bkash",
+            "reference": "TRX1234567",
+            "sender_number": "01711111111",
+            "amount_sent": "1500.00",
+        },
+        format="json",
+    )
     assert third.status_code == 400 and "already been submitted" in str(third.json())
 
 

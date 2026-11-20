@@ -198,11 +198,11 @@ def submit_manual_payment(
     """Records what the owner says they paid. Nothing changes on the plan until an admin verifies it."""
     invoice = _open_invoice(invoice)
     fee, total = payable(invoice)
-    if amount_sent is not None and amount_sent < total - 1:
+    if amount_sent is None or amount_sent != total:
         raise ValidationError(
             {
                 "amount_sent": [
-                    f"Send at least ৳{total:,.2f} (plan ৳{invoice.amount:,.2f} + charge ৳{fee:,.2f})."
+                    f"Send the exact amount ৳{total:,.2f} (plan ৳{invoice.amount:,.2f} + charge ৳{fee:,.2f})."
                 ]
             }
         )

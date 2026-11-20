@@ -2,7 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from .models import Invoice, PaymentTransaction, Plan, PromoCode, Subscription
-from .services import normalize_code, promo_uses, standing
+from .services import normalize_code, payable, promo_uses, standing
 
 
 class PlanSerializer(serializers.ModelSerializer):
@@ -178,6 +178,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     subscription = SubscriptionSerializer(read_only=True)
     promo_code = InvoicePromoSerializer(read_only=True)
     list_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    payable_total = serializers.SerializerMethodField()
     transactions = TransactionSerializer(many=True, read_only=True)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
 
@@ -188,6 +189,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "number",
             "amount",
             "list_amount",
+            "payable_total",
             "discount",
             "promo_code",
             "status",
@@ -197,6 +199,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "subscription",
             "transactions",
         ]
+
+    def get_payable_total(self, obj):
+        return str(payable(obj)[1])
 
 
 def standing_payload(turf) -> dict:
@@ -223,6 +228,13 @@ class AdminPaymentSerializer(TransactionSerializer):
     payable = serializers.SerializerMethodField()
     current = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
+    promo_code = serializers.SerializerMethodField()
+    discount = serializers.DecimalField(
+        source="invoice.discount", max_digits=12, decimal_places=2, read_only=True
+    )
+    list_amount = serializers.DecimalField(
+        source="invoice.list_amount", max_digits=12, decimal_places=2, read_only=True
+    )
 
     class Meta(TransactionSerializer.Meta):
         fields = TransactionSerializer.Meta.fields + [
@@ -235,6 +247,9 @@ class AdminPaymentSerializer(TransactionSerializer):
             "payable",
             "current",
             "owner",
+            "promo_code",
+            "discount",
+            "list_amount",
         ]
 
     def get_payable(self, obj):
@@ -253,3 +268,6 @@ class AdminPaymentSerializer(TransactionSerializer):
     def get_owner(self, obj):
         m = next((m for m in obj.invoice.turf.memberships.all() if m.role == "owner" and m.is_active), None)
         return {"name": m.user.full_name, "email": m.user.email, "phone": m.user.phone} if m else None
+
+    def get_promo_code(self, obj):
+        return obj.invoice.promo_code.code if obj.invoice.promo_code_id else None

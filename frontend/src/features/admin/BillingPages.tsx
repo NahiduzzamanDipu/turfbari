@@ -240,6 +240,7 @@ export function AdminBillingPage() {
                         Now: {t.current.plan ?? "no plan"}
                         {t.current.paid_until && ` until ${t.current.paid_until}`}
                       </span>
+                      {t.promo_code && <span className="block text-xs text-primary">Promo {t.promo_code}: {formatBDT(t.discount)} off {formatBDT(t.list_amount)} list price</span>}
                       <span className="block font-mono text-xs text-muted-foreground">{t.invoice_number}</span>
                     </td>
                     <td>{t.method_label}</td>

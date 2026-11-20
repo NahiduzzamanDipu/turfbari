@@ -441,6 +441,7 @@ export interface SubscriptionPeriod {
   price: string;
   note: string;
   created_at: string;
+  change_type?: "new" | "renewal" | "upgrade" | "downgrade";
 }
 
 export interface PaymentTx {
@@ -448,7 +449,7 @@ export interface PaymentTx {
   tran_id: string;
   method: string;
   method_label: string;
-  channel: "manual" | "gateway" | "admin";
+  channel: "manual" | "gateway" | "admin" | "promo";
   amount: string;
   status: "initiated" | "pending_verification" | "verified" | "rejected" | "failed" | "cancelled";
   status_label: string;
@@ -466,6 +467,7 @@ export interface Invoice {
   number: string;
   amount: string;
   list_amount: string;
+  payable_total: string;
   discount: string;
   promo_code: { code: string; percent_off: number; label?: string } | null;
   status: "unpaid" | "pending_verification" | "paid" | "cancelled";
@@ -526,6 +528,7 @@ export interface SubscriptionOverview {
     manual: { method: string; label: string; account: string }[];
     instructions?: string;
     fee_percent?: string;
+    bkash_account_type?: string;
   };
 }
 
@@ -539,6 +542,9 @@ export interface AdminPayment extends PaymentTx {
   payable: string;
   current: { plan: string | null; paid_until: string | null; state: string };
   owner: { name: string; email: string; phone: string } | null;
+  promo_code: string | null;
+  discount: string;
+  list_amount: string;
 }
 
 export interface WorkspacePhoto extends PublicPhoto {

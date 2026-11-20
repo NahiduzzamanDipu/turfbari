@@ -524,9 +524,10 @@ def test_31_to_38_renewal_and_plan_change_only_with_admin_approval():
 
     upgrade = client.post("/api/workspace/subscription/order/", {"plan": "yearly"}, format="json").json()
     assert Subscription.objects.get(invoice__id=upgrade["id"]).change_type == "upgrade"
-    reused = _pay(client, upgrade, "SUBTRX0001", "999999")
+    reused = _pay(client, upgrade, "SUBTRX0001", upgrade["payable_total"])
     assert reused.status_code == 400  # 36: same TrxID can't pay twice
-    _pay(client, upgrade, "SUBTRX0002", "999999")
+    submitted = _pay(client, upgrade, "SUBTRX0002", upgrade["payable_total"])
+    assert submitted.status_code == 201
     pending = PaymentTransaction.objects.get(reference="SUBTRX0002")
     admin.post(f"/api/admin/payments/{pending.pk}/reject/", {"note": "Not received"}, format="json")
     assert standing(turf).paid_until == after.paid_until  # 35: rejection leaves the plan alone

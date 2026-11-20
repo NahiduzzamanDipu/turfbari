@@ -67,6 +67,7 @@ def payment_options() -> dict:
     return {
         "instructions": s.subscription_instructions,
         "fee_percent": str(s.subscription_fee_percent),
+        "bkash_account_type": s.subscription_bkash_account_type,
         "online": gateway.enabled(),
         "online_sandbox": gateway.enabled() and settings.SSLCOMMERZ_SANDBOX,
         "manual": [
@@ -147,22 +148,38 @@ class ManualPaymentSerializer(serializers.Serializer):
         r"^[A-Za-z0-9-]{6,40}$",
         error_messages={"invalid": "Enter the transaction ID exactly as shown in your payment SMS."},
     )
-    sender_number = serializers.CharField(max_length=20, required=False, allow_blank=True)
-    amount_sent = serializers.DecimalField(
-        max_digits=12, decimal_places=2, min_value=Decimal("0"), required=False
-    )
+    sender_number = serializers.CharField(max_length=20)
+    amount_sent = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"))
 
     def validate_method(self, value):
         if not payment_accounts().get(value):
             raise serializers.ValidationError("This payment method is not available.")
         return value
 
+    def validate_sender_number(self, value):
+        from rest_framework.exceptions import ValidationError as DRFValidationError
+
+        from apps.bookings.phone import normalize_bd_phone
+
+        try:
+            return normalize_bd_phone(value)
+        except DRFValidationError as exc:
+            raise serializers.ValidationError("Enter a valid Bangladesh mobile number.") from exc
+
+    def validate(self, attrs):
+        from .services import payable
+
+        expected = payable(self.context["invoice"])[1]
+        if attrs["amount_sent"] != expected:
+            raise serializers.ValidationError({"amount_sent": [f"Send the exact amount: ৳{expected:,.2f}."]})
+        return attrs
+
 
 class InvoiceManualPaymentView(WorkspaceSubscriptionMixin, APIView):
     @extend_schema(request=ManualPaymentSerializer, tags=["workspace"])
     def post(self, request, pk):
         invoice = self.open_invoice(request, pk)
-        data = ManualPaymentSerializer(data=request.data)
+        data = ManualPaymentSerializer(data=request.data, context={"invoice": invoice})
         data.is_valid(raise_exception=True)
         tx = submit_manual_payment(invoice, user=request.user, **data.validated_data)
         record(

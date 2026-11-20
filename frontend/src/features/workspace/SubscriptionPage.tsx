@@ -7,13 +7,9 @@ import {
   Clock,
   CreditCard,
   Hourglass,
-  Loader2,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
-  Smartphone,
-  TicketPercent,
-  XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type React from "react";
@@ -23,11 +19,12 @@ import { PageHeader } from "@/components/layout/AppShell";
 import { LegalAcceptBox, legalPayload, usePendingLegal } from "@/components/legal/Legal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge, type BadgeTone, ErrorState, FormField, Input, Select, Table } from "@/components/ui/form";
+import { Badge, type BadgeTone, ErrorState, Table } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
-import type { Invoice, Plan, SubscriptionOverview } from "@/lib/types";
+import type { Invoice, Plan } from "@/lib/types";
 import { cn, formatBDT } from "@/lib/utils";
+import { SubscriptionCheckoutDialog, type CheckoutStep } from "./SubscriptionCheckoutDialog";
 import { errorText, useIsOwner } from "./hooks";
 import { resolvePlanCardState } from "./planCardState";
 import { STANDING_LABEL, STANDING_TONE, fmtPlainDate, useSubscription } from "./SubscriptionBanner";
@@ -54,6 +51,12 @@ export function SubscriptionPage() {
   const legal = usePendingLegal("subscription", isOwner);
   const legalDocs = legal.data?.documents ?? [];
   const [agree, setAgree] = useState(false);
+  const [checkout, setCheckout] = useState<{ invoice: Invoice; step: CheckoutStep } | null>(null);
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+
+  const closeCheckout = () => {
+    if (!paymentSubmitting) setCheckout(null);
+  };
 
   // Result of returning from the online checkout.
   useEffect(() => {
@@ -70,8 +73,9 @@ export function SubscriptionPage() {
   const order = useMutation({
     mutationFn: (period: string) =>
       api<Invoice>("/workspace/subscription/order/", { method: "POST", json: { plan: period, ...legalPayload(legalDocs, agree) } }),
-    onSuccess: () => {
-      toast.success("Plan selected. Pay below to activate it.");
+    onSuccess: (invoice) => {
+      setCheckout({ invoice, step: "promo" });
+      toast.success("Plan selected. Continue in the payment window.");
       setAgree(false);
       qc.invalidateQueries({ queryKey: ["ws", "subscription"] });
       qc.invalidateQueries({ queryKey: ["legal"] });
@@ -199,6 +203,7 @@ export function SubscriptionPage() {
                 const save = savings(plan, plans);
                 const isCurrent = standing.current?.plan.period === plan.period;
                 const isOrdered = open_invoice?.subscription.plan.period === plan.period;
+                const canContinueOrder = isOrdered && open_invoice.status === "unpaid";
                 return (
                   <div
                     key={plan.id}
@@ -221,13 +226,13 @@ export function SubscriptionPage() {
                         className="mt-auto"
                         disabled={
                           order.isPending ||
-                          isOrdered ||
+                          (isOrdered && !canContinueOrder) ||
                           open_invoice?.status === "pending_verification" ||
                           (legalDocs.length > 0 && !agree)
                         }
-                        onClick={() => order.mutate(plan.period)}
+                        onClick={() => canContinueOrder ? setCheckout({ invoice: open_invoice, step: "promo" }) : order.mutate(plan.period)}
                       >
-                        {isOrdered ? "Selected" : isCurrent ? "Renew" : standing.current ? "Switch" : "Choose"}
+                        {canContinueOrder ? "Continue payment" : isOrdered ? "Under review" : isCurrent ? "Renew Plan" : standing.current ? "Switch Plan" : "Choose Plan"}
                       </Button>
                     )}
                   </div>
@@ -242,7 +247,17 @@ export function SubscriptionPage() {
         </Card>
       </div>
 
-      {open_invoice && <PayInvoice invoice={open_invoice} options={payment_options} canPay={isOwner} />}
+      <SubscriptionCheckoutDialog
+        invoice={checkout?.invoice ?? null}
+        options={payment_options}
+        canPay={isOwner}
+        step={checkout?.step ?? "promo"}
+        onStepChange={(step) => setCheckout((current) => current ? { ...current, step } : current)}
+        onInvoiceChange={(invoice) => setCheckout((current) => current ? { ...current, invoice } : current)}
+        onClose={closeCheckout}
+        onDone={() => setCheckout(null)}
+        onSubmittingChange={setPaymentSubmitting}
+      />
 
       <Card className="mt-6">
         <CardHeader>
@@ -294,186 +309,6 @@ export function SubscriptionPage() {
   );
 }
 
-function PayInvoice({
-  invoice,
-  options,
-  canPay,
-}: {
-  invoice: Invoice;
-  options: SubscriptionOverview["payment_options"];
-  canPay: boolean;
-}) {
-  const qc = useQueryClient();
-  const [method, setMethod] = useState(options.manual[0]?.method ?? "");
-  const [reference, setReference] = useState("");
-  const [sender, setSender] = useState("");
-  const [amountSent, setAmountSent] = useState("");
-  const account = options.manual.find((m) => m.method === method);
-  // Payable = plan price + TurfBari's payment charge (set by the admin; the server re-checks it).
-  const feePct = Number(options.fee_percent ?? 0);
-  const fee = Math.round(Number(invoice.amount) * feePct) / 100;
-  const payableTotal = Number(invoice.amount) + fee;
-  const changeLabel = { new: "New plan", renewal: "Renewal", upgrade: "Upgrade", downgrade: "Downgrade" }[
-    (invoice.subscription as { change_type?: string }).change_type ?? ""
-  ];
-  const lastRejected = invoice.transactions.find((t) => t.status === "rejected");
-  const reviewing = invoice.transactions.find((t) => t.status === "pending_verification");
-
-  const refresh = () => qc.invalidateQueries({ queryKey: ["ws", "subscription"] });
-  const online = useMutation({
-    mutationFn: () => api<{ redirect_url: string }>(`/workspace/subscription/invoices/${invoice.id}/pay-online/`, { method: "POST" }),
-    onSuccess: ({ redirect_url }) => window.location.assign(redirect_url),
-    onError: (e) => toast.error(errorText(e)),
-  });
-  const manual = useMutation({
-    mutationFn: () =>
-      api(`/workspace/subscription/invoices/${invoice.id}/manual-payment/`, {
-        method: "POST",
-        json: { method, reference, sender_number: sender, amount_sent: amountSent || String(payableTotal) },
-      }),
-    onSuccess: () => {
-      toast.success("Payment submitted. Your plan changes only after TurfBari verifies it.");
-      setReference("");
-      refresh();
-    },
-  });
-  const cancel = useMutation({
-    mutationFn: () => api(`/workspace/subscription/invoices/${invoice.id}/cancel/`, { method: "POST" }),
-    onSuccess: refresh,
-    onError: (e) => toast.error(errorText(e)),
-  });
-
-  return (
-    <Card className="mt-6 border-primary/40">
-      <CardHeader>
-        <CardTitle className="flex flex-wrap items-center justify-between gap-2">
-          <span>
-            Pay for {invoice.subscription.plan.name} ·{" "}
-            {invoice.promo_code && <s className="tabular font-normal text-muted-foreground">{formatBDT(invoice.list_amount)}</s>}{" "}
-            <span className="tabular">{formatBDT(invoice.amount)}</span>
-          </span>
-          <span className="font-mono text-xs font-normal text-muted-foreground">{invoice.number}</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-5">
-        {reviewing ? (
-          <div className="flex items-start gap-3 rounded-lg bg-amber-400/15 p-4 text-sm">
-            <Clock className="mt-0.5 size-5 shrink-0 text-amber-600" />
-            <div>
-              <p className="font-semibold">Payment under review</p>
-              <p className="text-muted-foreground">
-                {reviewing.method_label} transaction <span className="font-mono">{reviewing.reference}</span> was submitted.
-                Your plan activates as soon as TurfBari confirms it.
-              </p>
-            </div>
-          </div>
-        ) : !canPay ? (
-          <p className="text-sm text-muted-foreground">Waiting for the turf owner to pay.</p>
-        ) : (
-          <>
-            <PromoBox invoice={invoice} onChange={refresh} />
-            {lastRejected && (
-              <p className="flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                <XCircle className="mt-0.5 size-4 shrink-0" />
-                Your last payment ({lastRejected.reference}) could not be verified{lastRejected.note ? `: ${lastRejected.note}` : ""}. Please try again.
-              </p>
-            )}
-            <div className="grid gap-5 md:grid-cols-2">
-              <section className="flex flex-col gap-3 rounded-xl border p-4">
-                <h3 className="flex items-center gap-2 font-semibold">
-                  <CreditCard className="size-4" /> Pay online
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Card (Visa, Mastercard, Amex), bKash, Nagad, Rocket or internet banking through SSLCommerz secure checkout. Activates instantly.
-                </p>
-                {options.online ? (
-                  <>
-                    <Button size="lg" onClick={() => online.mutate()} disabled={online.isPending}>
-                      {online.isPending ? <Loader2 className="animate-spin" /> : <ShieldCheck />} Pay {formatBDT(invoice.amount)} now
-                    </Button>
-                    {options.online_sandbox && <p className="text-xs text-amber-600">Test mode: no real money is taken.</p>}
-                  </>
-                ) : (
-                  <p className="rounded-md bg-secondary px-3 py-2 text-sm text-muted-foreground">
-                    Online checkout is not switched on yet. Use mobile banking on the right.
-                  </p>
-                )}
-              </section>
-
-              <section className="flex flex-col gap-3 rounded-xl border p-4">
-                <h3 className="flex items-center gap-2 font-semibold">
-                  <Smartphone className="size-4" /> Send money & submit transaction ID
-                </h3>
-                {options.manual.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Contact TurfBari support for payment details.</p>
-                ) : (
-                  <form
-                    className="flex flex-col gap-3"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      manual.mutate();
-                    }}
-                  >
-                    <FormField label="Method">
-                      {(id) => (
-                        <Select id={id} value={method} onChange={(e) => setMethod(e.target.value)}>
-                          {options.manual.map((m) => (
-                            <option key={m.method} value={m.method}>
-                              {m.label}
-                            </option>
-                          ))}
-                        </Select>
-                      )}
-                    </FormField>
-                    {account && (
-                      <div className="rounded-md bg-secondary px-3 py-2 text-sm">
-                        {method === "bank" ? "Transfer to: " : `Send money to ${account.label} `}
-                        <span className="font-mono font-semibold">{account.account}</span>
-                        <span className="block text-xs text-muted-foreground">
-                          {changeLabel && <>{changeLabel} · </>}Plan {formatBDT(invoice.amount)}
-                          {fee > 0 && <> + charge {formatBDT(fee)} ({options.fee_percent}%)</>} = <strong>{formatBDT(payableTotal)}</strong> · Reference:{" "}
-                          {invoice.number}
-                        </span>
-                        {options.instructions && <span className="mt-1 block whitespace-pre-line text-xs">{options.instructions}</span>}
-                      </div>
-                    )}
-                    <FormField label="Transaction ID (TrxID)" error={manual.error ? errorText(manual.error) : undefined}>
-                      {(id) => (
-                        <Input id={id} required placeholder="e.g. 9BG7XK2LQ1" className="font-mono uppercase" value={reference} onChange={(e) => setReference(e.target.value)} />
-                      )}
-                    </FormField>
-                    <FormField label="Amount sent (৳)">
-                      {(id) => (
-                        <Input id={id} type="number" step="0.01" required placeholder={payableTotal.toFixed(2)} value={amountSent} onChange={(e) => setAmountSent(e.target.value)} />
-                      )}
-                    </FormField>
-                    {method !== "bank" && (
-                      <FormField label="Sent from number">
-                        {(id) => <Input id={id} type="tel" placeholder="01XXXXXXXXX" value={sender} onChange={(e) => setSender(e.target.value)} />}
-                      </FormField>
-                    )}
-                    <Button type="submit" variant="outline" disabled={manual.isPending}>
-                      {manual.isPending && <Loader2 className="animate-spin" />} Submit payment
-                    </Button>
-                  </form>
-                )}
-              </section>
-            </div>
-            <button
-              type="button"
-              className="self-start text-xs text-muted-foreground hover:text-foreground"
-              onClick={() => cancel.mutate()}
-              disabled={cancel.isPending}
-            >
-              Cancel this order
-            </button>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 function PlanInfo({ icon, label, value, emphasis = false, onDark = false }: {
   icon: React.ReactNode; label: string; value: string; emphasis?: boolean; onDark?: boolean;
 }) {
@@ -482,75 +317,5 @@ function PlanInfo({ icon, label, value, emphasis = false, onDark = false }: {
       <dt className="flex items-center gap-2 text-xs font-medium opacity-75">{icon}<span>{label}</span></dt>
       <dd className={cn("mt-1 break-words font-semibold tabular-nums", emphasis && "text-amber-300")}>{value}</dd>
     </div>
-  );
-}
-
-function PromoBox({ invoice, onChange }: { invoice: Invoice; onChange: () => void }) {
-  const [code, setCode] = useState("");
-  const apply = useMutation({
-    mutationFn: () => api<Invoice>(`/workspace/subscription/invoices/${invoice.id}/promo/`, { method: "POST", json: { code } }),
-    onSuccess: (inv) => {
-      setCode("");
-      toast.success(
-        inv.status === "paid"
-          ? `${inv.promo_code?.code} covers the full price. Your plan is active.`
-          : `Promo code applied: you save ${formatBDT(inv.discount)}.`,
-      );
-      onChange();
-    },
-  });
-  const remove = useMutation({
-    mutationFn: () => api<Invoice>(`/workspace/subscription/invoices/${invoice.id}/promo/`, { method: "DELETE" }),
-    onSuccess: () => {
-      apply.reset();
-      onChange();
-    },
-    onError: (e) => toast.error(errorText(e)),
-  });
-
-  if (invoice.promo_code) {
-    return (
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3 text-sm">
-        <p className="flex items-center gap-2">
-          <TicketPercent className="size-4 text-primary" />
-          <span>
-            Promo code <span className="font-mono font-semibold">{invoice.promo_code.code}</span> applied ·{" "}
-            {invoice.promo_code.label ?? `${invoice.promo_code.percent_off}% off`} ·{" "}
-            <span className="tabular font-semibold">
-              {formatBDT(invoice.list_amount)} − {formatBDT(invoice.discount)} = {formatBDT(invoice.amount)}
-            </span>
-          </span>
-        </p>
-        <button type="button" className="text-xs font-medium text-muted-foreground hover:text-foreground" onClick={() => remove.mutate()} disabled={remove.isPending}>
-          Remove
-        </button>
-      </div>
-    );
-  }
-  return (
-    <form
-      className="flex flex-col gap-2 rounded-xl border border-dashed px-4 py-3 sm:flex-row sm:items-end"
-      onSubmit={(e) => {
-        e.preventDefault();
-        apply.mutate();
-      }}
-    >
-      <FormField label="Have a promo code?" className="flex-1" error={apply.error ? errorText(apply.error) : undefined}>
-        {(id) => (
-          <Input
-            id={id}
-            required
-            maxLength={40}
-            placeholder="Enter code"
-            className="font-mono uppercase"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-          />
-        )}
-      </FormField>
-      <Button type="submit" variant="outline" disabled={apply.isPending || !code.trim()} className={apply.error ? "sm:mb-5" : undefined}>
-        {apply.isPending ? <Loader2 className="animate-spin" /> : <TicketPercent />} Apply
-      </Button>
-    </form>
   );
 }
