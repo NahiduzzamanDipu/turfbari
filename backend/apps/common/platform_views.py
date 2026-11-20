@@ -71,6 +71,144 @@ class AdminApiConfigView(APIView):
         )
 
 
+def contact_payload(s: PlatformSettings) -> dict:
+    """Only expose public contact fields that are both enabled and configured."""
+    if not s.contact_enabled:
+        return {
+            "enabled": False,
+            "heading": "",
+            "description": "",
+            "phone": None,
+            "email": None,
+            "facebook_url": None,
+            "whatsapp": None,
+            "address": None,
+            "updated_at": s.updated_at,
+        }
+    return {
+        "enabled": True,
+        "heading": s.contact_heading,
+        "description": s.contact_description,
+        "phone": s.contact_phone if s.contact_show_phone and s.contact_phone else None,
+        "email": s.contact_email if s.contact_show_email and s.contact_email else None,
+        "facebook_url": s.contact_facebook_url
+        if s.contact_show_facebook and s.contact_facebook_url
+        else None,
+        "whatsapp": s.contact_whatsapp if s.contact_show_whatsapp and s.contact_whatsapp else None,
+        "address": s.contact_address if s.contact_show_address and s.contact_address else None,
+        "updated_at": s.updated_at,
+    }
+
+
+class ContactSettingsSerializer(serializers.Serializer):
+    enabled = serializers.BooleanField()
+    phone = serializers.CharField(max_length=30, allow_blank=True, required=False, default="")
+    email = serializers.EmailField(allow_blank=True, required=False, default="")
+    facebook_url = serializers.CharField(max_length=300, allow_blank=True, required=False, default="")
+    whatsapp = serializers.CharField(max_length=30, allow_blank=True, required=False, default="")
+    address = serializers.CharField(max_length=300, allow_blank=True, required=False, default="")
+    heading = serializers.CharField(max_length=120, allow_blank=True, required=False, default="")
+    description = serializers.CharField(max_length=300, allow_blank=True, required=False, default="")
+    show_phone = serializers.BooleanField()
+    show_email = serializers.BooleanField()
+    show_facebook = serializers.BooleanField()
+    show_whatsapp = serializers.BooleanField()
+    show_address = serializers.BooleanField()
+
+    def validate_phone(self, value):
+        import re
+
+        value = value.strip()
+        if value and not re.fullmatch(r"\+?[0-9][0-9 ()-]{6,27}", value):
+            raise serializers.ValidationError("Enter a valid phone number.")
+        return value
+
+    validate_whatsapp = validate_phone
+
+    def validate_facebook_url(self, value):
+        from urllib.parse import urlparse
+
+        value = value.strip()
+        if value:
+            parsed = urlparse(value)
+            if parsed.scheme != "https" or parsed.hostname not in {
+                "facebook.com",
+                "www.facebook.com",
+                "m.facebook.com",
+                "fb.com",
+                "www.fb.com",
+            }:
+                raise serializers.ValidationError("Use a valid HTTPS Facebook page URL.")
+        return value
+
+
+class AdminContactSettingsView(APIView):
+    permission_classes = [IsPlatformAdmin]
+
+    def get(self, request):
+        s = PlatformSettings.load()
+        data = contact_payload(s)
+        data.update(
+            {
+                "show_phone": s.contact_show_phone,
+                "show_email": s.contact_show_email,
+                "show_facebook": s.contact_show_facebook,
+                "show_whatsapp": s.contact_show_whatsapp,
+                "show_address": s.contact_show_address,
+            }
+        )
+        return Response(data)
+
+    @extend_schema(tags=["admin"], request=ContactSettingsSerializer)
+    def put(self, request):
+        data = ContactSettingsSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        v = data.validated_data
+        s = PlatformSettings.objects.get_or_create(pk=1)[0]
+        before = contact_payload(s)
+        for key in (
+            "enabled",
+            "phone",
+            "email",
+            "facebook_url",
+            "whatsapp",
+            "address",
+            "heading",
+            "description",
+        ):
+            setattr(s, f"contact_{key}", v[key])
+        for key in ("phone", "email", "facebook", "whatsapp", "address"):
+            setattr(s, f"contact_show_{key}", v[f"show_{key}"])
+        s.save()
+        after = contact_payload(s)
+        before.pop("updated_at", None)
+        updated_at = after.pop("updated_at", None)
+        record(
+            "platform.contact_settings",
+            "Updated homepage contact information",
+            category=Category.PLATFORM,
+            request=request,
+            data={"before": before, "after": after},
+        )
+        result = dict(after)
+        result["updated_at"] = updated_at
+        result.update(
+            {
+                f"show_{key}": getattr(s, f"contact_show_{key}")
+                for key in ("phone", "email", "facebook", "whatsapp", "address")
+            }
+        )
+        return Response(result)
+
+
+class PublicContactView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        return Response(contact_payload(PlatformSettings.load()))
+
+
 class YoutubeSerializer(serializers.Serializer):
     url = serializers.CharField(max_length=300, allow_blank=True)
 

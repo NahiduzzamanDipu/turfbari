@@ -33,6 +33,20 @@ class PlatformSettings(models.Model):
 
     youtube_video_id = models.CharField(max_length=11, blank=True)  # "how to book" video on every turf page
     youtube_url = models.CharField(max_length=300, blank=True)  # as pasted, for display only
+    # Public homepage contact details. Blank values are never exposed as contact links.
+    contact_enabled = models.BooleanField(default=True)
+    contact_phone = models.CharField(max_length=30, blank=True)
+    contact_email = models.EmailField(blank=True)
+    contact_facebook_url = models.URLField(max_length=300, blank=True)
+    contact_whatsapp = models.CharField(max_length=30, blank=True)
+    contact_address = models.CharField(max_length=300, blank=True)
+    contact_heading = models.CharField(max_length=120, blank=True)
+    contact_description = models.CharField(max_length=300, blank=True)
+    contact_show_phone = models.BooleanField(default=True)
+    contact_show_email = models.BooleanField(default=True)
+    contact_show_facebook = models.BooleanField(default=True)
+    contact_show_whatsapp = models.BooleanField(default=True)
+    contact_show_address = models.BooleanField(default=True)
     # Booking slots one mobile number may hold per Bangladesh calendar day (across all turfs).
     max_slots_per_customer = models.PositiveSmallIntegerField(default=2)
     # SMS wallet recharge by bKash "Send Money" to TurfBari (admin verifies, then credits).

@@ -46,6 +46,7 @@ workspace_router.register("expenses", ExpenseViewSet, basename="ws-expenses")
 workspace_router.register("photos", setup.PhotoViewSet, basename="ws-photos")
 
 public_urls = [
+    path("contact/", platform.PublicContactView.as_view()),
     path("locations/", public.LocationsView.as_view()),
     path("amenities/", public.AmenitiesView.as_view()),
     path("turfs/<slug:slug>/", public.PublicTurfDetailView.as_view()),
@@ -101,6 +102,7 @@ admin_urls = [
     path("subscriptions/", subs_admin.AdminSubscriptionsView.as_view()),
     path("health/", subs_admin.AdminHealthView.as_view()),
     path("api-config/", platform.AdminApiConfigView.as_view()),
+    path("contact-settings/", platform.AdminContactSettingsView.as_view()),
     path("api-config/youtube/", platform.AdminYoutubeView.as_view()),
     path("api-config/bulksmsbd/", platform.AdminBulkSmsView.as_view()),
     path("api-config/booking/", platform.AdminBookingPolicyView.as_view()),

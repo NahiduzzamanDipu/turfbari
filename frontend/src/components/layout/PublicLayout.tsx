@@ -7,6 +7,7 @@ import { useMe } from "@/features/auth/auth";
 import { cn } from "@/lib/utils";
 
 const NAV = [
+  { to: "/#contact", label: "Contact" },
   { to: "/booking-status", label: "Check booking" },
   { to: "/register-turf", label: "Register your turf" },
 ];

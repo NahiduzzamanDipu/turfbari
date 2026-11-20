@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, ExternalLink, KeyRound, Loader2, MessageSquareText, PlugZap, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, ExternalLink, KeyRound, Loader2, MessageSquareText, PlugZap, Trash2, XCircle, Phone, Mail, MapPin, Share2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import type React from "react";
 import { toast } from "sonner";
 import { YouTubeIcon } from "@/components/content/YouTube";
 import { PageHeader } from "@/components/layout/AppShell";
@@ -90,6 +91,70 @@ export function AdminApiPage() {
       )}
     </>
   );
+}
+
+interface ContactSettings {
+  enabled: boolean; phone: string; email: string; facebook_url: string; whatsapp: string; address: string;
+  heading: string; description: string; show_phone: boolean; show_email: boolean; show_facebook: boolean;
+  show_whatsapp: boolean; show_address: boolean; updated_at: string;
+}
+
+export function AdminContactSettingsPage() {
+  const qc = useQueryClient();
+  const query = useQuery({ queryKey: ["admin", "contact-settings"], queryFn: () => api<ContactSettings>("/admin/contact-settings/") });
+  const [form, setForm] = useState<ContactSettings | null>(null);
+  useEffect(() => { if (query.data) setForm(query.data); }, [query.data]);
+  const save = useMutation({
+    mutationFn: (data: ContactSettings) => api<ContactSettings>("/admin/contact-settings/", { method: "PUT", json: data }),
+    onSuccess: (data) => { setForm(data); qc.setQueryData(["admin", "contact-settings"], data); qc.invalidateQueries({ queryKey: ["public", "contact"] }); toast.success("Homepage contact information saved"); },
+    onError: (error) => toast.error(errorText(error)),
+  });
+  const update = (key: keyof ContactSettings, value: string | boolean) => setForm((current) => current ? { ...current, [key]: value } : current);
+  return <>
+    <PageHeader title="Contact Information" description="Manage the public contact details shown on the TURFBARI homepage." />
+    {query.isPending && <Skeleton className="h-96" />}
+    {query.isError && <ErrorState error={query.error} onRetry={() => query.refetch()} />}
+    {form && <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.8fr)]">
+      <Card><CardHeader><CardTitle>Homepage contact settings</CardTitle></CardHeader><CardContent>
+        <form className="flex flex-col gap-5" onSubmit={(event) => { event.preventDefault(); save.mutate(form); }}>
+          <Checkbox label="Show the Contact Us section on homepage" checked={form.enabled} onChange={(e) => update("enabled", e.target.checked)} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField label="Section heading">{(id) => <Input id={id} value={form.heading} onChange={(e) => update("heading", e.target.value)} placeholder="Get in Touch" />}</FormField>
+            <FormField label="Phone number" hint="Use the verified public support number.">{(id) => <Input id={id} type="tel" value={form.phone} onChange={(e) => update("phone", e.target.value)} />}</FormField>
+            <FormField label="Support email">{(id) => <Input id={id} type="email" value={form.email} onChange={(e) => update("email", e.target.value)} />}</FormField>
+            <FormField label="Facebook page URL">{(id) => <Input id={id} type="url" value={form.facebook_url} onChange={(e) => update("facebook_url", e.target.value)} placeholder="https://www.facebook.com/…" />}</FormField>
+            <FormField label="WhatsApp number" hint="Optional; Bangladesh country code accepted.">{(id) => <Input id={id} type="tel" value={form.whatsapp} onChange={(e) => update("whatsapp", e.target.value)} />}</FormField>
+            <FormField label="Office / business address">{(id) => <Input id={id} value={form.address} onChange={(e) => update("address", e.target.value)} />}</FormField>
+          </div>
+          <FormField label="Section description">{(id) => <Textarea id={id} value={form.description} onChange={(e) => update("description", e.target.value)} placeholder="Have questions about TURFBARI? We're here to help." />}</FormField>
+          <fieldset className="flex flex-wrap gap-x-5 gap-y-3 rounded-lg border p-4"><legend className="px-1 text-sm font-semibold">Show contact methods</legend>
+            {([ ["show_phone", "Phone"], ["show_email", "Email"], ["show_facebook", "Facebook"], ["show_whatsapp", "WhatsApp"], ["show_address", "Address"] ] as const).map(([key, label]) => <Checkbox key={key} label={label} checked={form[key]} onChange={(e) => update(key, e.target.checked)} />)}
+          </fieldset>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {form.updated_at && <span className="text-xs text-muted-foreground">Last updated {new Date(form.updated_at).toLocaleString()}</span>}
+            <Button className="ml-auto min-h-11" type="submit" disabled={save.isPending}>{save.isPending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} Save Changes</Button>
+          </div>
+        </form>
+      </CardContent></Card>
+      <Card className="h-fit"><CardHeader><CardTitle>Preview</CardTitle></CardHeader><CardContent>
+        <div className="rounded-xl border bg-muted/30 p-5"><p className="text-xs font-bold uppercase tracking-wider text-primary">Let's Talk</p><h3 className="mt-1 text-xl font-bold">{form.heading || "Get in Touch"}</h3><p className="mt-2 text-sm text-muted-foreground">{form.description || "Have questions about TURFBARI or want to bring your turf business online? We're here to help."}</p>
+          <div className="mt-4 grid gap-2">
+            {form.enabled && form.show_phone && form.phone && <PreviewLine icon={<Phone />} value={form.phone} />}
+            {form.enabled && form.show_email && form.email && <PreviewLine icon={<Mail />} value={form.email} />}
+            {form.enabled && form.show_facebook && form.facebook_url && <PreviewLine icon={<Share2 />} value="Visit Facebook Page" />}
+            {form.enabled && form.show_whatsapp && form.whatsapp && <PreviewLine icon={<MessageSquareText />} value={form.whatsapp} />}
+            {form.enabled && form.show_address && form.address && <PreviewLine icon={<MapPin />} value={form.address} />}
+            {!form.enabled && <p className="text-sm text-muted-foreground">Contact section hidden.</p>}
+            {form.enabled && !form.phone && !form.email && !form.facebook_url && !form.whatsapp && !form.address && <p className="text-sm text-muted-foreground">No contact methods configured yet.</p>}
+          </div>
+        </div>
+      </CardContent></Card>
+    </div>}
+  </>;
+}
+
+function PreviewLine({ icon, value }: { icon: React.ReactNode; value: string }) {
+  return <div className="flex min-h-11 items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm"><span className="text-primary">{icon}</span>{value}</div>;
 }
 
 function YouTubeCard({ current, onSaved }: { current: ApiConfig["youtube"]; onSaved: () => void }) {

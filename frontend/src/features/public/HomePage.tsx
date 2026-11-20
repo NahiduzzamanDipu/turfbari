@@ -2,7 +2,11 @@ import {
   BarChart3,
   CalendarCheck2,
   CalendarClock,
+  Mail,
   MessageSquareText,
+  MapPin,
+  Phone,
+  Share2,
   QrCode,
   ShieldCheck,
   Smartphone,
@@ -11,8 +15,11 @@ import {
   Wallet,
 } from "lucide-react";
 import { Link } from "react-router";
+import type React from "react";
 import { Button } from "@/components/ui/button";
 import { useMe } from "@/features/auth/auth";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 /**
  * TurfBari's own site is about the product for turf owners. There is no public directory of turfs:
@@ -35,6 +42,11 @@ const STEPS = [
 
 export function HomePage() {
   const me = useMe();
+  const contact = useQuery({
+    queryKey: ["public", "contact"],
+    queryFn: () => api<ContactDetails>("/public/contact/"),
+    staleTime: 5 * 60_000,
+  });
   const signedIn = me.data?.authenticated;
 
   return (
@@ -139,6 +151,57 @@ export function HomePage() {
           </div>
         </div>
       </section>
+      {contact.data?.enabled && (
+        <section id="contact" className="scroll-mt-24 border-t bg-muted/30" aria-labelledby="contact-heading">
+          <div className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
+            <div className="mx-auto mb-8 max-w-2xl text-center">
+              <p className="text-sm font-bold uppercase tracking-wider text-primary">Let's Talk</p>
+              <h2 id="contact-heading" className="mt-2 font-display text-3xl font-extrabold uppercase sm:text-4xl">
+                {contact.data.heading || "Get in Touch"}
+              </h2>
+              <p className="mt-3 text-muted-foreground">
+                {contact.data.description || "Have questions about TURFBARI or want to bring your turf business online? We're here to help."}
+              </p>
+            </div>
+            {contact.data.phone || contact.data.email || contact.data.facebook_url || contact.data.whatsapp || contact.data.address ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {contact.data.phone && <ContactCard icon={<Phone />} title="Phone" href={`tel:${contact.data.phone.replace(/[^+\d]/g, "")}`} value={contact.data.phone} />}
+                {contact.data.email && <ContactCard icon={<Mail />} title="Email" href={`mailto:${contact.data.email}`} value={contact.data.email} />}
+                {contact.data.facebook_url && <ContactCard icon={<Share2 />} title="Facebook" href={contact.data.facebook_url} value="Visit Facebook Page" external />}
+                {contact.data.whatsapp && <ContactCard icon={<MessageSquareText />} title="WhatsApp" href={`https://wa.me/${contact.data.whatsapp.replace(/\D/g, "")}`} value={contact.data.whatsapp} external />}
+                {contact.data.address && <div className="glass flex min-h-28 items-start gap-4 rounded-xl p-5"><span className="rounded-lg bg-accent p-3 text-accent-foreground"><MapPin aria-hidden="true" /></span><div><h3 className="font-semibold">Office</h3><p className="mt-1 text-sm text-muted-foreground">{contact.data.address}</p></div></div>}
+              </div>
+            ) : (
+              <p className="rounded-xl border border-dashed bg-card px-5 py-8 text-center text-sm text-muted-foreground">
+                Our contact details are being updated. Please check back soon.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
     </>
+  );
+}
+
+interface ContactDetails {
+  enabled: boolean;
+  heading: string;
+  description: string;
+  phone: string | null;
+  email: string | null;
+  facebook_url: string | null;
+  whatsapp: string | null;
+  address: string | null;
+}
+
+function ContactCard({ icon, title, href, value, external = false }: {
+  icon: React.ReactNode; title: string; href: string; value: string; external?: boolean;
+}) {
+  return (
+    <a href={href} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      aria-label={`${title}: ${value}`} className="glass group flex min-h-28 items-center gap-4 rounded-xl p-5 transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <span aria-hidden="true" className="rounded-lg bg-accent p-3 text-accent-foreground transition group-hover:bg-primary group-hover:text-primary-foreground">{icon}</span>
+      <span className="min-w-0"><span className="block font-semibold">{title}</span><span className="mt-1 block break-words text-sm text-muted-foreground">{value}</span></span>
+    </a>
   );
 }
