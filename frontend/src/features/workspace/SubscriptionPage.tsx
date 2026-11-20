@@ -114,9 +114,9 @@ export function SubscriptionPage() {
     <>
       <PageHeader title="Subscription" description="Your TurfBari plan. Plans never renew automatically — you choose and pay for each period." />
 
-      <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <Card
-          className={cn("flex h-full flex-col rounded-2xl transition-shadow duration-200 hover:shadow-lg", planCardTone)}
+          className={cn("h-fit rounded-2xl transition-shadow duration-200 hover:shadow-lg", planCardTone)}
           style={planCardState === "active" ? {
             background: "linear-gradient(135deg, #064E3B 0%, #087F5B 100%)",
             color: "#FFFFFF",
@@ -134,7 +134,7 @@ export function SubscriptionPage() {
               >{planStatusLabel}</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className={cn("flex flex-1 flex-col gap-2.5 px-4 pt-2 pb-4 text-sm", planCardState !== "none" && "!text-white")}>
+          <CardContent className={cn("flex flex-col gap-2 px-4 pt-2 pb-3 text-sm", planCardState !== "none" && "!text-white")}>
             {standing.current ? (
               <>
                 <div className="flex flex-wrap items-end justify-between gap-3">
@@ -198,11 +198,11 @@ export function SubscriptionPage() {
           </CardContent>
         </Card>
 
-        <Card id="plan-options" className="flex h-full flex-col scroll-mt-24">
+        <Card id="plan-options" className="scroll-mt-24">
           <CardHeader>
             <CardTitle>{standing.current ? "Renew or change plan" : "Choose a plan"}</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-1 flex-col gap-3">
+          <CardContent className="flex flex-col gap-3">
             <LegalAcceptBox
               id="agree-plan-legal"
               docs={legalDocs}
