@@ -7,7 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState, FormField, Input, Textarea } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, api } from "@/lib/api";
+import { YouTubeDialog, YouTubeIcon } from "@/components/content/YouTube";
 import { addDays, fmtDay, fmtRange, todayISO } from "@/lib/format";
+import {
+  clearDraft,
+  loadDraft,
+  loadSubmitted,
+  newIdempotencyKey,
+  saveDraft,
+  saveSubmitted,
+  type SubmittedBooking,
+  visitorId,
+} from "@/lib/visitor";
 import type { PublicBooking, SlotHold, PublicSlotState, TurfDetail, PublicAvailability } from "@/lib/types";
 import { cn, formatBDT } from "@/lib/utils";
 
@@ -18,23 +29,6 @@ const STATE_LABEL: Partial<Record<PublicSlotState, string>> = {
   unavailable: "Unavailable",
   past: "Past",
 };
-
-const tokenKey = (slug: string) => `turfbari-hold:${slug}`;
-function readToken(slug: string) {
-  try {
-    return sessionStorage.getItem(tokenKey(slug));
-  } catch {
-    return null;
-  }
-}
-function writeToken(slug: string, token: string | null) {
-  try {
-    if (token) sessionStorage.setItem(tokenKey(slug), token);
-    else sessionStorage.removeItem(tokenKey(slug));
-  } catch {
-    /* private mode: the hold still works for this page view */
-  }
-}
 
 /** Seconds left until an ISO time, ticking every second. */
 function useCountdown(until: string | null | undefined) {
@@ -59,9 +53,18 @@ const clock = (iso: string) =>
  */
 export function BookingPanel({ turf }: { turf: TurfDetail }) {
   const qc = useQueryClient();
-  const [fieldId, setFieldId] = useState(turf.fields_list[0]?.id ?? "");
-  const [day, setDay] = useState(todayISO());
-  const [token, setToken] = useState<string | null>(() => readToken(turf.slug));
+  const qcDraft = useMemo(() => loadDraft(turf.slug), [turf.slug]);
+  const validDay = (d?: string) => (d && d >= todayISO() ? d : todayISO());
+  const [fieldId, setFieldId] = useState(
+    turf.fields_list.some((f) => f.id === qcDraft?.fieldId) ? qcDraft!.fieldId : (turf.fields_list[0]?.id ?? ""),
+  );
+  const [day, setDay] = useState(validDay(qcDraft?.day));
+  const [token, setToken] = useState<string | null>(qcDraft?.token ?? null);
+  const [agree, setAgree] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
+  const [submitted, setSubmitted] = useState<SubmittedBooking | null>(() => loadSubmitted(turf.slug));
+  const visitor = useMemo(() => visitorId(), []);
+  const visitorHeaders = useMemo(() => ({ "X-Visitor-Id": visitor }), [visitor]);
   const [form, setForm] = useState({ name: "", phone: "", email: "", team_name: "", notes: "", website: "" });
   const [pay, setPay] = useState({ payment_amount: "", bkash_sender: "", trx_id: "" });
   const [done, setDone] = useState<PublicBooking | null>(null);
@@ -70,17 +73,22 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
 
   const saveToken = (t: string | null) => {
     setToken(t);
-    writeToken(turf.slug, t);
+    if (t) saveDraft(turf.slug, { token: t, fieldId, day });
+    else saveDraft(turf.slug, { token: null, idempotencyKey: newIdempotencyKey() });
   };
+  // Remember where the visitor is looking, so a reload comes back to the same field and day.
+  useEffect(() => {
+    saveDraft(turf.slug, { fieldId, day });
+  }, [turf.slug, fieldId, day]);
 
   const slots = useQuery({
     queryKey: ["public", "availability", turf.slug, fieldId, day, token],
     queryFn: () =>
       api<PublicAvailability>(`/public/turfs/${turf.slug}/availability/?field=${fieldId}&date=${day}`, {
-        headers: token ? { "X-Hold-Token": token } : {},
+        headers: token ? { "X-Hold-Token": token, ...visitorHeaders } : visitorHeaders,
       }),
     enabled: Boolean(fieldId),
-    refetchInterval: 5_000, // live: other players' selections and bookings show up within seconds
+    refetchInterval: 8_000, // live: others' selections and bookings show up within seconds (paused when hidden)
     staleTime: 0,
   });
 
@@ -90,14 +98,29 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
   const secondsLeft = useCountdown(myHold?.expires_at);
   const cooldownLeft = useCountdown(cooldown);
 
+  // The server still holds a slot for this browser (reload / new tab): adopt it and show it.
+  const [adopted, setAdopted] = useState(false);
+  useEffect(() => {
+    const h = slots.data?.my_hold;
+    if (!h || adopted) return;
+    setAdopted(true);
+    if (h.token !== token) saveToken(h.token);
+    const holdDay = h.start.slice(0, 10);
+    if (h.field !== fieldId) setFieldId(h.field);
+    if (holdDay !== day) setDay(holdDay);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slots.data?.my_hold?.token]);
+
   // The server forgot our hold (it lapsed or was used): drop the stale token.
   useEffect(() => {
     if (slots.data && token && !myHold) {
       saveToken(null);
       if (cooldown) setNotice("Your 10 minutes ran out, so the slot was released for others.");
+      else setNotice("Your earlier selection has expired. Please choose a slot again.");
     }
     // The wait is over: drop the "time ran out" message.
     if (slots.data && !cooldown && notice?.startsWith("Your 10 minutes")) setNotice(null);
+    if (slots.data && myHold && notice?.startsWith("Your earlier selection")) setNotice(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slots.data]);
 
@@ -127,6 +150,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
     mutationFn: (r: { from: number; to: number }) =>
       api<SlotHold>(`/public/turfs/${turf.slug}/hold/`, {
         method: "POST",
+        headers: visitorHeaders,
         json: { field: fieldId, start: list[r.from]!.start, end: list[r.to]!.end, token: token ?? "" },
       }),
     onSuccess: (h) => {
@@ -142,7 +166,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
 
   const release = useMutation({
     mutationFn: () =>
-      api<void>(`/public/turfs/${turf.slug}/hold/`, { method: "DELETE", headers: token ? { "X-Hold-Token": token } : {} }),
+      api<void>(`/public/turfs/${turf.slug}/hold/`, { method: "DELETE", headers: token ? { "X-Hold-Token": token, ...visitorHeaders } : visitorHeaders }),
     onSettled: () => {
       saveToken(null);
       void refresh();
@@ -153,7 +177,10 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
     mutationFn: () =>
       api<PublicBooking>(`/public/turfs/${turf.slug}/book/`, {
         method: "POST",
+        headers: { ...visitorHeaders, "Idempotency-Key": loadDraft(turf.slug)?.idempotencyKey ?? newIdempotencyKey() },
         json: {
+          agree_terms: agree,
+          terms_version: turf.terms_version?.id ?? null,
           field: fieldId,
           start: chosen[0]?.start,
           end: chosen.at(-1)?.end,
@@ -167,8 +194,20 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
     onSuccess: (b) => {
       setDone(b);
       setPay({ payment_amount: "", bkash_sender: "", trx_id: "" });
-      saveToken(null);
+      setAgree(false);
+      const record = { reference: b.reference, start: b.start, at: Date.now() };
+      saveSubmitted(turf.slug, record);
+      setSubmitted(record);
+      setToken(null);
+      clearDraft(turf.slug);
       void refresh();
+    },
+    onError: (e) => {
+      // The terms changed while the form was open: fetch the new version and ask again.
+      if (e instanceof ApiError && e.fields?.terms_version) {
+        setAgree(false);
+        void qc.invalidateQueries({ queryKey: ["public", "turf", turf.slug] });
+      }
     },
   });
   const fieldErrors = submit.error instanceof ApiError ? submit.error.fields : null;
@@ -192,12 +231,45 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
     else hold.mutate({ from: i, to: i });
   };
 
+  const header = (
+    <CardHeader>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <CardTitle>
+          Book a slot <span className="font-normal text-muted-foreground">· বুক করুন</span>
+        </CardTitle>
+        <div className="flex flex-wrap items-center gap-2">
+        {turf.terms_version && (
+          <Link
+            to={`/terms?turf=${turf.slug}`}
+            className="rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+          >
+            Terms &amp; Conditions
+          </Link>
+        )}
+        {turf.youtube_video_id && (
+          <button
+            type="button"
+            onClick={() => setShowVideo(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition hover:bg-secondary"
+          >
+            <YouTubeIcon className="h-4 w-auto" />
+            <span lang="bn">বুকিং করার নিয়ম</span>
+          </button>
+        )}
+        </div>
+      </div>
+    </CardHeader>
+  );
+  const video =
+    showVideo && turf.youtube_video_id ? (
+      <YouTubeDialog videoId={turf.youtube_video_id} title="বুকিং করার নিয়ম — How to book" onClose={() => setShowVideo(false)} />
+    ) : null;
+
   if (done) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Book a slot</CardTitle>
-        </CardHeader>
+        {header}
+        {video}
         <CardContent>
           <div className="flex flex-col items-center gap-3 py-4 text-center" role="status">
             <CheckCircle2 className="size-12 text-primary" />
@@ -237,10 +309,29 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Book a slot</CardTitle>
-      </CardHeader>
+      {header}
+      {video}
       <CardContent className="flex flex-col gap-4">
+        {submitted && !done && (
+          <p role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
+            <span>
+              You already sent a booking request (<span className="font-mono font-semibold">{submitted.reference}</span>).{" "}
+              <Link className="font-semibold text-primary hover:underline" to={`/booking-status?reference=${submitted.reference}`}>
+                Check its status
+              </Link>
+            </span>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                saveSubmitted(turf.slug, null);
+                setSubmitted(null);
+              }}
+            >
+              Dismiss
+            </button>
+          </p>
+        )}
         {turf.fields_list.length > 1 && (
           <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Field">
             {turf.fields_list.map((f) => (
@@ -463,14 +554,34 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
               value={form.website}
               onChange={(e) => setForm({ ...form, website: e.target.value })}
             />
+            {turf.terms_version && (
+              <div className="flex items-start gap-2 rounded-md border p-3 text-sm">
+                <input
+                  id="agree-terms"
+                  type="checkbox"
+                  required
+                  className="mt-1 size-4 shrink-0 accent-[var(--primary)]"
+                  checked={agree}
+                  onChange={(e) => setAgree(e.target.checked)}
+                />
+                <label htmlFor="agree-terms" lang="bn" className="leading-relaxed">
+                  আমি Terms &amp; Conditions এবং Booking Rules &amp; Regulations পড়েছি এবং সম্মত হয়েছি।{" "}
+                  <Link to={`/terms?turf=${turf.slug}`} target="_blank" className="whitespace-nowrap font-semibold text-primary hover:underline">
+                    Read them
+                  </Link>
+                </label>
+              </div>
+            )}
+            {fieldErrors?.agree_terms && <p className="text-sm text-destructive">{fieldErrors.agree_terms[0]}</p>}
             {submit.error && (
               <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {fieldErrors?.start?.[0] ??
+                {(fieldErrors?.code?.[0] === "booking_limit" ? fieldErrors.phone?.[0] : undefined) ??
+                  fieldErrors?.start?.[0] ??
                   fieldErrors?.non_field_errors?.[0] ??
                   (fieldErrors ? "Please fix the highlighted fields." : submit.error.message)}
               </p>
             )}
-            <Button type="submit" size="lg" disabled={submit.isPending || secondsLeft === 0}>
+            <Button type="submit" size="lg" disabled={submit.isPending || secondsLeft === 0 || (Boolean(turf.terms_version) && !agree)}>
               {submit.isPending ? <Loader2 className="animate-spin" /> : <Send />}
               Submit payment &amp; request booking
             </Button>

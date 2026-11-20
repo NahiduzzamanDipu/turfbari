@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ExternalLink, Loader2, Palette, PlayCircle, RotateCcw, Send, Trash2 } from "lucide-react";
+import { Check, ExternalLink, Loader2, Palette, RotateCcw, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/AppShell";
@@ -26,33 +26,10 @@ import { errorText } from "./hooks";
 interface DesignResponse {
   published: Required<PageTheme>;
   draft: Required<PageTheme> | null;
-  youtube_video_id: string | null;
   slug: string;
 }
 
 const HEX = /^#[0-9a-f]{6}$/i;
-const YT_ID = /^[A-Za-z0-9_-]{11}$/;
-
-/** Same rules as the server (apps/turfs/design_views.youtube_id), used only for the instant preview. */
-function youtubeId(url: string): string | null {
-  const raw = url.trim();
-  if (YT_ID.test(raw)) return raw;
-  try {
-    const u = new URL(/^https?:\/\//.test(raw) ? raw : `https://${raw}`);
-    const host = u.hostname.toLowerCase();
-    if (!["youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be"].includes(host)) return null;
-    let id: string | null = null;
-    if (host === "youtu.be") id = u.pathname.split("/")[1] ?? null;
-    else if (u.pathname === "/watch") id = u.searchParams.get("v");
-    else {
-      const [kind, value] = u.pathname.split("/").filter(Boolean);
-      if (kind && ["shorts", "embed", "live", "v"].includes(kind)) id = value ?? null;
-    }
-    return id && YT_ID.test(id) ? id : null;
-  } catch {
-    return null;
-  }
-}
 
 function Choice<T extends string>({
   label,
@@ -91,7 +68,6 @@ export function DesignPage() {
   const isOwner = useActiveMembership()?.role === "owner";
   const design = useQuery({ queryKey: ["ws", "design"], queryFn: () => api<DesignResponse>("/workspace/design/") });
   const [theme, setTheme] = useState<Required<PageTheme> | null>(null);
-  const [videoUrl, setVideoUrl] = useState("");
   useEffect(() => {
     if (design.data && !theme) setTheme(design.data.draft ?? design.data.published);
   }, [design.data, theme]);
@@ -119,28 +95,19 @@ export function DesignPage() {
       done(d, "Draft discarded");
     },
   });
-  const video = useMutation({
-    mutationFn: (url: string) => api<DesignResponse>("/workspace/design/video/", { method: "PUT", json: { url } }),
-    onSuccess: (d) => {
-      setVideoUrl("");
-      done(d, d.youtube_video_id ? "Video added to your booking page" : "Video removed");
-    },
-    onError: (e) => toast.error(errorText(e)),
-  });
 
   const d = design.data;
   const set = (patch: Partial<PageTheme>) => setTheme((t) => (t ? ({ ...t, ...patch } as Required<PageTheme>) : t));
   const colorOk = !theme?.color || (HEX.test(theme.color) && contrastWithWhite(theme.color) >= 3);
   const secondaryOk = !theme?.secondary || HEX.test(theme.secondary);
   const changed = theme && d && JSON.stringify(theme) !== JSON.stringify(d.published);
-  const previewId = youtubeId(videoUrl);
   const fieldErrors = saveDraft.error instanceof ApiError ? saveDraft.error.fields : null;
 
   return (
     <>
       <PageHeader
         title="Page design"
-        description="How your public booking page looks. Try changes in the preview, save a draft, and publish when you're happy."
+        description="How your public booking page looks. Try changes in the preview, save a draft, and publish when you're happy. (The “how to book” video is the same on every turf page and is set by TurfBari.)"
         actions={
           d && (
             <Button asChild variant="outline">
@@ -267,62 +234,6 @@ export function DesignPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PlayCircle className="size-4 text-[#FF0000]" /> Video on your page
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                <p className="text-sm text-muted-foreground">
-                  Add a YouTube video of your turf. Players see a YouTube button at the top of your page and watch it in a popup. It never autoplays.
-                </p>
-                {d.youtube_video_id && (
-                  <div className="flex items-center justify-between gap-2 rounded-lg border p-2 text-sm">
-                    <span>
-                      Current video: <span className="font-mono">{d.youtube_video_id}</span>
-                    </span>
-                    {isOwner && (
-                      <Button size="sm" variant="ghost" onClick={() => window.confirm("Remove the video from your page?") && video.mutate("")}>
-                        <Trash2 /> Remove
-                      </Button>
-                    )}
-                  </div>
-                )}
-                {isOwner && (
-                  <form
-                    className="flex flex-col gap-2 sm:flex-row sm:items-end"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (previewId) video.mutate(videoUrl);
-                    }}
-                  >
-                    <FormField
-                      label="YouTube link"
-                      className="flex-1"
-                      error={videoUrl && !previewId ? ["That's not a YouTube video link."] : video.error instanceof ApiError ? video.error.fields?.url : null}
-                    >
-                      {(id) => <Input id={id} placeholder="https://youtu.be/…" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} />}
-                    </FormField>
-                    <Button type="submit" disabled={!previewId || video.isPending}>
-                      {d.youtube_video_id ? "Replace video" : "Add video"}
-                    </Button>
-                  </form>
-                )}
-                {previewId && (
-                  <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
-                    <iframe
-                      className="size-full"
-                      src={`https://www.youtube-nocookie.com/embed/${previewId}?rel=0`}
-                      title="Video preview"
-                      allow="encrypted-media; picture-in-picture; fullscreen"
-                      referrerPolicy="strict-origin-when-cross-origin"
-                      allowFullScreen
-                    />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
 
           <div className="xl:sticky xl:top-4 xl:self-start">

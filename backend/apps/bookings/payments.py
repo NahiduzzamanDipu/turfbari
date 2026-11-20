@@ -261,3 +261,78 @@ def booking_reminders(now=None) -> dict:
 def notify_cancelled(booking: Booking, previous_status: str) -> None:
     if previous_status == Booking.Status.CONFIRMED and booking.status == Booking.Status.CANCELLED:
         _sms(booking, "booking_cancelled")
+
+
+# ------------------------------------------------------------------ customer limit & terms
+LIMIT_MESSAGE_BN = "একজন গ্রাহক সর্বোচ্চ {n}টি স্লট বুক করতে পারবেন। আপনার বুকিং সীমা পূর্ণ হয়েছে।"
+
+
+def bn_digits(n: int) -> str:
+    return str(n).translate(str.maketrans("0123456789", "০১২৩৪৫৬৭৮৯"))
+
+
+def slot_count_for(field, start, end) -> int:
+    """How many offered slots [start, end) covers (custom slots counted one by one; the automatic grid
+    by its slot length)."""
+    from apps.turfs.schedule import day_slots, uses_templates
+
+    day = timezone.localtime(start).date()
+    days = [day - timedelta(days=1), day, day + timedelta(days=1)]
+    if any(uses_templates(field, d) for d in days):
+        slots = {s for d in days for s in day_slots(field, d)}
+        return max(1, sum(1 for s in slots if s.start >= start and s.end <= end))
+    minutes = int((end - start).total_seconds() // 60)
+    length = field.slot_minutes or 60
+    return max(1, -(-minutes // length))
+
+
+def active_slots_for_phone(phone: str, now=None) -> int:
+    """Upcoming slots this phone holds on ANY turf: confirmed, plus pending ones still holding their
+    slot. Past, cancelled, rejected and expired bookings don't count."""
+    from django.db.models import Sum
+
+    now = now or timezone.now()
+    total = (
+        Booking.objects.blocking(now)
+        .filter(
+            customer__phone=phone, end__gt=now, status__in=[Booking.Status.PENDING, Booking.Status.CONFIRMED]
+        )
+        .aggregate(n=Sum("slot_count"))["n"]
+    )
+    return int(total or 0)
+
+
+def enforce_customer_limit(phone: str, new_slots: int) -> None:
+    """Call inside the booking transaction. Locks the phone's row so parallel requests queue."""
+    from apps.common.models import CustomerLock, PlatformSettings
+
+    CustomerLock.objects.get_or_create(phone=phone)
+    CustomerLock.objects.select_for_update().get(phone=phone)
+    limit = PlatformSettings.load().max_slots_per_customer
+    if active_slots_for_phone(phone) + new_slots > limit:
+        raise ValidationError(
+            {"phone": [LIMIT_MESSAGE_BN.format(n=bn_digits(limit))], "code": ["booking_limit"]}
+        )
+
+
+def check_terms(agreed: bool, version_id) -> object:
+    """Returns the TermsVersion the customer agreed to (None if no terms are published)."""
+    from apps.common.models import TermsVersion
+
+    current = TermsVersion.current()
+    if current is None:
+        return None
+    if not agreed:
+        raise ValidationError(
+            {"agree_terms": ["Please read and accept the Terms & Conditions and Booking Rules to book."]}
+        )
+    if str(version_id or "") != str(current.pk):
+        raise ValidationError(
+            {
+                "agree_terms": [
+                    "The Terms & Conditions were just updated. Please read them again and accept."
+                ],
+                "terms_version": [str(current.pk)],
+            }
+        )
+    return current

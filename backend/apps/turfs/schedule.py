@@ -28,8 +28,49 @@ def local_dt(day: date, at: time) -> datetime:
     return timezone.make_aware(datetime.combine(day, at), timezone.get_current_timezone())
 
 
+# ------------------------------------------------------------------ cached turf configuration
+CONFIG_TTL = 600
+
+
+def config_key(turf_id) -> str:
+    return f"turfcfg:{turf_id}"
+
+
+def turf_config(turf_id) -> dict:
+    """Opening hours, custom slots, price rules and categories for one turf, cached together.
+
+    This is the slow-changing part of every availability request (4+ queries). It is dropped from the
+    cache whenever any of those rows is saved or deleted (signals in apps.turfs.signals). Live data —
+    bookings, holds, maintenance — is never cached.
+    """
+    from django.core.cache import cache
+
+    from .models import PricingRule
+
+    key = config_key(turf_id)
+    data = cache.get(key)
+    if data is None:
+        templates: dict = {}
+        for t in SlotTemplate.objects.filter(turf_id=turf_id).order_by("start_time"):
+            templates.setdefault((t.field_id, t.weekday), []).append(t)
+        data = {
+            "hours": {h.weekday: h for h in OperatingHours.objects.filter(turf_id=turf_id)},
+            "templates": templates,
+            "rules": list(PricingRule.objects.filter(turf_id=turf_id, is_active=True)),
+            "categories": list(PriceCategory.objects.filter(turf_id=turf_id).order_by("starts_at")),
+        }
+        cache.set(key, data, CONFIG_TTL)
+    return data
+
+
+def forget_turf_config(turf_id) -> None:
+    from django.core.cache import cache
+
+    cache.delete(config_key(turf_id))
+
+
 def opening_window(turf: Turf, day: date) -> tuple[datetime, datetime] | None:
-    hours = OperatingHours.objects.filter(turf=turf, weekday=day.weekday()).first()
+    hours = turf_config(turf.pk)["hours"].get(day.weekday())
     if hours is None or hours.is_closed:
         return None
     opens = local_dt(day, hours.opens_at)
@@ -52,8 +93,8 @@ def templates_for(field: TurfField, weekday: int, *, cache: dict | None = None) 
     """The field's templates for a weekday (active and inactive), or None if it uses the grid."""
     if cache is not None and (field.pk, weekday) in cache:
         return cache[(field.pk, weekday)]
-    rows = list(SlotTemplate.objects.filter(field=field, weekday=weekday).order_by("start_time"))
-    result = rows or None
+    rows = turf_config(field.turf_id)["templates"].get((field.pk, weekday), [])
+    result = list(rows) or None
     if cache is not None:
         cache[(field.pk, weekday)] = result
     return result
@@ -118,7 +159,11 @@ def uses_templates(field: TurfField, day: date) -> bool:
 
 # ------------------------------------------------------------------ categories
 def turf_categories(turf_id) -> list[PriceCategory]:
-    return list(PriceCategory.objects.filter(turf_id=turf_id).order_by("starts_at"))
+    return list(turf_config(turf_id)["categories"])
+
+
+def turf_rules(turf_id) -> list:
+    return list(turf_config(turf_id)["rules"])
 
 
 def category_at(categories: list[PriceCategory], at: time) -> PriceCategory | None:

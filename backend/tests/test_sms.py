@@ -73,8 +73,8 @@ def test_skips_bad_numbers_switched_off_platform_and_monthly_limit():
     config = SmsConfig.load()
     config.per_turf_monthly_limit = 1
     config.save()
-    queue_sms(to="01712345678", body="x", kind="test", turf=turf)
-    over = queue_sms(to="01712345678", body="y", kind="test", turf=turf)
+    queue_sms(to="01712345678", body="x", kind="booking_confirmed", turf=turf)
+    over = queue_sms(to="01712345678", body="y", kind="booking_confirmed", turf=turf)
     assert over.status == "skipped" and "allowance" in over.provider_message
     config.enabled = False
     config.save()

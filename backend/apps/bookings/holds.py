@@ -9,6 +9,7 @@
 
 import hashlib
 import hmac
+import re
 import secrets
 from datetime import datetime, timedelta
 
@@ -38,6 +39,29 @@ class HoldRefused(APIException):
 def ip_hash(request) -> str:
     ip = client_ip(request) or "unknown"
     return hmac.new(settings.SECRET_KEY.encode(), f"hold:{ip}".encode(), hashlib.sha256).hexdigest()
+
+
+VISITOR_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
+
+
+def visitor_key(request) -> str:
+    """Who is holding: the browser's own random id (X-Visitor-Id, kept in localStorage) so people
+    sharing one IP (same Wi-Fi, mobile carrier NAT) are told apart; the IP only as a fallback.
+    Stored as a keyed hash in SlotHold.ip_hash (historic column name)."""
+    raw = (request.headers.get("X-Visitor-Id") or "").strip().lower()
+    if VISITOR_ID.match(raw):
+        return hmac.new(settings.SECRET_KEY.encode(), f"visitor:{raw}".encode(), hashlib.sha256).hexdigest()
+    return ip_hash(request)
+
+
+def latest_hold(key: str, now: datetime | None = None) -> SlotHold | None:
+    """This visitor's live hold even if the page lost its token (reload, new tab)."""
+    now = now or timezone.now()
+    return (
+        SlotHold.objects.filter(ip_hash=key, status=SlotHold.Status.ACTIVE, expires_at__gt=now)
+        .order_by("-updated_at")
+        .first()
+    )
 
 
 def active_holds(field_id, start: datetime, end: datetime, now: datetime | None = None):

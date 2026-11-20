@@ -10,8 +10,10 @@ from apps.applications.admin_views import AdminDashboardView, ApplicationAdminVi
 from apps.audit import views as audit
 from apps.bookings import verification_views as verify
 from apps.bookings import workspace_views as ws
+from apps.common import platform_views as platform
 from apps.common.live import LiveView
 from apps.expenses.views import ExpenseViewSet
+from apps.notifications import usage as sms_usage
 from apps.notifications import views as sms
 from apps.subscriptions import admin_tools as subs_admin
 from apps.subscriptions import views as subs
@@ -47,6 +49,7 @@ public_urls = [
     path("turfs/<slug:slug>/qr.svg", public.TurfQRCodeView.as_view()),
     path("bookings/lookup/", public.PublicBookingLookupView.as_view()),
     path("applications/", public.PublicApplicationView.as_view()),
+    path("terms/", platform.PublicTermsView.as_view()),
 ]
 
 auth_urls = [
@@ -74,9 +77,17 @@ admin_urls = [
     path("turfs/<uuid:pk>/end-subscription/", subs_admin.AdminEndSubscriptionView.as_view()),
     path("subscriptions/", subs_admin.AdminSubscriptionsView.as_view()),
     path("health/", subs_admin.AdminHealthView.as_view()),
+    path("api-config/", platform.AdminApiConfigView.as_view()),
+    path("api-config/youtube/", platform.AdminYoutubeView.as_view()),
+    path("api-config/bulksmsbd/", platform.AdminBulkSmsView.as_view()),
+    path("api-config/booking/", platform.AdminBookingPolicyView.as_view()),
+    path("terms/", platform.AdminTermsView.as_view()),
+    path("terms/publish/", platform.AdminTermsPublishView.as_view()),
+    path("terms/switch/", platform.AdminTermsSwitchView.as_view()),
     path("audit/", audit.AdminAuditView.as_view()),
     path("sms/", sms.AdminSmsOverviewView.as_view()),
     path("sms/messages/", sms.AdminSmsMessagesView.as_view()),
+    path("sms/usage/", sms_usage.AdminSmsUsageView.as_view()),
     path("sms/messages/<uuid:pk>/retry/", sms.AdminSmsRetryView.as_view()),
     path("sms/test/", sms.AdminSmsTestView.as_view()),
     path("sms/templates/", sms.AdminSmsTemplatesView.as_view()),
@@ -100,7 +111,6 @@ workspace_urls = [
     path("price-categories/", slots.PriceCategoriesView.as_view()),
     path("design/", design.DesignView.as_view()),
     path("design/publish/", design.DesignPublishView.as_view()),
-    path("design/video/", design.DesignVideoView.as_view()),
     path("settings/", setup.SettingsView.as_view()),
     path("profile-picture/", setup.ProfilePictureView.as_view()),
     path("booking-page/qr.<str:kind>", setup.BookingQRView.as_view()),
@@ -109,6 +119,7 @@ workspace_urls = [
     path("activity/", audit.WorkspaceActivityView.as_view()),
     path("sms/", sms.WorkspaceSmsView.as_view()),
     path("sms/settings/", sms.WorkspaceSmsSettingsView.as_view()),
+    path("sms/usage/", sms_usage.WorkspaceSmsUsageView.as_view()),
     path("subscription/", subs.SubscriptionOverviewView.as_view()),
     path("subscription/order/", subs.SubscriptionOrderView.as_view()),
     path("subscription/invoices/<uuid:pk>/manual-payment/", subs.InvoiceManualPaymentView.as_view()),

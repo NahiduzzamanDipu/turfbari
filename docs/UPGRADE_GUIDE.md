@@ -136,3 +136,61 @@ Migrations are additive, so older code runs against the newer schema; only rever
   every read, so slots are never stuck; only the *Expired* label and reminder SMS wait for the tick.
 - Email reset codes and owner reminder emails go only to your own address until a domain is verified in Resend.
 - The 10-minute slot-selection hold is unchanged; customers who take longer to pay in bKash must re-select.
+
+---
+
+# Version 2 updates
+
+## What changed
+- **Global "বুকিং করার নিয়ম" video** — one YouTube video set by the Super Admin (Admin → **API** → YouTube) shows next to
+  "Book a slot · বুক করুন" on every turf page and opens in a popup (youtube-nocookie, no autoplay, stops on close).
+  Owners can no longer set a video (the per-turf field was removed).
+- **Admin → API**: YouTube card (paste, preview, save, change, remove); BulkSMSBD card (API key saved **encrypted**
+  with Fernet, shown only masked; sender ID; connection test with balance; status); customer booking limit.
+  A key saved here overrides `BULKSMSBD_API_KEY`. Removing it falls back to the environment key.
+- **Admin → Terms & Rules**: versioned Terms & Conditions + Booking Rules (Bengali/English, simple safe formatting,
+  preview, save draft, publish, on/off). Public page `/terms`; "Terms & Conditions" link on every booking page;
+  required checkbox *"আমি Terms & Conditions এবং Booking Rules & Regulations পড়েছি এবং সম্মত হয়েছি।"* checked on the
+  server. Each booking stores `terms_version` + `terms_agreed_at`; publishing a new version never changes old bookings,
+  and a form opened before an update is asked to accept the new version.
+- **SMS usage**: every provider call is an `SmsAttempt`; usage counts logical messages (retries once). Messages are
+  `tenant` (customer SMS) or `platform` (plan notices, sign-in codes, tests) — platform ones never count as a turf's
+  usage or limit. Owner: usage section on SMS page + dashboard line. Admin → **SMS usage**: date/status/turf filters,
+  per-turf table with attempts and a high-usage flag (≥ 3× typical, min 20), per-account log, CSV export.
+- **Booking drafts & duplicates**: the browser keeps a random visitor id and a draft (field, day, hold token,
+  idempotency key — no names/phones/payment data) in localStorage for 30 min. Holds are keyed by that id (IP only as a
+  fallback), so a reload or new tab gets its own selection back and neighbours on one Wi-Fi are told apart. A repeated
+  submit with the same `Idempotency-Key` returns the same booking. "Already submitted" is shown after a request.
+- **Customer limit**: a mobile number can hold at most **2** upcoming slots across all turfs (configurable). Pending
+  requests count; past, expired, rejected and cancelled don't. Enforced under a per-phone row lock.
+- **Online-booking message fix** — root cause: the v1 bKash migration left `bkash_number` empty on every existing turf
+  and the page treated "no bKash number" as "online booking off". Now only the owner's switch decides; until an owner
+  sets a bKash number, customers are asked to Send Money to **that turf's own registered mobile**.
+
+## Performance (measured locally, same data)
+| | Before | After |
+|---|---|---|
+| Availability API | 12 queries, ~17 ms | 7 queries, ~12 ms |
+| Turf page API | 7 queries, ~15 ms | 7 queries, ~14 ms |
+| JS loaded by a turf page (gzip) | 186 kB | 140 kB |
+| Slot list refresh | every 5 s | every 8 s (paused in background tabs) |
+
+Turf configuration (hours, custom slots, price rules, categories) is cached and dropped on every change; bookings,
+holds and maintenance are never cached. Production (remote Postgres) gains more, since each query is a round trip.
+
+## Migrations
+`common.0001_initial` (PlatformSettings, TermsVersion, CustomerLock), `bookings.0005` (slot_count, idempotency_key,
+terms_version, terms_agreed_at), `notifications.0002`/`0003` (encrypted key, scope, provider_ref, SmsAttempt; old
+platform messages re-labelled), `turfs.0011` (per-turf video removed). New dependency: `cryptography`.
+
+## New endpoints
+Public `GET /api/public/terms/`; booking request takes `agree_terms`, `terms_version`, header `Idempotency-Key`;
+public calls accept `X-Visitor-Id`. Admin: `api-config/`, `api-config/youtube/`, `api-config/bulksmsbd/` (PUT save,
+POST test), `api-config/booking/`, `terms/`, `terms/publish/` (POST/DELETE), `terms/switch/`, `sms/usage/`
+(`?from&to&status&q`, `&export=csv`); `sms/messages/` adds `from`, `to`, `scope`. Workspace: `sms/usage/`.
+Removed: `workspace/design/video/`.
+
+## After deploying
+1. Admin → **API**: paste the booking-guide video; optionally save the BulkSMSBD key and sender ID there.
+2. Admin → **Terms & Rules**: write and publish the first version (until then no checkbox is shown).
+3. Tell owners to confirm their bKash number in Settings (the turf's own mobile is used until they do).

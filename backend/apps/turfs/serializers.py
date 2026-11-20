@@ -160,7 +160,29 @@ class PublicTurfDetailSerializer(PublicTurfCardSerializer):
             "payment",
             "price_categories",
             "youtube_video_id",
+            "terms_version",
+            "max_slots_per_customer",
         ]
+
+    youtube_video_id = serializers.SerializerMethodField()
+    terms_version = serializers.SerializerMethodField()
+    max_slots_per_customer = serializers.SerializerMethodField()
+
+    def get_youtube_video_id(self, obj):
+        from apps.common.models import PlatformSettings
+
+        return PlatformSettings.load().youtube_video_id or None  # one global video for every turf
+
+    def get_terms_version(self, obj):
+        from apps.common.models import TermsVersion
+
+        current = TermsVersion.current()
+        return {"id": current.pk, "version": current.version} if current else None
+
+    def get_max_slots_per_customer(self, obj):
+        from apps.common.models import PlatformSettings
+
+        return PlatformSettings.load().max_slots_per_customer
 
     payment = serializers.SerializerMethodField()
     price_categories = serializers.SerializerMethodField()
@@ -174,9 +196,11 @@ class PublicTurfDetailSerializer(PublicTurfCardSerializer):
         """bKash details for the booking form. Online booking needs a bKash number to pay to."""
         from apps.bookings.payments import MIN_ADVANCE
 
+        number = obj.payment_bkash_number
         return {
-            "accepts_online": bool(obj.public_booking_enabled and obj.bkash_number),
-            "bkash_number": obj.bkash_number or None,
+            # Only the owner's "Accept online booking requests" switch decides this.
+            "accepts_online": bool(obj.public_booking_enabled and number),
+            "bkash_number": number or None,
             "advance_amount": str(max(obj.advance_amount or MIN_ADVANCE, MIN_ADVANCE)),
             "min_advance": str(MIN_ADVANCE),
             "hold_minutes": obj.payment_hold_minutes,

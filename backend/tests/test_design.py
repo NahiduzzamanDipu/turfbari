@@ -73,18 +73,6 @@ def test_unreadable_or_unknown_choices_are_refused():
         assert client.put("/api/workspace/design/", {**THEME, **bad}, format="json").status_code == 400, bad
 
 
-def test_video_is_validated_shown_publicly_and_removable_by_the_owner_only():
-    turf, owner = make_turf()
-    client = client_for(owner)
-    bad = client.put("/api/workspace/design/video/", {"url": "https://vimeo.com/123"}, format="json")
-    assert bad.status_code == 400
-    ok = client.put("/api/workspace/design/video/", {"url": "https://youtu.be/dQw4w9WgXcQ"}, format="json")
-    assert ok.json()["youtube_video_id"] == "dQw4w9WgXcQ"
-    assert APIClient().get(f"/api/public/turfs/{turf.slug}/").json()["youtube_video_id"] == "dQw4w9WgXcQ"
-    client.put("/api/workspace/design/video/", {"url": ""}, format="json")
-    assert APIClient().get(f"/api/public/turfs/{turf.slug}/").json()["youtube_video_id"] == ""
-
-
 def test_themes_stay_inside_their_own_turf():
     turf_a, owner_a = make_turf()
     turf_b, _ = make_turf("Beta Turf", "beta@example.com")

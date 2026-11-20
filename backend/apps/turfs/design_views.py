@@ -1,4 +1,4 @@
-"""Public page design: theme (draft -> preview -> publish) and the YouTube video popup.
+"""Public page design: theme (draft -> preview -> publish). (The booking-guide video is global: Admin -> API.)
 
 The theme is limited to safe, readable choices: preset palettes, a main colour that keeps white button
 text readable, a secondary colour (text colour picked automatically), a light background style, a
@@ -108,7 +108,6 @@ class DesignView(APIView):
         return {
             "published": published_theme(turf),
             "draft": turf.theme_draft or None,
-            "youtube_video_id": turf.youtube_video_id or None,
             "slug": turf.slug,
         }
 
@@ -158,41 +157,4 @@ class DesignPublishView(APIView):
         turf = request.tenant
         turf.theme_draft = None
         turf.save(update_fields=["theme_draft", "updated_at"])
-        return Response(DesignView.payload(turf))
-
-
-class VideoSerializer(serializers.Serializer):
-    url = serializers.CharField(max_length=300, allow_blank=True)
-
-
-class DesignVideoView(APIView):
-    permission_classes = [IsTenantMember]
-    owner_only = True
-
-    @extend_schema(tags=["workspace"], request=VideoSerializer)
-    def put(self, request):
-        data = VideoSerializer(data=request.data)
-        data.is_valid(raise_exception=True)
-        url = data.validated_data["url"].strip()
-        turf = request.tenant
-        if url:
-            video = youtube_id(url)
-            if video is None:
-                raise serializers.ValidationError(
-                    {
-                        "url": [
-                            "Paste a YouTube video link, e.g. https://youtu.be/… or https://www.youtube.com/watch?v=…"
-                        ]
-                    }
-                )
-        else:
-            video = ""
-        turf.youtube_video_id = video
-        turf.save(update_fields=["youtube_video_id", "updated_at"])
-        record(
-            "settings.video",
-            "Set the booking page video" if video else "Removed the booking page video",
-            category=Category.SETTINGS,
-            request=request,
-        )
         return Response(DesignView.payload(turf))

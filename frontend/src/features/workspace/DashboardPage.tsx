@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge, EmptyState, ErrorState, STATUS_TONE } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCan } from "@/features/auth/auth";
 import { api } from "@/lib/api";
 import { fmtDay, fmtRange } from "@/lib/format";
 import type { Dashboard } from "@/lib/types";
@@ -53,6 +54,7 @@ export function DashboardPage() {
           Your booking page isn't published yet, so its link and QR code don't open. <strong className="text-primary">Publish it in Settings →</strong>
         </Link>
       )}
+      <DashboardSmsLine />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Today's bookings" icon={<CalendarDays />} value={d.today.bookings} hint={`${d.today.hours_booked} hours booked`} />
         <StatCard label="Collected today" icon={<Coins />} value={formatBDT(d.today.revenue)} />
@@ -111,5 +113,29 @@ export function DashboardPage() {
         </Card>
       </div>
     </>
+  );
+}
+
+/** One line of this turf's SMS usage (owners and managers allowed to see SMS). */
+function DashboardSmsLine() {
+  const can = useCan("view_sms");
+  const usage = useQuery({
+    queryKey: ["ws", "sms", "usage"],
+    queryFn: () =>
+      api<{ this_month: { sent: number; failed: number; pending: number }; all_time: { sent: number } }>("/workspace/sms/usage/"),
+    enabled: can,
+  });
+  if (!can || !usage.data) return null;
+  const m = usage.data.this_month;
+  return (
+    <Link to="/workspace/sms" className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm hover:bg-secondary">
+      <span>
+        SMS this month: <strong className="tabular">{m.sent}</strong> sent
+        {m.failed > 0 && <span className="text-destructive"> · {m.failed} failed</span>}
+        {m.pending > 0 && <span className="text-muted-foreground"> · {m.pending} waiting</span>}
+        <span className="text-muted-foreground"> · {usage.data.all_time.sent} all time</span>
+      </span>
+      <span className="font-semibold text-primary">SMS usage →</span>
+    </Link>
   );
 }

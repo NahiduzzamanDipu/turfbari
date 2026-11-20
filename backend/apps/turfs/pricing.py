@@ -77,7 +77,9 @@ def quote(
     if end <= start:
         raise ValueError("Booking end must be after start.")
     if rules is None:
-        rules = list(PricingRule.objects.filter(turf_id=field.turf_id, is_active=True))
+        from .schedule import turf_rules
+
+        rules = turf_rules(field.turf_id)
     if categories is None:
         categories = turf_categories(field.turf_id)
     cache = {} if cache is None else cache

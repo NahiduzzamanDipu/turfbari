@@ -79,7 +79,6 @@ class Turf(BaseModel):
         default=dict, blank=True
     )  # published: secondary, surface, buttons, font
     theme_draft = models.JSONField(null=True, blank=True)  # saved but not yet published (preview only)
-    youtube_video_id = models.CharField(max_length=11, blank=True)  # validated 11-char ID, never a raw URL
     # WGS84 coordinates, used for "near me" search and the map pin. Optional.
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
@@ -136,6 +135,19 @@ class Turf(BaseModel):
     @property
     def is_operational(self) -> bool:
         return self.status == self.Status.ACTIVE
+
+    @property
+    def payment_bkash_number(self) -> str:
+        """Where customers send the advance: the owner's bKash number, or (until they set one) the
+        turf's own registered mobile — never anyone else's number."""
+        import re
+
+        if self.bkash_number:
+            return self.bkash_number
+        digits = re.sub(r"\D", "", self.owner_phone or self.public_phone or "")
+        if digits.startswith("880"):
+            digits = digits[2:]
+        return digits if re.fullmatch(r"01[3-9]\d{8}", digits) else ""
 
 
 # What an owner can let a manager do, beyond daily operations (bookings, customers, maintenance).

@@ -23,6 +23,12 @@ class SmsKind(models.TextChoices):
 
 
 class SmsMessage(BaseModel):
+    """One logical message (what usage is counted on). Each provider call is an SmsAttempt."""
+
+    class Scope(models.TextChoices):
+        TENANT = "tenant", "Turf (customer SMS)"
+        PLATFORM = "platform", "TurfBari (plan notices, sign-in codes)"
+
     class Status(models.TextChoices):
         QUEUED = "queued", "Queued"
         SENDING = "sending", "Sending"
@@ -37,6 +43,8 @@ class SmsMessage(BaseModel):
     to = models.CharField(max_length=20)  # 8801XXXXXXXXX, the format the provider wants
     body = models.TextField()
     kind = models.CharField(max_length=30, choices=SmsKind.choices)
+    scope = models.CharField(max_length=10, choices=Scope.choices, default=Scope.TENANT, db_index=True)
+    provider_ref = models.CharField(max_length=64, blank=True)  # BulkSMSBD message id, when it returns one
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.QUEUED, db_index=True)
     dedupe_key = models.CharField(max_length=120, unique=True, null=True, blank=True)
     segments = models.PositiveSmallIntegerField(default=1)
@@ -68,6 +76,25 @@ class SmsMessage(BaseModel):
         return f"{self.to[:-6]}***{self.to[-3:]}" if len(self.to) > 8 else self.to
 
 
+class SmsAttempt(models.Model):
+    """One call to the provider for a message. Retries add attempts; usage counts messages, not attempts."""
+
+    message = models.ForeignKey(SmsMessage, on_delete=models.CASCADE, related_name="attempt_log")
+    number = models.PositiveSmallIntegerField()
+    ok = models.BooleanField(default=False)
+    provider_code = models.CharField(max_length=20, blank=True)
+    provider_message = models.CharField(max_length=255, blank=True)
+    provider_ref = models.CharField(max_length=64, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["message", "number"]
+        constraints = [models.UniqueConstraint(fields=["message", "number"], name="uniq_sms_attempt_number")]
+
+    def __str__(self) -> str:
+        return f"Attempt {self.number} for {self.message_id}"
+
+
 class SmsTemplate(models.Model):
     """Platform-wide wording for each automatic SMS. Placeholders like {turf} are filled per message."""
 
@@ -88,6 +115,8 @@ class SmsConfig(models.Model):
 
     enabled = models.BooleanField(default=True)
     sender_id = models.CharField(max_length=20, blank=True, help_text="Blank = BULKSMSBD_SENDER_ID")
+    # Saved from Admin -> API, Fernet-encrypted. Overrides BULKSMSBD_API_KEY; never sent to browsers.
+    api_key_encrypted = models.TextField(blank=True)
     per_turf_monthly_limit = models.PositiveIntegerField(default=0, help_text="0 = no limit")
     subscription_reminder_days = models.JSONField(default=list, blank=True)  # e.g. [7, 3, 1]
     updated_at = models.DateTimeField(auto_now=True)

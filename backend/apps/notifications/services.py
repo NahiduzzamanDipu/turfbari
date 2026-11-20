@@ -18,7 +18,7 @@ from django.conf import settings
 from django.db import IntegrityError, close_old_connections, transaction
 from django.utils import timezone
 
-from .models import SmsConfig, SmsKind, SmsMessage, SmsTemplate
+from .models import SmsAttempt, SmsConfig, SmsKind, SmsMessage, SmsTemplate
 from .providers import bd_msisdn, get_provider, segment_count
 
 log = logging.getLogger(__name__)
@@ -94,10 +94,23 @@ def sender_id() -> str:
     return SmsConfig.load().sender_id or settings.BULKSMSBD_SENDER_ID
 
 
+# Sent on TurfBari's behalf (plan notices, sign-in codes, admin tests): never counted as a turf's usage.
+PLATFORM_KINDS = {
+    SmsKind.SUBSCRIPTION_REMINDER,
+    SmsKind.SUBSCRIPTION_EXPIRED,
+    SmsKind.PASSWORD_RESET,
+    SmsKind.TEST,
+}
+
+
 def month_usage(turf) -> int:
+    """Logical messages (not attempts) this turf sent this month — what the monthly limit counts."""
     start = timezone.localtime().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     return SmsMessage.objects.filter(
-        turf=turf, created_at__gte=start, status__in=[SmsMessage.Status.SENT, SmsMessage.Status.SENDING]
+        turf=turf,
+        scope=SmsMessage.Scope.TENANT,
+        created_at__gte=start,
+        status__in=[SmsMessage.Status.SENT, SmsMessage.Status.SENDING],
     ).count()
 
 
@@ -127,6 +140,7 @@ def queue_sms(
         status, reason = SmsMessage.Status.SKIPPED, "SMS isn't connected yet (no BulkSMSBD API key)"
     elif (
         turf is not None
+        and kind not in PLATFORM_KINDS
         and config.per_turf_monthly_limit
         and month_usage(turf) >= config.per_turf_monthly_limit
     ):
@@ -138,6 +152,7 @@ def queue_sms(
                 to=msisdn or (to or "")[:20],
                 body=body,
                 kind=kind,
+                scope=SmsMessage.Scope.PLATFORM if kind in PLATFORM_KINDS else SmsMessage.Scope.TENANT,
                 status=status,
                 provider_message=reason,
                 dedupe_key=dedupe_key,
@@ -194,6 +209,16 @@ def deliver(message_id) -> SmsMessage | None:
         message.save(update_fields=["status", "attempts", "updated_at"])
 
     result = get_provider().send(message.to, message.body, sender_id())
+    SmsAttempt.objects.create(
+        message=message,
+        number=message.attempts,
+        ok=result.ok,
+        provider_code=result.code[:20],
+        provider_message=result.message[:255],
+        provider_ref=result.ref,
+    )
+    if result.ref:
+        message.provider_ref = result.ref
 
     message.provider_code, message.provider_message = result.code[:20], result.message[:255]
     if result.ok:
@@ -216,6 +241,7 @@ def deliver(message_id) -> SmsMessage | None:
             "next_attempt_at",
             "provider_code",
             "provider_message",
+            "provider_ref",
             "updated_at",
         ]
     )

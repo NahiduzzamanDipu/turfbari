@@ -36,7 +36,6 @@ export function TurfDetailPage() {
     queryFn: () => api<TurfDetail>(`/public/turfs/${slug}/`),
   });
   const [showQR, setShowQR] = useState(false);
-  const [showVideo, setShowVideo] = useState(false);
 
   if (turf.isPending) {
     return (
@@ -78,16 +77,6 @@ export function TurfDetailPage() {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
         <div className="absolute right-4 top-4 flex gap-2">
-        {t.youtube_video_id && (
-          <button
-            type="button"
-            onClick={() => setShowVideo(true)}
-            aria-label={`Watch a video of ${t.name}`}
-            className="inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-sm font-semibold text-neutral-900 shadow transition hover:scale-105"
-          >
-            <YouTubeIcon className="h-5 w-auto" /> Video
-          </button>
-        )}
         {t.map_link && (
           <a
             href={t.map_link}
@@ -304,46 +293,7 @@ export function TurfDetailPage() {
           </Button>
         </div>
       </Dialog>
-      {showVideo && t.youtube_video_id && (
-        <VideoDialog videoId={t.youtube_video_id} title={t.name} onClose={() => setShowVideo(false)} />
-      )}
     </div>
     </div>
-  );
-}
-
-/** The official YouTube "play" mark (red rounded rectangle with a white triangle). */
-function YouTubeIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 28 20" className={className} aria-hidden>
-      <rect width="28" height="20" rx="5" fill="#FF0000" />
-      <path d="M11.2 5.8v8.4l7.3-4.2-7.3-4.2Z" fill="#fff" />
-    </svg>
-  );
-}
-
-/**
- * Plays the turf's video from youtube-nocookie.com. Only a validated 11-character ID ever reaches the
- * URL. Nothing autoplays; closing unmounts the iframe, which stops playback.
- */
-function VideoDialog({ videoId, title, onClose }: { videoId: string; title: string; onClose: () => void }) {
-  const safeId = /^[A-Za-z0-9_-]{11}$/.test(videoId) ? videoId : null;
-  return (
-    <Dialog open onClose={onClose} title={`${title} — video`} wide>
-      {safeId ? (
-        <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
-          <iframe
-            className="size-full"
-            src={`https://www.youtube-nocookie.com/embed/${safeId}?rel=0&modestbranding=1`}
-            title={`${title} video`}
-            allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-            referrerPolicy="strict-origin-when-cross-origin"
-            allowFullScreen
-          />
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">This video can't be played.</p>
-      )}
-    </Dialog>
   );
 }

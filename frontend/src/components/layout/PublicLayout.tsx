@@ -85,7 +85,12 @@ export function PublicLayout() {
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <Logo className="[&_span]:text-lg" />
           <p>Turf management and booking pages for football turfs in Bangladesh.</p>
-          <p>© {new Date().getFullYear()} TurfBari</p>
+          <p>
+            <Link to="/terms" className="hover:text-foreground hover:underline">
+              Terms &amp; Conditions
+            </Link>{" "}
+            · © {new Date().getFullYear()} TurfBari
+          </p>
         </div>
       </footer>
     </div>

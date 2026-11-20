@@ -51,6 +51,7 @@ class SendResult:
     code: str
     message: str
     retryable: bool
+    ref: str = ""  # provider's message id, when it returns one
 
 
 def describe(code: str) -> tuple[str, bool]:
@@ -140,6 +141,18 @@ class BulkSMSBDProvider(BaseProvider):
             return response.status, response.read().decode("utf-8", "replace")
 
     @staticmethod
+    def _ref(text: str) -> str:
+        try:
+            payload = json.loads(text)
+        except ValueError:
+            return ""
+        if isinstance(payload, dict):
+            for key in ("message_id", "messageid", "msg_id", "id"):
+                if payload.get(key):
+                    return str(payload[key])[:64]
+        return ""
+
+    @staticmethod
     def _code(text: str) -> tuple[str, str]:
         """BulkSMSBD answers JSON like {"response_code": 202, ...} (some accounts get plain text)."""
         try:
@@ -180,7 +193,7 @@ class BulkSMSBDProvider(BaseProvider):
             return SendResult(False, "network", f"Couldn't reach BulkSMSBD ({exc.reason})"[:200], True)
         code, detail = self._code(text)
         if code == "202":
-            return SendResult(True, code, detail or "Accepted by BulkSMSBD", False)
+            return SendResult(True, code, detail or "Accepted by BulkSMSBD", False, self._ref(text))
         meaning, retryable = describe(code or "unknown")
         return SendResult(
             False, code or "unknown", (f"{meaning}: {detail}" if detail else meaning)[:255], retryable
@@ -206,12 +219,27 @@ class BulkSMSBDProvider(BaseProvider):
             return None
 
 
+def api_key() -> tuple[str, str]:
+    """(key, source): the admin-saved key (encrypted in the DB) wins over BULKSMSBD_API_KEY."""
+    from apps.common.crypto import decrypt
+
+    from .models import SmsConfig
+
+    saved = decrypt(SmsConfig.load().api_key_encrypted)
+    if saved:
+        return saved, "admin"
+    if settings.BULKSMSBD_API_KEY:
+        return settings.BULKSMSBD_API_KEY, "environment"
+    return "", "none"
+
+
 def get_provider() -> BaseProvider:
     backend = settings.SMS_BACKEND
     if backend == "memory":
         return MemoryProvider()
     if backend == "console":
         return ConsoleProvider()
-    if backend == "bulksmsbd" and settings.BULKSMSBD_API_KEY:
-        return BulkSMSBDProvider(settings.BULKSMSBD_API_KEY, settings.BULKSMSBD_BASE_URL)
+    key, _ = api_key()
+    if backend == "bulksmsbd" and key:
+        return BulkSMSBDProvider(key, settings.BULKSMSBD_BASE_URL)
     return DisabledProvider()

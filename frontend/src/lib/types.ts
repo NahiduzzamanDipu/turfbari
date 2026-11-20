@@ -94,7 +94,10 @@ export interface PublicPhoto {
 export interface TurfDetail extends TurfCard {
   photos: PublicPhoto[];
   theme: PageTheme;
+  /** The platform-wide "how to book" video (same on every turf page). */
   youtube_video_id: string | null;
+  terms_version: { id: number; version: number } | null;
+  max_slots_per_customer: number;
   description: string;
   maps_url: string;
   public_phone: string;

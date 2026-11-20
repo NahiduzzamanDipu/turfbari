@@ -5,6 +5,7 @@ There is no public turf directory: a turf page is reached only by its link or QR
 
 import io
 import logging
+import re
 import uuid
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -28,7 +29,7 @@ from rest_framework.views import APIView
 from apps.applications.models import TurfApplication
 from apps.audit.services import Category, booking_label, record
 from apps.bookings import holds, payments
-from apps.bookings.models import Booking, MaintenanceBlock
+from apps.bookings.models import Booking
 from apps.bookings.phone import normalize_bd_phone
 from apps.bookings.services import availability, get_or_create_customer, opening_window, reserve_slot
 from apps.locations.models import Area, District, Division
@@ -129,10 +130,11 @@ class PublicAvailabilityView(PublicAPIView):
             field = None
         if field is None:
             raise NotFound("Field not found.")
-        slots = availability(field, day, include_price=turf.show_pricing)
-        ip = holds.ip_hash(request)
-        mine = holds.find_hold(request.headers.get("X-Hold-Token"), ip)
-        _add_live_states(field, slots, mine)
+        context: dict = {}
+        slots = availability(field, day, include_price=turf.show_pricing, context=context)
+        ip = holds.visitor_key(request)
+        mine = holds.find_hold(request.headers.get("X-Hold-Token"), ip) or holds.latest_hold(ip)
+        _add_live_states(field, slots, mine, context)
         retry = holds.cooldown_until(ip)
         response = Response(
             {
@@ -157,22 +159,13 @@ def _hold_payload(hold) -> dict:
     }
 
 
-def _add_live_states(field, slots: list[dict], mine) -> None:
-    """state per slot: free | yours | held (someone is booking) | requested | booked | unavailable | past."""
+def _add_live_states(field, slots: list[dict], mine, context: dict) -> None:
+    """state per slot: free | yours | held (someone is booking) | requested | booked | unavailable | past.
+    Reuses the bookings/blocks availability() already read (same request, no second query)."""
     if not slots:
         return
-    first = datetime.fromisoformat(slots[0]["start"])
-    last = datetime.fromisoformat(slots[-1]["end"])
-    bookings = list(
-        Booking.objects.blocking()
-        .filter(field=field, start__lt=last, end__gt=first)
-        .values_list("start", "end", "status")
-    )
-    blocks = list(
-        MaintenanceBlock.objects.filter(field=field, start__lt=last, end__gt=first).values_list(
-            "start", "end"
-        )
-    )
+    first, last = context["first"], context["last"]
+    bookings, blocks = context["bookings"], context["blocks"]
     held = list(holds.active_holds(field.id, first, last).values_list("start", "end", "token"))
     now = timezone.now()
     for slot in slots:
@@ -221,7 +214,12 @@ class PublicHoldView(PublicAPIView):
         _check_public_window(turf, start, end, field)
         try:
             hold = holds.place_hold(
-                turf=turf, field=field, start=start, end=end, ip=holds.ip_hash(request), token=v.get("token")
+                turf=turf,
+                field=field,
+                start=start,
+                end=end,
+                ip=holds.visitor_key(request),
+                token=v.get("token"),
             )
         except holds.HoldRefused as exc:
             return Response(
@@ -240,7 +238,7 @@ class PublicHoldView(PublicAPIView):
     @extend_schema(tags=["public"], request=None)
     def delete(self, request, slug):
         token = request.headers.get("X-Hold-Token") or request.data.get("token", "")
-        holds.release_hold(token, holds.ip_hash(request))
+        holds.release_hold(token, holds.visitor_key(request))
         return Response(status=204)
 
 
@@ -259,6 +257,12 @@ class BookingRequestSerializer(serializers.Serializer):
     payment_amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("1"))
     bkash_sender = serializers.CharField(max_length=20)
     trx_id = serializers.CharField(max_length=30)
+    # Consent to the platform Terms & Booking Rules: the box must be ticked for the *current* version.
+    agree_terms = serializers.BooleanField(default=False)
+    terms_version = serializers.IntegerField(required=False, allow_null=True)
+
+
+IDEMPOTENCY_KEY = re.compile(r"^[A-Za-z0-9-]{16,64}$")
 
 
 class PublicBookingRequestView(PublicAPIView):
@@ -268,13 +272,19 @@ class PublicBookingRequestView(PublicAPIView):
     @extend_schema(tags=["public"], request=BookingRequestSerializer)
     def post(self, request, slug):
         turf = listed_turf(slug)
-        if not turf.public_booking_enabled or not turf.bkash_number:
+        if not turf.public_booking_enabled or not turf.payment_bkash_number:
             raise PermissionDenied("This turf is not taking online bookings. Call the turf to book.")
         data = BookingRequestSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         v = data.validated_data
         if v.get("website"):
             raise ValidationError({"non_field_errors": ["Request rejected."]})
+        # A retried submit (double click, flaky network) with the same key returns the same booking.
+        key = (request.headers.get("Idempotency-Key") or "").strip()
+        key = key if IDEMPOTENCY_KEY.match(key) else None
+        if key and (done := Booking.objects.filter(idempotency_key=key, turf=turf).first()):
+            return Response(_public_booking(done), status=200)
+        terms = payments.check_terms(v["agree_terms"], v.get("terms_version"))
         phone = normalize_bd_phone(v["phone"])
         start, end = v["start"], v["end"]
         field = turf.fields.filter(is_active=True, pk=v["field"]).first()
@@ -282,13 +292,15 @@ class PublicBookingRequestView(PublicAPIView):
             raise NotFound("Field not found.")
         _check_public_window(turf, start, end, field)
         today_start = timezone.make_aware(datetime.combine(timezone.localdate(), datetime.min.time()))
-        recent = Booking.objects.filter(
-            turf=turf, customer__phone=phone, status=Booking.Status.PENDING, created_at__gte=today_start
-        ).count()
+        recent = (
+            Booking.objects.awaiting_review()  # lapsed holds no longer count
+            .filter(turf=turf, customer__phone=phone, created_at__gte=today_start)
+            .count()
+        )
         if recent >= MAX_PENDING_PER_PHONE_PER_DAY:
             raise ValidationError({"phone": ["Too many pending requests for this number today."]})
 
-        ip = holds.ip_hash(request)
+        ip = holds.visitor_key(request)
         with transaction.atomic():
             # Lock the field first (as reserve_slot does) so holds and requests can't interleave.
             TurfField.objects.select_for_update().filter(pk=v["field"], turf=turf).first()
@@ -300,6 +312,8 @@ class PublicBookingRequestView(PublicAPIView):
                 raise ValidationError(
                     {"start": ["Someone else is booking this slot right now. Please choose another."]}
                 )
+            slots = payments.slot_count_for(field, start, end)
+            payments.enforce_customer_limit(phone, slots)
             customer = get_or_create_customer(turf, name=v["name"], phone=phone, email=v.get("email", ""))
             booking = reserve_slot(
                 turf=turf,
@@ -320,6 +334,17 @@ class PublicBookingRequestView(PublicAPIView):
                 trx_id=v["trx_id"],
             )
             payments.attach_submission(booking, payment)
+            booking.slot_count, booking.idempotency_key = slots, key
+            booking.terms_version, booking.terms_agreed_at = terms, timezone.now() if terms else None
+            booking.save(
+                update_fields=[
+                    "slot_count",
+                    "idempotency_key",
+                    "terms_version",
+                    "terms_agreed_at",
+                    "updated_at",
+                ]
+            )
             # Every hold of this visitor is done with: the request went through.
             holds.SlotHold.objects.filter(ip_hash=ip, status=holds.SlotHold.Status.ACTIVE).update(
                 status=holds.SlotHold.Status.CONVERTED, updated_at=timezone.now()

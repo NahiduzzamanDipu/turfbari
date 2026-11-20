@@ -93,6 +93,14 @@ class Booking(BaseModel):
     confirmed_at = models.DateTimeField(null=True, blank=True)
     # Online requests keep the slot only until the owner verifies the bKash payment or this passes.
     hold_expires_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    # Public requests: how many offered slots this booking covers (the per-customer limit counts these),
+    # the client's idempotency key (a retried submit returns the same booking) and the agreed terms.
+    slot_count = models.PositiveSmallIntegerField(default=1)
+    idempotency_key = models.CharField(max_length=64, unique=True, null=True, blank=True)
+    terms_version = models.ForeignKey(
+        "common.TermsVersion", on_delete=models.PROTECT, null=True, blank=True, related_name="bookings"
+    )
+    terms_agreed_at = models.DateTimeField(null=True, blank=True)
 
     objects = BookingQuerySet.as_manager()
 

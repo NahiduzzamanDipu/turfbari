@@ -6,6 +6,7 @@ import {
   CalendarPlus,
   CalendarRange,
   CreditCard,
+  FileText,
   Clock,
   Grid2x2,
   HeartPulse,
@@ -13,6 +14,7 @@ import {
   Inbox,
   LayoutDashboard,
   Palette,
+  PlugZap,
   MessageSquareText,
   Receipt,
   Settings,
@@ -28,14 +30,8 @@ import { createBrowserRouter, Navigate, useParams } from "react-router";
 import { AppShell, type NavItem } from "@/components/layout/AppShell";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { RequireRole } from "@/features/auth/auth";
-import { LoginPage } from "@/features/auth/LoginPage";
-import { ForgotPasswordPage, SetPasswordPage } from "@/features/auth/PasswordPages";
-import { BookingStatusPage } from "@/features/public/BookingStatusPage";
-import { HomePage } from "@/features/public/HomePage";
-import { RegisterTurfPage } from "@/features/public/RegisterTurfPage";
 import { TurfDetailPage } from "@/features/public/TurfDetailPage";
 import { NotFoundPage } from "@/features/system/NotFoundPage";
-import { SystemStatusPage } from "@/features/system/SystemStatusPage";
 
 /**
  * Signed-in screens load on demand, so the public pages (what players open) download much less.
@@ -62,12 +58,14 @@ function TurfAlias() {
   return <Navigate to={`/turfs/${slug}`} replace />;
 }
 
+const passwordPages = () => import("@/features/auth/PasswordPages");
 const adminPages = () => import("@/features/admin/AdminPages");
 const billingPages = () => import("@/features/admin/BillingPages");
 const activityPages = () => import("@/features/audit/ActivityLog");
 const accountPage = () => import("@/features/auth/AccountPage");
 const operationsPages = () => import("@/features/workspace/OperationsPages");
 const setupPages = () => import("@/features/workspace/SetupPages");
+const configPages = () => import("@/features/admin/ConfigPages");
 const platformPages = () => import("@/features/admin/PlatformPages");
 const smsPages = () => import("@/features/sms/SmsPages");
 
@@ -80,6 +78,9 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/admin/promo-codes", label: "Promo codes", icon: <TicketPercent /> },
   { to: "/admin/accounts", label: "Accounts", icon: <UserCog /> },
   { to: "/admin/sms", label: "SMS", icon: <MessageSquareText /> },
+  { to: "/admin/sms-usage", label: "SMS usage", icon: <BarChart3 /> },
+  { to: "/admin/api", label: "API", icon: <PlugZap /> },
+  { to: "/admin/terms", label: "Terms & Rules", icon: <FileText /> },
   { to: "/admin/health", label: "Health", icon: <HeartPulse /> },
   { to: "/admin/audit", label: "Audit log", icon: <History /> },
 ];
@@ -109,19 +110,20 @@ export const router = createBrowserRouter([
   {
     element: <PublicLayout />,
     children: [
-      { path: "/", element: <HomePage /> },
+      { path: "/", element: page(() => import("@/features/public/HomePage"), "HomePage") },
       // The public turf directory was retired: old links land on the home page.
       { path: "/explore", element: <Navigate to="/" replace /> },
       { path: "/turf/:slug", element: <TurfAlias /> },
       { path: "/turfs/:slug", element: <TurfDetailPage /> },
-      { path: "/register-turf", element: <RegisterTurfPage /> },
-      { path: "/booking-status", element: <BookingStatusPage /> },
-      { path: "/status", element: <SystemStatusPage /> },
+      { path: "/register-turf", element: page(() => import("@/features/public/RegisterTurfPage"), "RegisterTurfPage") },
+      { path: "/booking-status", element: page(() => import("@/features/public/BookingStatusPage"), "BookingStatusPage") },
+      { path: "/status", element: page(() => import("@/features/system/SystemStatusPage"), "SystemStatusPage") },
+      { path: "/terms", element: page(() => import("@/features/public/TermsPage"), "TermsPage") },
     ],
   },
-  { path: "/login", element: <LoginPage /> },
-  { path: "/forgot-password", element: <ForgotPasswordPage /> },
-  { path: "/set-password", element: <SetPasswordPage /> },
+  { path: "/login", element: page(() => import("@/features/auth/LoginPage"), "LoginPage") },
+  { path: "/forgot-password", element: page(passwordPages, "ForgotPasswordPage") },
+  { path: "/set-password", element: page(passwordPages, "SetPasswordPage") },
   {
     path: "/admin",
     element: (
@@ -137,6 +139,9 @@ export const router = createBrowserRouter([
       { path: "promo-codes", element: page(() => import("@/features/admin/PromoCodesPage"), "AdminPromoCodesPage") },
       { path: "accounts", element: page(() => import("@/features/admin/AccountsPage"), "AdminAccountsPage") },
       { path: "sms", element: page(smsPages, "AdminSmsPage") },
+      { path: "sms-usage", element: page(smsPages, "AdminSmsUsagePage") },
+      { path: "api", element: page(configPages, "AdminApiPage") },
+      { path: "terms", element: page(configPages, "AdminTermsPage") },
       { path: "subscriptions", element: page(platformPages, "AdminSubscriptionsPage") },
       { path: "health", element: page(platformPages, "AdminHealthPage") },
       { path: "audit", element: page(activityPages, "AdminAuditPage") },

@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import {
   ChevronLeft,
   ChevronRight,
+  Download,
   ExternalLink,
   Loader2,
   MessageSquareText,
@@ -96,7 +97,10 @@ function MessageLog({
   const [page, setPage] = useState(1);
   const list = useQuery({
     queryKey: ["sms", base, status, kind, q, page],
-    queryFn: () => api<Paginated<SmsMessage>>(`${base}?${new URLSearchParams({ status, kind, q, page: String(page) })}`),
+    queryFn: () =>
+      api<Paginated<SmsMessage>>(
+        `${base}${base.includes("?") ? "" : "?"}${new URLSearchParams({ status, kind, q, page: String(page) })}`,
+      ),
     placeholderData: keepPreviousData,
   });
   const reset = () => setPage(1);
@@ -299,6 +303,7 @@ export function WorkspaceSmsPage() {
               {!isOwner && <p className="mt-3 text-xs text-muted-foreground">Only the turf owner can change these.</p>}
             </CardContent>
           </Card>
+          <SmsUsageCard />
           <MessageLog base="/workspace/sms/" />
         </div>
       )}
@@ -602,3 +607,240 @@ function TemplatesCard() {
   );
 }
 
+
+// ------------------------------------------------------------------ usage (counted by TurfBari)
+interface UsageSummary {
+  total: number;
+  sent: number;
+  failed: number;
+  pending: number;
+  not_sent: number;
+  parts: number;
+  attempts: number;
+  booking_confirmations: number;
+  rejections_cancellations: number;
+}
+interface WorkspaceUsage {
+  all_time: UsageSummary;
+  this_month: UsageSummary & { since: string };
+  history: { month: string; sent: number; failed: number; parts: number }[];
+  plan_notices_from_turfbari: number;
+  first_sms_at: string | null;
+  source: string;
+}
+
+const monthLabel = (ym: string) => new Date(`${ym}-01T00:00:00`).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+
+/** Owner / manager view of this turf's own SMS usage. */
+export function SmsUsageCard() {
+  const usage = useQuery({ queryKey: ["ws", "sms", "usage"], queryFn: () => api<WorkspaceUsage>("/workspace/sms/usage/") });
+  const u = usage.data;
+  const max = Math.max(1, ...(u?.history.map((h) => h.sent + h.failed) ?? [1]));
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>SMS usage</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        {usage.isPending && <Skeleton className="h-32" />}
+        {usage.isError && <ErrorState error={usage.error} onRetry={() => usage.refetch()} />}
+        {u && (
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <Stat label="Sent (all time)" value={u.all_time.sent} hint={`${u.all_time.parts} SMS parts`} />
+              <Stat label="This month" value={u.this_month.sent} hint={`since ${fmtDate(u.this_month.since)}`} />
+              <Stat label="Failed" value={u.all_time.failed} hint={`${u.all_time.not_sent} not sent`} />
+              <Stat label="Waiting" value={u.all_time.pending} />
+            </div>
+            <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
+              <div className="rounded-lg border p-3">
+                <dt className="text-muted-foreground">Booking confirmations &amp; reminders</dt>
+                <dd className="tabular text-lg font-bold">{u.all_time.booking_confirmations}</dd>
+              </div>
+              <div className="rounded-lg border p-3">
+                <dt className="text-muted-foreground">Rejections &amp; cancellations</dt>
+                <dd className="tabular text-lg font-bold">{u.all_time.rejections_cancellations}</dd>
+              </div>
+              <div className="rounded-lg border p-3">
+                <dt className="text-muted-foreground">Plan notices from TurfBari</dt>
+                <dd className="tabular text-lg font-bold">{u.plan_notices_from_turfbari}</dd>
+                <dd className="text-xs text-muted-foreground">Not counted as your usage</dd>
+              </div>
+            </dl>
+            {u.history.length > 0 && (
+              <div>
+                <p className="mb-2 text-sm font-medium">Month by month</p>
+                <ul className="flex flex-col gap-1.5 text-sm">
+                  {u.history.map((h) => (
+                    <li key={h.month} className="grid grid-cols-[6rem_1fr_auto] items-center gap-3">
+                      <span className="text-muted-foreground">{monthLabel(h.month)}</span>
+                      <span className="flex h-2.5 overflow-hidden rounded-full bg-secondary" aria-hidden>
+                        <span className="bg-primary" style={{ width: `${(h.sent / max) * 100}%` }} />
+                        <span className="bg-destructive/70" style={{ width: `${(h.failed / max) * 100}%` }} />
+                      </span>
+                      <span className="tabular text-xs">
+                        {h.sent} sent{h.failed ? ` · ${h.failed} failed` : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {u.source} BulkSMSBD's balance belongs to TurfBari's account and isn't split per turf.
+            </p>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface AdminUsage {
+  from: string | null;
+  to: string | null;
+  totals: UsageSummary;
+  platform: UsageSummary;
+  turfs: {
+    turf: { id: string; name: string; slug: string };
+    total: number;
+    sent: number;
+    failed: number;
+    pending: number;
+    not_sent: number;
+    parts: number;
+    attempts: number;
+    high_usage: boolean;
+  }[];
+  high_usage_threshold: number;
+}
+
+function monthStartISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+}
+
+export function AdminSmsUsagePage() {
+  const [from, setFrom] = useState(monthStartISO());
+  const [to, setTo] = useState("");
+  const [status, setStatus] = useState("");
+  const [q, setQ] = useState("");
+  const [account, setAccount] = useState<{ id: string; name: string } | null>(null);
+  const params = new URLSearchParams({ from, to, status, q });
+  const usage = useQuery({
+    queryKey: ["admin", "sms-usage", from, to, status, q],
+    queryFn: () => api<AdminUsage>(`/admin/sms/usage/?${params}`),
+    placeholderData: keepPreviousData,
+  });
+  const u = usage.data;
+  return (
+    <>
+      <PageHeader
+        title="SMS usage"
+        description="Every SMS counted by TurfBari per turf account (retries count once). TurfBari's own plan notices and sign-in codes are shown separately."
+        actions={
+          <Button asChild variant="outline">
+            <a href={`/api/admin/sms/usage/?${params}&export=csv`}>
+              <Download /> Export CSV
+            </a>
+          </Button>
+        }
+      />
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <FormField label="From">{(id) => <Input id={id} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />}</FormField>
+        <FormField label="To">{(id) => <Input id={id} type="date" value={to} onChange={(e) => setTo(e.target.value)} />}</FormField>
+        <FormField label="Status">
+          {(id) => (
+            <Select id={id} value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">All</option>
+              <option value="sent">Sent</option>
+              <option value="failed">Failed / check</option>
+              <option value="queued">Waiting</option>
+              <option value="skipped">Not sent</option>
+            </Select>
+          )}
+        </FormField>
+        <FormField label="Turf">{(id) => <Input id={id} placeholder="Search turf name" value={q} onChange={(e) => setQ(e.target.value)} />}</FormField>
+      </div>
+      {usage.isPending && <Skeleton className="h-64" />}
+      {usage.isError && <ErrorState error={usage.error} onRetry={() => usage.refetch()} />}
+      {u && (
+        <div className="flex flex-col gap-6">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <Stat label="Sent" value={u.totals.sent} hint={`${u.totals.parts} parts billed`} />
+            <Stat label="Failed / check" value={u.totals.failed} />
+            <Stat label="Waiting" value={u.totals.pending} />
+            <Stat label="Not sent" value={u.totals.not_sent} hint="SMS off, limit, bad number" />
+            <Stat label="Provider attempts" value={u.totals.attempts} hint="Retries included" />
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>By turf account</CardTitle>
+            </CardHeader>
+            <CardContent className="p-2 sm:p-4">
+              {u.turfs.length === 0 ? (
+                <EmptyState icon={<MessageSquareText />} title="No turf SMS in this period" />
+              ) : (
+                <Table>
+                  <thead>
+                    <tr>
+                      <th>Turf</th>
+                      <th className="text-right">Sent</th>
+                      <th className="text-right">Failed</th>
+                      <th className="text-right">Waiting</th>
+                      <th className="text-right">Not sent</th>
+                      <th className="text-right">Parts</th>
+                      <th className="text-right">Attempts</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {u.turfs.map((r) => (
+                      <tr key={r.turf.id}>
+                        <td className="font-medium">
+                          {r.turf.name} {r.high_usage && <Badge tone="amber">High usage</Badge>}
+                        </td>
+                        <td className="tabular text-right">{r.sent}</td>
+                        <td className="tabular text-right">{r.failed}</td>
+                        <td className="tabular text-right">{r.pending}</td>
+                        <td className="tabular text-right">{r.not_sent}</td>
+                        <td className="tabular text-right">{r.parts}</td>
+                        <td className="tabular text-right">{r.attempts}</td>
+                        <td className="text-right">
+                          <Button size="sm" variant="ghost" onClick={() => setAccount({ id: r.turf.id, name: r.turf.name })}>
+                            View log
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+              <div className="mt-3 flex flex-wrap justify-between gap-2 rounded-lg bg-secondary/50 px-3 py-2 text-sm">
+                <span className="font-medium">TurfBari platform messages (plan notices, sign-in codes, tests)</span>
+                <span className="tabular">
+                  {u.platform.sent} sent · {u.platform.failed} failed · {u.platform.parts} parts
+                </span>
+              </div>
+              <p className="mt-3 px-2 text-xs text-muted-foreground">
+                “High usage” = at least {u.high_usage_threshold} sent in the period (3× the typical turf, minimum 20).
+              </p>
+            </CardContent>
+          </Card>
+          {account && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="font-semibold">Log: {account.name}</p>
+                <Button size="sm" variant="ghost" onClick={() => setAccount(null)}>
+                  Close
+                </Button>
+              </div>
+              <MessageLog key={account.id} base={`/admin/sms/messages/?turf=${account.id}&from=${from}&to=${to}&`} admin />
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+}

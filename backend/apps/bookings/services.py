@@ -14,9 +14,9 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.common.money import to_money
-from apps.turfs.models import PricingRule, Turf, TurfField
+from apps.turfs.models import Turf, TurfField
 from apps.turfs.pricing import quote
-from apps.turfs.schedule import category_at, day_slots, opening_window, turf_categories  # noqa: F401
+from apps.turfs.schedule import category_at, day_slots, opening_window, turf_categories, turf_rules  # noqa: F401
 
 from .models import Booking, Customer, MaintenanceBlock, Payment
 from .phone import normalize_bd_phone
@@ -174,17 +174,21 @@ def sync_amount_paid(booking: Booking) -> None:
 
 
 # ------------------------------------------------------------------ availability
-def availability(field: TurfField, day: date, *, include_price: bool = True) -> list[dict]:
+def availability(
+    field: TurfField, day: date, *, include_price: bool = True, context: dict | None = None
+) -> list[dict]:
     """The day's offered slots (custom templates or the automatic grid) with price and category."""
     cache: dict = {}
     slots_today = day_slots(field, day, cache=cache)
     if not slots_today:
         return []
     first, last = slots_today[0].start, max(s.end for s in slots_today)
-    busy = list(overlapping_bookings(field.id, first, last).values_list("start", "end")) + list(
-        overlapping_maintenance(field.id, first, last).values_list("start", "end")
-    )
-    rules = list(PricingRule.objects.filter(turf_id=field.turf_id, is_active=True)) if include_price else []
+    bookings = list(overlapping_bookings(field.id, first, last).values_list("start", "end", "status"))
+    blocks = list(overlapping_maintenance(field.id, first, last).values_list("start", "end"))
+    if context is not None:  # callers that also need these (public slot states) reuse them
+        context.update(bookings=bookings, blocks=blocks, first=first, last=last)
+    busy = [(s, e) for s, e, _ in bookings] + blocks
+    rules = turf_rules(field.turf_id) if include_price else []
     categories = turf_categories(field.turf_id)
     now = timezone.now()
     result = []

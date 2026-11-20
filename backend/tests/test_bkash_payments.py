@@ -97,13 +97,18 @@ def test_valid_submission_is_pending_not_paid_and_shows_the_bengali_notice():
     assert reused.status_code == 400 and "already used" in str(reused.json())
 
 
-def test_turf_without_a_bkash_number_takes_no_online_bookings():
+def test_online_booking_follows_the_owner_switch_and_uses_the_turfs_own_number():
     turf, _ = make_turf()
-    turf.bkash_number = ""
+    turf.bkash_number = ""  # never set: falls back to the turf's own registered mobile
     turf.save()
-    assert request_booking(turf).status_code == 403
+    page = APIClient().get(f"/api/public/turfs/{turf.slug}/").json()["payment"]
+    assert page["accepts_online"] is True and page["bkash_number"] == "01711000000"
+    assert request_booking(turf).status_code == 201
+    turf.public_booking_enabled = False
+    turf.save()
     page = APIClient().get(f"/api/public/turfs/{turf.slug}/").json()
-    assert page["payment"]["accepts_online"] is False
+    assert page["payment"]["accepts_online"] is False and page["public_phone"] == turf.public_phone
+    assert request_booking(turf, hour=20, phone="01812345678").status_code == 403
 
 
 # ------------------------------------------------------------------ holds

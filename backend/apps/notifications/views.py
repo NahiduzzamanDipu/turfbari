@@ -56,13 +56,17 @@ def message_row(m: SmsMessage, *, admin: bool) -> dict:
     }
     if admin:
         row["turf"] = {"id": str(m.turf_id), "name": m.turf.name} if m.turf_id else None
+        row["scope"] = m.scope
+        row["provider_ref"] = m.provider_ref or None
+        row["related_ref"] = m.related_ref or None
+        row["dedupe_key"] = m.dedupe_key
     return row
 
 
 def filtered_messages(request, qs):
     params = request.query_params
     if s := params.get("status"):
-        qs = qs.filter(status=s)
+        qs = qs.filter(status__in=["failed", "unknown"] if s == "failed" else [s])
     if k := params.get("kind"):
         qs = qs.filter(kind=k)
     if q := params.get("q", "").strip()[:60]:
@@ -196,6 +200,11 @@ class AdminSmsMessagesView(APIView):
         qs = filtered_messages(request, SmsMessage.objects.select_related("turf", "booking"))
         if turf := request.query_params.get("turf"):
             qs = qs.filter(turf_id=turf)
+        if scope := request.query_params.get("scope"):
+            qs = qs.filter(scope=scope)
+        from .usage import date_range, in_range
+
+        qs = in_range(qs, *date_range(request))
         paginator = StandardPagination()
         page = paginator.paginate_queryset(qs, request, view=self)
         return paginator.get_paginated_response([message_row(m, admin=True) for m in page])
