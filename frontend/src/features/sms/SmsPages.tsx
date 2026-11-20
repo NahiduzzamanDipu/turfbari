@@ -32,7 +32,7 @@ export interface SmsMessage {
   kind_label: string;
   to: string;
   body: string;
-  status: "queued" | "sending" | "sent" | "failed" | "unknown" | "skipped";
+  status: "queued" | "sending" | "sent" | "failed" | "unknown" | "skipped" | "blocked";
   segments: number;
   attempts: number;
   provider_code: string;
@@ -57,6 +57,7 @@ const STATUS: Record<SmsMessage["status"], { label: string; tone: BadgeTone }> =
   failed: { label: "Failed", tone: "red" },
   unknown: { label: "Check", tone: "amber" },
   skipped: { label: "Not sent", tone: "neutral" },
+  blocked: { label: "Blocked", tone: "amber" },
 };
 
 const KINDS = [
@@ -178,7 +179,8 @@ function MessageLog({
                     {m.booking_reference && <span className="text-xs text-muted-foreground">{m.booking_reference}</span>}
                   </td>
                   <td>
-                    <Badge tone={STATUS[m.status].tone}>{STATUS[m.status].label}</Badge>
+                    {/* Unknown future statuses must never crash the list. */}
+                    <Badge tone={STATUS[m.status]?.tone ?? "neutral"}>{STATUS[m.status]?.label ?? m.status}</Badge>
                     {m.status !== "sent" && m.provider_message && (
                       <span className="mt-1 block max-w-48 text-xs text-muted-foreground">{m.provider_message}</span>
                     )}
@@ -759,6 +761,7 @@ export function AdminSmsUsagePage() {
               <option value="failed">Failed / check</option>
               <option value="queued">Waiting</option>
               <option value="skipped">Not sent</option>
+              <option value="blocked">Blocked</option>
             </Select>
           )}
         </FormField>
