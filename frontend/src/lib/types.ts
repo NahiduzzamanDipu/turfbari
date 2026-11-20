@@ -26,6 +26,7 @@ export interface ManagerPermissions {
   approve_payments: boolean;
   manage_slots: boolean;
   view_sms: boolean;
+  advance_bookings: boolean;
 }
 
 export interface Me {
@@ -224,6 +225,8 @@ export interface Booking {
   created_at: string;
   confirmed_at: string | null;
   payments?: Payment[];
+  /** Set when this date belongs to an advance/recurring series. */
+  series?: { id: string; reference: string; number: number | null; total: number; status: string } | null;
 }
 
 export interface Field {

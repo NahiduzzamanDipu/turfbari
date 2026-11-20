@@ -723,6 +723,7 @@ const PERMISSION_LABELS: Record<keyof ManagerPermissions, string> = {
   approve_payments: "Approve bKash payments",
   manage_slots: "Edit fields, slots, hours & pricing",
   view_sms: "See SMS messages",
+  advance_bookings: "Create & manage advance / recurring bookings",
 };
 
 export function ManagersPage() {

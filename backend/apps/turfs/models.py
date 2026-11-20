@@ -159,8 +159,14 @@ MANAGER_PERMISSIONS = {
     "approve_payments": "Approve or reject bKash payments",
     "manage_slots": "Change fields, slots, opening hours and pricing",
     "view_sms": "See SMS messages sent for this turf",
+    "advance_bookings": "Create and manage advance & recurring bookings",
 }
-DEFAULT_MANAGER_PERMISSIONS = {"approve_payments": True, "manage_slots": False, "view_sms": False}
+DEFAULT_MANAGER_PERMISSIONS = {
+    "approve_payments": True,
+    "manage_slots": False,
+    "view_sms": False,
+    "advance_bookings": False,
+}
 
 
 def default_manager_permissions() -> dict:

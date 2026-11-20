@@ -40,6 +40,18 @@ DEFAULT_TEMPLATES = {
     SmsKind.OWNER_BOOKING_CONFIRMED: (
         "TURFBARI: আপনার {turf}-এ {date} তারিখ {time} সময়ের বুকিং কনফার্ম হয়েছে। বুকিং আইডি: {reference}। ধন্যবাদ।"
     ),
+    SmsKind.SERIES_CONFIRMED: (
+        "TURFBARI: আপনার {turf}-এ {start_date} থেকে {end_date} পর্যন্ত নির্ধারিত দিনে {time} সময়ের বুকিং "
+        "নিশ্চিত করা হয়েছে। মোট বুকিং: {count}। বুকিং আইডি: {reference}। বিস্তারিত জানতে যোগাযোগ: {phone}"
+    ),
+    SmsKind.SERIES_UPDATED: (
+        "TURFBARI: {turf}-এ আপনার নিয়মিত বুকিং ({reference}) পরিবর্তন করা হয়েছে: {detail}। "
+        "এখন মোট বুকিং: {count}। যোগাযোগ: {phone}"
+    ),
+    SmsKind.SERIES_CANCELLED: (
+        "TURFBARI: {turf}-এ আপনার নিয়মিত বুকিং ({reference}) থেকে {count}টি বুকিং বাতিল করা হয়েছে: {dates}। "
+        "যোগাযোগ: {phone}"
+    ),
     SmsKind.BOOKING_REMINDER: (
         "মনে করিয়ে দিচ্ছি: {date} {time}-এ {turf}-এ আপনার খেলা। বুকিং আইডি: {reference}। — TURFBARI"
     ),
@@ -58,6 +70,18 @@ PLACEHOLDERS = {
     SmsKind.BOOKING_CANCELLED: {"turf", "date", "time", "reference", "phone", "name"},
     SmsKind.OWNER_BOOKING_CONFIRMED: {"turf", "date", "time", "reference", "phone", "name"},
     SmsKind.BOOKING_REMINDER: {"turf", "date", "time", "reference", "phone", "name"},
+    SmsKind.SERIES_CONFIRMED: {
+        "turf",
+        "start_date",
+        "end_date",
+        "time",
+        "count",
+        "reference",
+        "phone",
+        "name",
+    },
+    SmsKind.SERIES_UPDATED: {"turf", "detail", "count", "reference", "phone", "name"},
+    SmsKind.SERIES_CANCELLED: {"turf", "dates", "count", "reference", "phone", "name"},
     SmsKind.SUBSCRIPTION_REMINDER: {"turf", "plan", "date", "days", "url"},
     SmsKind.SUBSCRIPTION_EXPIRED: {"turf", "plan", "date", "url"},
 }

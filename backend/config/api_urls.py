@@ -8,6 +8,7 @@ from apps.accounts import two_factor
 from apps.accounts import views as auth
 from apps.applications.admin_views import AdminDashboardView, ApplicationAdminViewSet, TurfAdminViewSet
 from apps.audit import views as audit
+from apps.bookings import series_views as series
 from apps.bookings import verification_views as verify
 from apps.bookings import workspace_views as ws
 from apps.common import platform_views as platform
@@ -96,6 +97,7 @@ admin_urls = [
     path("api-config/bulksmsbd/", platform.AdminBulkSmsView.as_view()),
     path("api-config/booking/", platform.AdminBookingPolicyView.as_view()),
     path("api-config/credentials/", platform.AdminCredentialSmsView.as_view()),
+    path("api-config/recurring/", platform.AdminRecurringPolicyView.as_view()),
     path("legal/", legal_admin.AdminLegalOverviewView.as_view()),
     path("legal/sectors/", legal_admin.AdminSectorsView.as_view()),
     path("legal/sectors/<uuid:pk>/", legal_admin.AdminSectorDetailView.as_view()),
@@ -139,6 +141,13 @@ admin_urls = [
 workspace_urls = [
     path("dashboard/", ws.DashboardView.as_view()),
     path("availability/", ws.AvailabilityView.as_view()),
+    path("booking-series/", series.SeriesListView.as_view()),
+    path("booking-series/preview/", series.SeriesPreviewView.as_view()),
+    path("booking-series/<uuid:pk>/", series.SeriesDetailView.as_view()),
+    path("booking-series/<uuid:pk>/confirm/", series.SeriesConfirmView.as_view()),
+    path("booking-series/<uuid:pk>/cancel/", series.SeriesCancelView.as_view()),
+    path("booking-series/<uuid:pk>/add-date/", series.SeriesAddDateView.as_view()),
+    path("booking-series/<uuid:pk>/reschedule/", series.SeriesRescheduleView.as_view()),
     path("payment-verifications/", verify.PaymentVerificationListView.as_view()),
     path("payment-verifications/<uuid:pk>/approve/", verify.PaymentApproveView.as_view()),
     path("payment-verifications/<uuid:pk>/reject/", verify.PaymentRejectView.as_view()),

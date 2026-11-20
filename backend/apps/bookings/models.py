@@ -37,6 +37,53 @@ class Customer(BaseModel):
         return f"{self.name} ({self.phone})"
 
 
+class BookingSeries(BaseModel):
+    """An advance/recurring booking made by the turf: one row per series; every date is a normal Booking
+    (series + occurrence_number) so calendars, payments, reports and SMS treat it like any booking."""
+
+    class Recurrence(models.TextChoices):
+        DAILY = "daily", "Every day"
+        WEEKDAYS = "weekdays", "Selected days of the week"
+        WEEKLY = "weekly", "Every week on one day"
+        CUSTOM = "custom", "Custom dates"
+        ONCE = "once", "One-time advance booking"
+
+    class Status(models.TextChoices):
+        PENDING_PAYMENT = "pending_payment", "Awaiting payment"
+        ACTIVE = "active", "Active"
+        CANCELLED = "cancelled", "Cancelled"
+        EXPIRED = "expired", "Payment not received"
+
+    turf = models.ForeignKey("turfs.Turf", on_delete=models.CASCADE, related_name="booking_series")
+    field = models.ForeignKey("turfs.TurfField", on_delete=models.PROTECT, related_name="booking_series")
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name="booking_series")
+    reference = models.CharField(max_length=20, unique=True)
+    start_time = models.TimeField()
+    end_time = models.TimeField()  # earlier than start_time = ends the next day (overnight)
+    recurrence = models.CharField(max_length=10, choices=Recurrence.choices)
+    weekdays = models.JSONField(default=list, blank=True)  # 0=Monday … 6=Sunday
+    custom_dates = models.JSONField(default=list, blank=True)  # ISO dates for CUSTOM
+    start_date = models.DateField()
+    end_date = models.DateField()
+    occurrences_count = models.PositiveSmallIntegerField(default=0)
+    total = MoneyField()  # price snapshot of the dates booked at creation
+    status = models.CharField(max_length=16, choices=Status.choices, db_index=True)
+    team_name = models.CharField(max_length=120, blank=True)
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    idempotency_key = models.CharField(max_length=64, unique=True, null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["turf", "status"]), models.Index(fields=["turf", "start_date"])]
+
+    def __str__(self) -> str:
+        return self.reference
+
+
 class BookingQuerySet(models.QuerySet):
     def blocking(self, now=None):
         """Bookings that occupy their slot right now: confirmed/completed, plus pending ones whose
@@ -103,6 +150,11 @@ class Booking(BaseModel):
         "common.TermsVersion", on_delete=models.PROTECT, null=True, blank=True, related_name="bookings"
     )
     terms_agreed_at = models.DateTimeField(null=True, blank=True)
+    # Part of an advance/recurring series (null for ordinary bookings).
+    series = models.ForeignKey(
+        BookingSeries, on_delete=models.PROTECT, null=True, blank=True, related_name="occurrences"
+    )
+    occurrence_number = models.PositiveSmallIntegerField(null=True, blank=True)
 
     objects = BookingQuerySet.as_manager()
 
@@ -111,6 +163,10 @@ class Booking(BaseModel):
         indexes = [
             models.Index(fields=["field", "start", "end"]),
             models.Index(fields=["turf", "start"]),
+            models.Index(fields=["series", "start"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=["series", "occurrence_number"], name="uniq_series_occurrence"),
         ]
 
     def __str__(self) -> str:

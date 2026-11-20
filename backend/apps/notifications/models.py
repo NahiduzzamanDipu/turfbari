@@ -29,6 +29,9 @@ class SmsKind(models.TextChoices):
     SUBSCRIPTION_REJECTED = "subscription_rejected", "Plan payment rejected"
     ACCOUNT_CREDENTIALS = "account_credentials", "New account login details"
     CREDENTIAL_RESET = "credential_reset", "Password reset by TurfBari"
+    SERIES_CONFIRMED = "series_confirmed", "Advance/recurring booking confirmed"
+    SERIES_UPDATED = "series_updated", "Advance/recurring booking changed"
+    SERIES_CANCELLED = "series_cancelled", "Advance/recurring booking cancelled"
 
 
 class SmsMessage(BaseModel):

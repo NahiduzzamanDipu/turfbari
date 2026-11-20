@@ -18,6 +18,7 @@ import {
   PlugZap,
   MessageSquareText,
   Receipt,
+  Repeat,
   Scale,
   Settings,
   ShieldCheck,
@@ -72,6 +73,7 @@ const walletAdmin = () => import("@/features/admin/WalletAdminPages");
 const configPages = () => import("@/features/admin/ConfigPages");
 const platformPages = () => import("@/features/admin/PlatformPages");
 const smsPages = () => import("@/features/sms/SmsPages");
+const advancePages = () => import("@/features/workspace/AdvanceBookingPages");
 const legalPublic = () => import("@/features/legal/PublicLegalPages");
 const legalAdmin = () => import("@/features/legal/AdminLegalPages");
 const legalWorkspace = () => import("@/features/legal/WorkspaceLegalPages");
@@ -99,6 +101,7 @@ const WORKSPACE_NAV: NavItem[] = [
   { to: "/workspace/book", label: "Book a slot", icon: <CalendarPlus /> },
   { to: "/workspace/payments", label: "Payment verification", icon: <ShieldCheck />, badge: "pending_payments_to_verify" },
   { to: "/workspace/bookings", label: "Bookings", icon: <CalendarDays />, badge: "pending_bookings" },
+  { to: "/workspace/advance-bookings", label: "Advance & recurring", icon: <Repeat />, permission: "advance_bookings" },
   { to: "/workspace/customers", label: "Customers", icon: <Users /> },
   { to: "/workspace/maintenance", label: "Maintenance", icon: <Wrench /> },
   { to: "/workspace/fields", label: "Fields", icon: <Grid2x2 /> },
@@ -179,6 +182,9 @@ export const router = createBrowserRouter([
       { index: true, element: page(() => import("@/features/workspace/DashboardPage"), "DashboardPage") },
       { path: "book", element: page(() => import("@/features/workspace/SlotBoardPage"), "SlotBoardPage") },
       { path: "bookings", element: page(() => import("@/features/workspace/BookingsPage"), "BookingsPage") },
+      { path: "advance-bookings", element: page(advancePages, "AdvanceBookingsPage") },
+      { path: "advance-bookings/new", element: page(advancePages, "CreateAdvanceBookingPage") },
+      { path: "advance-bookings/:id", element: page(advancePages, "SeriesDetailPage") },
       { path: "payments", element: page(() => import("@/features/workspace/PaymentVerificationPage"), "PaymentVerificationPage") },
       { path: "customers", element: page(operationsPages, "CustomersPage") },
       { path: "maintenance", element: page(operationsPages, "MaintenancePage") },

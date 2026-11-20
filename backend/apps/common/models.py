@@ -57,6 +57,12 @@ class PlatformSettings(models.Model):
     credential_reset_en = models.TextField(blank=True)
     credential_reset_bn = models.TextField(blank=True)
     temp_password_hours = models.PositiveSmallIntegerField(default=72)
+    # Advance & recurring bookings made by turfs.
+    recurring_max_days = models.PositiveSmallIntegerField(default=186)  # furthest end date from today
+    recurring_max_occurrences = models.PositiveSmallIntegerField(default=200)
+    recurring_hold_hours = models.PositiveSmallIntegerField(default=24)  # awaiting-payment series
+    # Off by default: when on, recurring series ignore the per-customer daily limit (audited).
+    recurring_limit_exempt = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:

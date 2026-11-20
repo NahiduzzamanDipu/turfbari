@@ -66,6 +66,7 @@ class AdminApiConfigView(APIView):
                 "youtube": youtube_payload(s),
                 "bulksmsbd": bulksmsbd_payload(),
                 "booking": {"max_slots_per_customer": s.max_slots_per_customer},
+                "recurring": recurring_policy_payload(s),
             }
         )
 
@@ -270,3 +271,49 @@ class AdminCredentialSmsView(APIView):
             request=request,
         )
         return Response(credential_sms_payload())
+
+
+# ------------------------------------------------------------------ advance & recurring bookings
+def recurring_policy_payload(s: PlatformSettings) -> dict:
+    return {
+        "max_days": s.recurring_max_days,
+        "max_occurrences": s.recurring_max_occurrences,
+        "hold_hours": s.recurring_hold_hours,
+        "limit_exempt": s.recurring_limit_exempt,
+    }
+
+
+class RecurringPolicySerializer(serializers.Serializer):
+    max_days = serializers.IntegerField(min_value=1, max_value=366)
+    max_occurrences = serializers.IntegerField(min_value=1, max_value=400)
+    hold_hours = serializers.IntegerField(min_value=1, max_value=168)
+    limit_exempt = serializers.BooleanField()
+
+
+class AdminRecurringPolicyView(APIView):
+    """How far ahead / how many dates turfs may book in one series, how long an unpaid series holds its
+    dates, and the (off by default) exemption from the per-customer daily limit."""
+
+    permission_classes = [IsPlatformAdmin]
+
+    @extend_schema(tags=["admin"], request=RecurringPolicySerializer)
+    def put(self, request):
+        data = RecurringPolicySerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        v = data.validated_data
+        s = PlatformSettings.objects.get_or_create(pk=1)[0]
+        before = recurring_policy_payload(s)
+        s.recurring_max_days, s.recurring_max_occurrences = v["max_days"], v["max_occurrences"]
+        s.recurring_hold_hours, s.recurring_limit_exempt = v["hold_hours"], v["limit_exempt"]
+        s.save()
+        after = recurring_policy_payload(s)
+        record(
+            "platform.recurring_policy",
+            f"Advance bookings: up to {s.recurring_max_days} days / {s.recurring_max_occurrences} dates, "
+            f"unpaid hold {s.recurring_hold_hours} h, daily customer limit "
+            + ("NOT applied (exemption on)" if s.recurring_limit_exempt else "applied"),
+            category=Category.PLATFORM,
+            request=request,
+            data={"before": before, "after": after},
+        )
+        return Response(after)

@@ -1,10 +1,11 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type SmsOutcome, showSmsOutcome } from "@/lib/smsOutcome";
-import { CalendarX2, ChevronLeft, ChevronRight, Loader2, Pencil, Plus, Search } from "lucide-react";
+import { CalendarX2, ChevronLeft, ChevronRight, Loader2, Pencil, Plus, Repeat, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/AppShell";
+import { useCan } from "@/features/auth/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -54,6 +55,7 @@ const STATUS_ACTIONS: Record<BookingStatus, { to: BookingStatus; label: string; 
 
 export function BookingsPage() {
   const [params, setParams] = useSearchParams();
+  const canAdvance = useCan("advance_bookings");
   const view = params.get("view") ?? (params.get("status") ? "list" : "day");
   const day = params.get("date") ?? todayISO();
   const [formOpen, setFormOpen] = useState(params.get("new") === "1");
@@ -91,6 +93,13 @@ export function BookingsPage() {
                 </button>
               ))}
             </div>
+            {canAdvance && (
+              <Button asChild variant="outline">
+                <Link to="/workspace/advance-bookings">
+                  <Repeat /> Advance &amp; recurring
+                </Link>
+              </Button>
+            )}
             <Button
               onClick={() => {
                 setEditing(null);
@@ -191,7 +200,10 @@ function DayBoard({ day, onDay, onOpen }: { day: string; onDay: (d: string) => v
                     >
                       <div className="min-w-0">
                         <p className="tabular text-sm font-semibold">{fmtRange(b.start, b.end)}</p>
-                        <p className="truncate text-sm">{b.team_name || b.customer.name}</p>
+                        <p className="truncate text-sm">
+                          {b.series && <Repeat className="mr-1 inline size-3 text-primary" aria-label="Recurring" />}
+                          {b.team_name || b.customer.name}
+                        </p>
                         <p className="text-xs text-muted-foreground">{b.customer.phone}</p>
                       </div>
                       <div className="flex flex-col items-end gap-1">
@@ -224,7 +236,7 @@ function BookingList({
   const fields = useFields();
   const page = Number(params.get("page") ?? "1");
   const query = new URLSearchParams();
-  for (const key of ["q", "status", "field", "from", "to", "page"]) {
+  for (const key of ["q", "status", "field", "from", "to", "page", "kind"]) {
     const v = params.get(key);
     if (v) query.set(key, v);
   }
@@ -259,6 +271,11 @@ function BookingList({
           <option value="cancelled">Cancelled</option>
           <option value="rejected">Rejected</option>
           <option value="no_show">No-show</option>
+        </Select>
+        <Select aria-label="Booking type" value={params.get("kind") ?? ""} onChange={(e) => setParam("kind", e.target.value || null)}>
+          <option value="">One-time &amp; recurring</option>
+          <option value="single">One-time bookings</option>
+          <option value="recurring">Recurring / advance series</option>
         </Select>
         <Select aria-label="Field" value={params.get("field") ?? ""} onChange={(e) => setParam("field", e.target.value || null)}>
           <option value="">All fields</option>
@@ -304,6 +321,7 @@ function BookingList({
                       <span className="block text-xs text-muted-foreground">
                         {b.customer.phone} · {b.reference}
                       </span>
+                      {b.series && <SeriesTag series={b.series} />}
                     </td>
                     <td>{b.field_name}</td>
                     <td>
@@ -611,6 +629,17 @@ function BookingDetailDialog({ id, onClose, onEdit }: { id: string; onClose: () 
             </Badge>
             <span className="text-sm text-muted-foreground">via {b.source_label}</span>
           </div>
+          {b.series && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
+              <span className="flex items-center gap-2">
+                <Repeat className="size-4 text-primary" />
+                Part of recurring series <strong>{b.series.reference}</strong> — date {b.series.number} of {b.series.total}
+              </span>
+              <Link to={`/workspace/advance-bookings/${b.series.id}`} className="font-medium text-primary hover:underline">
+                View whole series
+              </Link>
+            </div>
+          )}
           <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-muted-foreground">When</dt>
@@ -717,5 +746,18 @@ function BookingDetailDialog({ id, onClose, onEdit }: { id: string; onClose: () 
         </div>
       )}
     </Dialog>
+  );
+}
+
+/** Small marker for a date that belongs to an advance/recurring series. */
+function SeriesTag({ series }: { series: NonNullable<Booking["series"]> }) {
+  return (
+    <Link
+      to={`/workspace/advance-bookings/${series.id}`}
+      onClick={(e) => e.stopPropagation()}
+      className="mt-0.5 inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary hover:underline"
+    >
+      <Repeat className="size-3" /> {series.reference} · {series.number}/{series.total}
+    </Link>
   );
 }

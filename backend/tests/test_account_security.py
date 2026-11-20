@@ -267,7 +267,12 @@ def test_manager_permissions_are_enforced_on_the_server():
     _, owner = make_turf()
     owner_client = client_for(owner)
     row = add_manager(owner_client)
-    assert row["permissions"] == {"approve_payments": True, "manage_slots": False, "view_sms": False}
+    assert row["permissions"] == {
+        "approve_payments": True,
+        "manage_slots": False,
+        "view_sms": False,
+        "advance_bookings": False,
+    }
     manager = get_user_model().objects.get(email="mgr@example.com")
     mgr = client_for(manager)
     assert (

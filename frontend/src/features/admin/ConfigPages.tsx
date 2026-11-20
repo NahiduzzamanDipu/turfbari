@@ -51,6 +51,7 @@ interface ApiConfig {
     test?: { ok: boolean; message: string };
   };
   booking: { max_slots_per_customer: number };
+  recurring: { max_days: number; max_occurrences: number; hold_hours: number; limit_exempt: boolean };
 }
 
 function Preview({ id }: { id: string }) {
@@ -83,6 +84,7 @@ export function AdminApiPage() {
           <BulkSmsCard current={c.bulksmsbd} onSaved={(b) => qc.setQueryData(["admin", "api-config"], { ...c, bulksmsbd: b })} />
           <BookingLimitCard current={c.booking.max_slots_per_customer} onSaved={() => qc.invalidateQueries({ queryKey: ["admin", "api-config"] })} />
           <PaymentsCard />
+          <RecurringPolicyCard current={c.recurring} onSaved={() => qc.invalidateQueries({ queryKey: ["admin", "api-config"] })} />
           <CredentialSmsCard />
         </div>
       )}
@@ -554,6 +556,57 @@ function CredentialSmsCard() {
             </Button>
           </form>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ------------------------------------------------------------------ advance & recurring bookings
+function RecurringPolicyCard({
+  current,
+  onSaved,
+}: {
+  current: { max_days: number; max_occurrences: number; hold_hours: number; limit_exempt: boolean };
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState(current);
+  const save = useMutation({
+    mutationFn: () => api("/admin/api-config/recurring/", { method: "PUT", json: form }),
+    onSuccess: () => {
+      toast.success("Advance booking policy saved");
+      onSaved();
+    },
+    onError: (e) => toast.error(errorText(e)),
+  });
+  const num = (k: "max_days" | "max_occurrences" | "hold_hours") => (e: { target: { value: string } }) => setForm({ ...form, [k]: Number(e.target.value) });
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Advance &amp; recurring bookings</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="flex flex-col gap-3 text-sm"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (form.limit_exempt && !current.limit_exempt && !window.confirm("Let recurring series ignore the per-customer daily limit? This is recorded in the audit log.")) return;
+            save.mutate();
+          }}
+        >
+          <div className="grid gap-3 sm:grid-cols-3">
+            <FormField label="Furthest date (days ahead)">{(id) => <Input id={id} type="number" min={1} max={366} value={form.max_days} onChange={num("max_days")} />}</FormField>
+            <FormField label="Max dates per series">{(id) => <Input id={id} type="number" min={1} max={400} value={form.max_occurrences} onChange={num("max_occurrences")} />}</FormField>
+            <FormField label="Unpaid hold (hours)">{(id) => <Input id={id} type="number" min={1} max={168} value={form.hold_hours} onChange={num("hold_hours")} />}</FormField>
+          </div>
+          <Checkbox
+            label="Exempt recurring series from the per-customer daily limit (off by default)"
+            checked={form.limit_exempt}
+            onChange={(e) => setForm({ ...form, limit_exempt: e.target.checked })}
+          />
+          <Button type="submit" className="self-start" disabled={save.isPending || JSON.stringify(form) === JSON.stringify(current)}>
+            Save
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );

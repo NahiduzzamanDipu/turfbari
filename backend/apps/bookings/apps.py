@@ -9,11 +9,12 @@ class BookingsConfig(AppConfig):
     def ready(self):
         from apps.notifications import campaigns, tick
 
-        from . import payments
+        from . import payments, recurring
 
         tick.EXTRA_STEPS.extend(
             [
                 ("expire_payment_holds", payments.expire_lapsed),
+                ("expire_unpaid_series", recurring.expire_unpaid),
                 ("booking_reminders", payments.booking_reminders),
                 ("sms_campaigns", campaigns.finish_campaigns),
             ]

@@ -40,6 +40,9 @@ DISABLED_BN = (
 KIND_SWITCH = {
     SmsKind.BOOKING_CONFIRMED: "booking_confirmed",
     SmsKind.OWNER_BOOKING_CONFIRMED: "owner_booking",
+    SmsKind.SERIES_CONFIRMED: "owner_booking",
+    SmsKind.SERIES_UPDATED: "owner_booking",
+    SmsKind.SERIES_CANCELLED: "rejection_cancellation",
     SmsKind.PAYMENT_REJECTED: "rejection_cancellation",
     SmsKind.BOOKING_CANCELLED: "rejection_cancellation",
     SmsKind.BOOKING_REMINDER: "reminder",

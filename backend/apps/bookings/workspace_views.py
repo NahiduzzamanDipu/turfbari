@@ -89,6 +89,20 @@ class BookingSerializer(serializers.ModelSerializer):
     due = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
     source_label = serializers.CharField(source="get_source_display", read_only=True)
+    series = serializers.SerializerMethodField()
+
+    def get_series(self, obj):
+        """Recurring/advance series this date belongs to (None for ordinary bookings)."""
+        if not obj.series_id:
+            return None
+        s = obj.series
+        return {
+            "id": str(s.pk),
+            "reference": s.reference,
+            "number": obj.occurrence_number,
+            "total": s.occurrences_count,
+            "status": s.status,
+        }
 
     class Meta:
         model = Booking
@@ -115,6 +129,7 @@ class BookingSerializer(serializers.ModelSerializer):
             "price_snapshot",
             "created_at",
             "confirmed_at",
+            "series",
         ]
 
 
@@ -165,7 +180,7 @@ class StatusSerializer(serializers.Serializer):
 
 # ---------------------------------------------------------------- bookings
 class BookingViewSet(TenantViewSet):
-    queryset = Booking.objects.select_related("customer", "field")
+    queryset = Booking.objects.select_related("customer", "field", "series")
     audit_auto = False  # bookings write their own, richer events
     http_method_names = ["get", "post", "put", "head", "options"]
     filter_backends = []
@@ -191,6 +206,15 @@ class BookingViewSet(TenantViewSet):
             qs = qs.filter(status__in=status.split(","))
         if field := params.get("field"):
             qs = qs.filter(field_id=field)
+        kind = params.get("kind")
+        if kind == "recurring":
+            qs = qs.filter(series__isnull=False)
+        elif kind == "single":
+            qs = qs.filter(series__isnull=True)
+        if series := params.get("series"):
+            qs = qs.filter(series_id=series)
+        if series_status := params.get("series_status"):
+            qs = qs.filter(series__status=series_status)
         if q := params.get("q", "").strip():
             qs = qs.filter(
                 Q(reference__icontains=q)

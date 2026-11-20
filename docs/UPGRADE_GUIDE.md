@@ -440,3 +440,64 @@ separate Celery worker on the free plan.
 - Mobile numbers are the registered numbers; there is no separate phone-ownership verification step.
 - BulkSMSBD gives no delivery reports.
 - Changing `DJANGO_SECRET_KEY` makes unsent encrypted copies unreadable; Resend then issues a new password.
+
+
+---
+
+# Version 6 — Advance & recurring bookings
+
+## Where
+Workspace → **Advance & recurring** (also a button on the Bookings page) → **Create advance booking**. Owners always
+have it; managers need the new Team switch **"Create & manage advance / recurring bookings"** (off by default).
+
+## How it works
+1. **Customer** — pick from the turf's customers (search name/phone) or add one. Phones are normalised, so the same
+   mobile number is always the same customer.
+2. **Schedule** — field, start/end time (15-minute steps; an end before the start means it ends the next day),
+   repeat: every day / selected weekdays / once a week / custom dates / one date; start date + end date or a quick
+   period (7, 15, 30 days, 2, 3, 6 months).
+3. **Availability** — every generated date is checked: past, opening hours or the custom slot schedule (incl.
+   special days), maintenance blocks, confirmed bookings, live holds and pending requests (expired holds don't count),
+   and the per-customer daily limit (Asia/Dhaka days, all turfs, confirmed + live pending). Unavailable dates are
+   listed with the reason; they must be excluded explicitly (or the schedule changed) — nothing is skipped silently.
+4. **Pricing** — each date is priced by the normal pricing engine (time categories, slot prices, special-date
+   rules), shown per date, with total, advance required (same rule as single bookings: ৳500 or the turf's advance per
+   booking, capped at its price) and remaining. Each booking stores its own price snapshot.
+5. **Confirm** — *Confirm now* (all dates confirmed, optional advance recorded and spread earliest-first) or
+   *Reserve, await payment* (dates held for the platform's hold hours; **Record payment & confirm** needs at least the
+   advance and a bKash TrxID for bKash; unpaid series release their dates automatically via the tick).
+
+The server re-checks every date inside one transaction holding the field and customer locks; a parallel request for
+the same slots fails cleanly. The same request (Idempotency-Key) never creates two series.
+
+## Data
+`BookingSeries` (reference `SER-…`, customer, field, times, recurrence, weekdays/custom dates, start/end date, count,
+total snapshot, status, created by). Each date is a normal `Booking` with `series` + `occurrence_number` (unique
+together), so the calendar, payment records, reports, reminders and public availability treat it like any booking.
+Bookings list/calendar show a "↻ SER-… n/N" tag and a link to the series; new filter "One-time / Recurring".
+
+## Managing a series
+View every date with status and payment; cancel selected upcoming dates or all upcoming; add a date; change the time
+of upcoming dates (dry run first; dates that can't move must be marked "keep current time"). Past and finished
+bookings never change. Cancelling shows how much was paid on the cancelled dates so it can be refunded per policy.
+Everything is in the activity log.
+
+## SMS
+One SMS per series event (not per date): confirmed (when confirmed, never for an unpaid reservation), changed,
+cancelled. Uses the turf's SMS wallet and switches (confirmation follows "Booking made by the turf", cancellation
+follows "Cancellation"); an empty wallet blocks only the SMS, the booking still succeeds and the owner is told.
+Templates are editable in Admin → SMS templates.
+
+## Admin policy (Admin → API → Advance & recurring bookings)
+Furthest date (default 186 days), max dates per series (200), unpaid hold (24 h), and an **exemption from the
+per-customer daily limit — off by default**, audited when changed.
+
+## Subscriptions
+There are no per-plan feature flags, so no new limits were invented: creating/changing a series needs an active
+plan exactly like any other booking change (402 when the plan has lapsed).
+
+## Migrations / endpoints
+`bookings.0007`, `common.0004`, `notifications.0006`. Workspace: `GET/POST /api/workspace/booking-series/`,
+`POST …/preview/`, `GET …/<id>/`, `POST …/<id>/confirm/`, `…/cancel/`, `…/add-date/`, `…/reschedule/`.
+Bookings list accepts `kind=single|recurring`, `series=<id>`, `series_status=…`. Admin: `PUT /api/admin/api-config/recurring/`.
+No new environment variables.
