@@ -32,6 +32,8 @@ from apps.bookings import holds, payments
 from apps.bookings.models import Booking
 from apps.bookings.phone import normalize_bd_phone
 from apps.bookings.services import availability, get_or_create_customer, opening_window, reserve_slot
+from apps.legal import services as legal_services
+from apps.legal.models import Sector
 from apps.locations.models import Area, District, Division
 
 from . import schedule
@@ -259,7 +261,9 @@ class BookingRequestSerializer(serializers.Serializer):
     trx_id = serializers.CharField(max_length=30)
     # Consent to the platform Terms & Booking Rules: the box must be ticked for the *current* version.
     agree_terms = serializers.BooleanField(default=False)
-    terms_version = serializers.IntegerField(required=False, allow_null=True)
+    # Ids of the exact legal document versions shown next to the checkbox (see turf detail "legal").
+    accepted_versions = serializers.ListField(child=serializers.IntegerField(), required=False)
+    terms_version = serializers.IntegerField(required=False, allow_null=True)  # old clients; ignored
 
 
 IDEMPOTENCY_KEY = re.compile(r"^[A-Za-z0-9-]{16,64}$")
@@ -284,7 +288,8 @@ class PublicBookingRequestView(PublicAPIView):
         key = key if IDEMPOTENCY_KEY.match(key) else None
         if key and (done := Booking.objects.filter(idempotency_key=key, turf=turf).first()):
             return Response(_public_booking(done), status=200)
-        terms = payments.check_terms(v["agree_terms"], v.get("terms_version"))
+        legal_needed = legal_services.required("booking", "customer", legal_services.sector_id_of(turf))
+        legal_services.require_accepted(legal_needed, v["agree_terms"], set(v.get("accepted_versions") or []))
         phone = normalize_bd_phone(v["phone"])
         start, end = v["start"], v["end"]
         field = turf.fields.filter(is_active=True, pk=v["field"]).first()
@@ -335,15 +340,15 @@ class PublicBookingRequestView(PublicAPIView):
             )
             payments.attach_submission(booking, payment)
             booking.slot_count, booking.idempotency_key = slots, key
-            booking.terms_version, booking.terms_agreed_at = terms, timezone.now() if terms else None
-            booking.save(
-                update_fields=[
-                    "slot_count",
-                    "idempotency_key",
-                    "terms_version",
-                    "terms_agreed_at",
-                    "updated_at",
-                ]
+            booking.terms_agreed_at = timezone.now() if legal_needed else None
+            booking.save(update_fields=["slot_count", "idempotency_key", "terms_agreed_at", "updated_at"])
+            legal_services.record_acceptances(
+                legal_needed,
+                action="booking",
+                turf=turf,
+                booking=booking,
+                related_ref=f"booking:{booking.reference}",
+                request=request,
             )
             # Every hold of this visitor is done with: the request went through.
             holds.SlotHold.objects.filter(ip_hash=ip, status=holds.SlotHold.Status.ACTIVE).update(
@@ -490,6 +495,9 @@ class ApplicationSerializer(serializers.ModelSerializer):
         slug_field="slug", queryset=Area.objects.all(), allow_null=True, required=False
     )
     website = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    sector = serializers.SlugRelatedField(
+        slug_field="slug", queryset=Sector.objects.filter(is_active=True), required=False, allow_null=True
+    )
 
     class Meta:
         model = TurfApplication
@@ -505,6 +513,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "number_of_fields",
             "message",
             "website",
+            "sector",
         ]
 
     def validate_phone(self, value):
@@ -537,5 +546,17 @@ class PublicApplicationView(PublicAPIView):
     def post(self, request):
         data = ApplicationSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        data.save()
+        sector = data.validated_data.get("sector") or legal_services.default_sector()
+        needed = legal_services.required("registration", "owner", sector.pk if sector else None)
+        legal_services.require_accepted(
+            needed,
+            bool(request.data.get("agree_legal")),
+            legal_services.parse_version_ids(request.data.get("accepted_versions")),
+            field="agree_legal",
+        )
+        with transaction.atomic():
+            application = data.save(sector=sector)
+            legal_services.record_acceptances(
+                needed, action="registration", related_ref=f"application:{application.pk}", request=request
+            )
         return Response({"detail": "Thanks! Our team will contact you within 2 working days."}, status=201)

@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { CheckCircle2, Copy, Hourglass, Loader2, Send, TimerOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
+import { LegalAcceptBox } from "@/components/legal/Legal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState, FormField, Input, Textarea } from "@/components/ui/form";
@@ -205,7 +206,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
         headers: { ...visitorHeaders, "Idempotency-Key": loadDraft(turf.slug)?.idempotencyKey ?? newIdempotencyKey() },
         json: {
           agree_terms: agree,
-          terms_version: turf.terms_version?.id ?? null,
+          accepted_versions: turf.legal.map((d) => d.version_id),
           field: fieldId,
           start: chosen[0]?.start,
           end: chosen.at(-1)?.end,
@@ -228,8 +229,8 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
       void refresh();
     },
     onError: (e) => {
-      // The terms changed while the form was open: fetch the new version and ask again.
-      if (e instanceof ApiError && e.fields?.terms_version) {
+      // The terms changed while the form was open: fetch the new versions and ask again.
+      if (e instanceof ApiError && e.fields?.code?.[0] === "legal_versions_changed") {
         setAgree(false);
         void qc.invalidateQueries({ queryKey: ["public", "turf", turf.slug] });
       }
@@ -263,9 +264,9 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
           Book a slot <span className="font-normal text-muted-foreground">· বুক করুন</span>
         </CardTitle>
         <div className="flex flex-wrap items-center gap-2">
-        {turf.terms_version && (
+        {turf.legal.length > 0 && (
           <Link
-            to={`/terms?turf=${turf.slug}`}
+            to={turf.legal.find((d) => d.scope === "sector")?.url ?? "/legal/terms"}
             className="rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
           >
             Terms &amp; Conditions
@@ -585,25 +586,14 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
               value={form.website}
               onChange={(e) => setForm({ ...form, website: e.target.value })}
             />
-            {turf.terms_version && (
-              <div className="flex items-start gap-2 rounded-md border p-3 text-sm">
-                <input
-                  id="agree-terms"
-                  type="checkbox"
-                  required
-                  className="mt-1 size-4 shrink-0 accent-[var(--primary)]"
-                  checked={agree}
-                  onChange={(e) => setAgree(e.target.checked)}
-                />
-                <label htmlFor="agree-terms" lang="bn" className="leading-relaxed">
-                  আমি Terms &amp; Conditions এবং Booking Rules &amp; Regulations পড়েছি এবং সম্মত হয়েছি।{" "}
-                  <Link to={`/terms?turf=${turf.slug}`} target="_blank" className="whitespace-nowrap font-semibold text-primary hover:underline">
-                    Read them
-                  </Link>
-                </label>
-              </div>
-            )}
-            {fieldErrors?.agree_terms && <p className="text-sm text-destructive">{fieldErrors.agree_terms[0]}</p>}
+            <LegalAcceptBox
+              id="agree-terms"
+              docs={turf.legal}
+              checked={agree}
+              onChange={setAgree}
+              intro="আমি এই বুকিংয়ের শর্তাবলী, বুকিং নিয়মাবলী ও রিফান্ড/বাতিলকরণ নীতি পড়েছি এবং সম্মত হয়েছি।"
+              error={fieldErrors?.agree_terms?.[0]}
+            />
             {submit.error && (
               <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {(fieldErrors?.code?.[0] === "booking_limit" ? fieldErrors.phone?.[0] : undefined) ??
@@ -612,7 +602,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
                   (fieldErrors ? "Please fix the highlighted fields." : submit.error.message)}
               </p>
             )}
-            <Button type="submit" size="lg" disabled={submit.isPending || secondsLeft === 0 || (Boolean(turf.terms_version) && !agree)}>
+            <Button type="submit" size="lg" disabled={submit.isPending || secondsLeft === 0 || (turf.legal.length > 0 && !agree)}>
               {submit.isPending ? <Loader2 className="animate-spin" /> : <Send />}
               Submit payment &amp; request booking
             </Button>

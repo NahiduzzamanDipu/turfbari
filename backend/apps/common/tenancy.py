@@ -37,6 +37,11 @@ class TurfSuspended(PermissionDenied):
     default_detail = "This turf is suspended. Contact TurfBari support to reactivate it."
 
 
+class LegalAcceptanceRequired(PermissionDenied):
+    default_code = "legal_acceptance_required"
+    default_detail = "Please review and accept the updated TurfBari terms and policies to continue."
+
+
 class SubscriptionInactive(APIException):
     status_code = 402
     default_code = "subscription_inactive"
@@ -65,6 +70,11 @@ class IsTenantMember(BasePermission):
             return False
         request.membership = membership
         request.tenant = membership.turf
+        if not user.is_platform_admin:
+            from apps.legal.services import account_gate_pending
+
+            if account_gate_pending(user):  # sign-in gate (also enforced by middleware for sessions)
+                raise LegalAcceptanceRequired()
 
         is_owner = membership.role == membership.Role.OWNER
         unsafe = request.method not in SAFE_METHODS

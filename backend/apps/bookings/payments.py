@@ -339,26 +339,3 @@ def enforce_customer_limit(phone: str, new_slots: int, start) -> None:
         raise ValidationError(
             {"phone": [LIMIT_MESSAGE_BN.format(n=bn_digits(limit))], "code": ["booking_limit"]}
         )
-
-
-def check_terms(agreed: bool, version_id) -> object:
-    """Returns the TermsVersion the customer agreed to (None if no terms are published)."""
-    from apps.common.models import TermsVersion
-
-    current = TermsVersion.current()
-    if current is None:
-        return None
-    if not agreed:
-        raise ValidationError(
-            {"agree_terms": ["Please read and accept the Terms & Conditions and Booking Rules to book."]}
-        )
-    if str(version_id or "") != str(current.pk):
-        raise ValidationError(
-            {
-                "agree_terms": [
-                    "The Terms & Conditions were just updated. Please read them again and accept."
-                ],
-                "terms_version": [str(current.pk)],
-            }
-        )
-    return current

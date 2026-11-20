@@ -7,20 +7,15 @@
 - Public: the published terms, and the global video id.
 """
 
-from django.db import transaction
-from django.db.models import Max
-from django.utils import timezone
 from drf_spectacular.utils import extend_schema
-from rest_framework import serializers, status
-from rest_framework.exceptions import NotFound
-from rest_framework.permissions import AllowAny
+from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.audit.services import Category, record
 
 from .crypto import decrypt, encrypt, mask
-from .models import PlatformSettings, TermsVersion
+from .models import PlatformSettings
 from .permissions import IsPlatformAdmin
 
 
@@ -192,151 +187,3 @@ class AdminBookingPolicyView(APIView):
             request=request,
         )
         return Response({"max_slots_per_customer": s.max_slots_per_customer})
-
-
-# ------------------------------------------------------------------ terms
-def terms_payload(t: TermsVersion | None) -> dict | None:
-    if t is None:
-        return None
-    return {
-        "id": t.pk,
-        "version": t.version,
-        "status": t.status,
-        "terms_body": t.terms_body,
-        "rules_body": t.rules_body,
-        "published_at": t.published_at,
-        "updated_at": t.updated_at,
-        "published_by": (t.published_by.full_name or t.published_by.email) if t.published_by_id else None,
-        "bookings_agreed": t.bookings.count() if t.status != TermsVersion.Status.DRAFT else 0,
-    }
-
-
-class TermsDraftSerializer(serializers.Serializer):
-    terms_body = serializers.CharField(max_length=30000)
-    rules_body = serializers.CharField(max_length=30000)
-
-
-class AdminTermsView(APIView):
-    """GET: published + draft + history. PUT: save the draft (creates one if needed)."""
-
-    permission_classes = [IsPlatformAdmin]
-
-    @staticmethod
-    def payload() -> dict:
-        published = (
-            TermsVersion.objects.filter(status=TermsVersion.Status.PUBLISHED).order_by("-version").first()
-        )
-        draft = TermsVersion.objects.filter(status=TermsVersion.Status.DRAFT).order_by("-version").first()
-        history = TermsVersion.objects.exclude(status=TermsVersion.Status.DRAFT).order_by("-version")[:20]
-        return {
-            "enabled": PlatformSettings.load().terms_enabled,
-            "published": terms_payload(published),
-            "draft": terms_payload(draft),
-            "history": [
-                {
-                    "version": t.version,
-                    "status": t.status,
-                    "published_at": t.published_at,
-                    "bookings_agreed": t.bookings.count(),
-                }
-                for t in history
-            ],
-        }
-
-    @extend_schema(tags=["admin"])
-    def get(self, request):
-        return Response(self.payload())
-
-    @extend_schema(tags=["admin"], request=TermsDraftSerializer)
-    @transaction.atomic
-    def put(self, request):
-        data = TermsDraftSerializer(data=request.data)
-        data.is_valid(raise_exception=True)
-        draft = TermsVersion.objects.select_for_update().filter(status=TermsVersion.Status.DRAFT).first()
-        if draft is None:
-            latest = TermsVersion.objects.aggregate(m=Max("version"))["m"] or 0
-            draft = TermsVersion(version=latest + 1)
-        draft.terms_body = data.validated_data["terms_body"].strip()
-        draft.rules_body = data.validated_data["rules_body"].strip()
-        draft.save()
-        return Response(self.payload())
-
-
-class AdminTermsPublishView(APIView):
-    """POST: publish the draft (the old published version is kept, marked replaced). DELETE: discard draft."""
-
-    permission_classes = [IsPlatformAdmin]
-
-    @extend_schema(tags=["admin"], request=None)
-    @transaction.atomic
-    def post(self, request):
-        draft = TermsVersion.objects.select_for_update().filter(status=TermsVersion.Status.DRAFT).first()
-        if draft is None:
-            raise serializers.ValidationError({"draft": ["There is no draft to publish."]})
-        TermsVersion.objects.filter(status=TermsVersion.Status.PUBLISHED).update(
-            status=TermsVersion.Status.ARCHIVED
-        )
-        draft.status, draft.published_at, draft.published_by = (
-            TermsVersion.Status.PUBLISHED,
-            timezone.now(),
-            request.user,
-        )
-        draft.save()
-        record(
-            "platform.terms_published",
-            f"Published Terms & Booking Rules v{draft.version}",
-            category=Category.PLATFORM,
-            request=request,
-        )
-        return Response(AdminTermsView.payload())
-
-    @extend_schema(tags=["admin"], request=None)
-    def delete(self, request):
-        TermsVersion.objects.filter(status=TermsVersion.Status.DRAFT).delete()
-        return Response(AdminTermsView.payload())
-
-
-class TermsSwitchSerializer(serializers.Serializer):
-    enabled = serializers.BooleanField()
-
-
-class AdminTermsSwitchView(APIView):
-    permission_classes = [IsPlatformAdmin]
-
-    @extend_schema(tags=["admin"], request=TermsSwitchSerializer)
-    def put(self, request):
-        data = TermsSwitchSerializer(data=request.data)
-        data.is_valid(raise_exception=True)
-        s = PlatformSettings.objects.get_or_create(pk=1)[0]
-        s.terms_enabled = data.validated_data["enabled"]
-        s.save()
-        record(
-            "platform.terms_switch",
-            "Terms agreement turned " + ("on" if s.terms_enabled else "off") + " for bookings",
-            category=Category.PLATFORM,
-            request=request,
-        )
-        return Response(AdminTermsView.payload())
-
-
-class PublicTermsView(APIView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
-
-    @extend_schema(tags=["public"])
-    def get(self, request):
-        current = TermsVersion.current()
-        if current is None:
-            raise NotFound("No terms are published.")
-        response = Response(
-            {
-                "version": current.version,
-                "id": current.pk,
-                "terms_body": current.terms_body,
-                "rules_body": current.rules_body,
-                "published_at": current.published_at,
-            },
-            status=status.HTTP_200_OK,
-        )
-        response["Cache-Control"] = "public, max-age=60"
-        return response

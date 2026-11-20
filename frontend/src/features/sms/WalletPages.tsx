@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { AlertTriangle, ChevronLeft, ChevronRight, Copy, Loader2, Megaphone, RotateCcw, Send, Upload, Wallet, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { LegalAcceptBox, legalPayload, usePendingLegal } from "@/components/legal/Legal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge, type BadgeTone, Checkbox, Dialog, EmptyState, ErrorState, FormField, Input, Table, Textarea } from "@/components/ui/form";
@@ -219,9 +220,15 @@ function RechargeDialog({ info, onClose }: { info: WalletInfo; onClose: () => vo
   // Shown for guidance; the server recomputes with exact decimals and checks the amount sent.
   const fee = Math.round(amount * pct) / 100;
   const total = amount + fee;
+  const legal = usePendingLegal("sms_recharge");
+  const legalDocs = legal.data?.documents ?? [];
+  const [agree, setAgree] = useState(false);
   const submit = useMutation({
-    mutationFn: () => api<RechargeRow>("/workspace/sms/wallet/recharge/", { method: "POST", json: form }),
+    mutationFn: () =>
+      api<RechargeRow>("/workspace/sms/wallet/recharge/", { method: "POST", json: { ...form, ...legalPayload(legalDocs, agree) } }),
+    onError: () => qc.invalidateQueries({ queryKey: ["legal", "pending"] }),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["legal"] });
       toast.success("Recharge request sent — TurfBari will verify the bKash payment and add the credit");
       qc.invalidateQueries({ queryKey: ["ws", "sms"] });
       onClose();
@@ -286,9 +293,17 @@ function RechargeDialog({ info, onClose }: { info: WalletInfo; onClose: () => vo
           </FormField>
           <FormField label="Note (optional)">{(id) => <Input id={id} maxLength={200} value={form.note} onChange={set("note")} />}</FormField>
         </div>
+        <LegalAcceptBox
+          id="agree-recharge-legal"
+          docs={legalDocs}
+          checked={agree}
+          onChange={setAgree}
+          intro="আমি এসএমএস ওয়ালেট ও পেমেন্ট/রিফান্ড নীতিমালা পড়েছি এবং সম্মত হয়েছি।"
+          error={fields?.agree_legal?.[0]}
+        />
         {submit.error && !fields && <p className="text-sm text-destructive">{errorText(submit.error)}</p>}
         {fields?.non_field_errors && <p className="text-sm text-destructive">{fields.non_field_errors[0]}</p>}
-        <Button type="submit" disabled={submit.isPending || amount <= 0}>
+        <Button type="submit" disabled={submit.isPending || amount <= 0 || (legalDocs.length > 0 && !agree)}>
           {submit.isPending && <Loader2 className="animate-spin" />} Submit recharge request
         </Button>
       </form>

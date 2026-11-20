@@ -86,8 +86,16 @@ export function PublicLayout() {
           <Logo className="[&_span]:text-lg" />
           <p>Turf management and booking pages for football turfs in Bangladesh.</p>
           <p>
-            <Link to="/terms" className="hover:text-foreground hover:underline">
-              Terms &amp; Conditions
+            <Link to="/legal/terms" className="hover:text-foreground hover:underline">
+              Terms
+            </Link>{" "}
+            ·{" "}
+            <Link to="/legal/privacy" className="hover:text-foreground hover:underline">
+              Privacy
+            </Link>{" "}
+            ·{" "}
+            <Link to="/legal" className="hover:text-foreground hover:underline">
+              All policies
             </Link>{" "}
             · © {new Date().getFullYear()} TurfBari
           </p>

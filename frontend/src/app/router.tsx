@@ -18,6 +18,7 @@ import {
   PlugZap,
   MessageSquareText,
   Receipt,
+  Scale,
   Settings,
   ShieldCheck,
   Tags,
@@ -71,6 +72,9 @@ const walletAdmin = () => import("@/features/admin/WalletAdminPages");
 const configPages = () => import("@/features/admin/ConfigPages");
 const platformPages = () => import("@/features/admin/PlatformPages");
 const smsPages = () => import("@/features/sms/SmsPages");
+const legalPublic = () => import("@/features/legal/PublicLegalPages");
+const legalAdmin = () => import("@/features/legal/AdminLegalPages");
+const legalWorkspace = () => import("@/features/legal/WorkspaceLegalPages");
 
 const ADMIN_NAV: NavItem[] = [
   { to: "/admin", label: "Overview", icon: <LayoutDashboard />, end: true },
@@ -85,7 +89,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/admin/sms-usage", label: "SMS usage", icon: <BarChart3 /> },
   { to: "/admin/finance", label: "Finance", icon: <Landmark /> },
   { to: "/admin/api", label: "API", icon: <PlugZap /> },
-  { to: "/admin/terms", label: "Terms & Rules", icon: <FileText /> },
+  { to: "/admin/legal", label: "Legal & Compliance", icon: <Scale /> },
   { to: "/admin/health", label: "Health", icon: <HeartPulse /> },
   { to: "/admin/audit", label: "Audit log", icon: <History /> },
 ];
@@ -109,6 +113,7 @@ const WORKSPACE_NAV: NavItem[] = [
   { to: "/workspace/subscription", label: "Subscription", icon: <CreditCard /> },
   { to: "/workspace/design", label: "Page design", icon: <Palette /> },
   { to: "/workspace/settings", label: "Settings", icon: <Settings /> },
+  { to: "/workspace/legal", label: "Legal & Policies", icon: <FileText /> },
 ];
 
 export const router = createBrowserRouter([
@@ -123,12 +128,16 @@ export const router = createBrowserRouter([
       { path: "/register-turf", element: page(() => import("@/features/public/RegisterTurfPage"), "RegisterTurfPage") },
       { path: "/booking-status", element: page(() => import("@/features/public/BookingStatusPage"), "BookingStatusPage") },
       { path: "/status", element: page(() => import("@/features/system/SystemStatusPage"), "SystemStatusPage") },
-      { path: "/terms", element: page(() => import("@/features/public/TermsPage"), "TermsPage") },
+      { path: "/terms", element: <Navigate to="/legal/terms" replace /> },
+      { path: "/legal", element: page(legalPublic, "LegalIndexPage") },
+      { path: "/legal/sector/:slug", element: page(legalPublic, "SectorLegalPage") },
+      { path: "/legal/:slug", element: page(legalPublic, "LegalDocumentPage") },
     ],
   },
   { path: "/login", element: page(() => import("@/features/auth/LoginPage"), "LoginPage") },
   { path: "/forgot-password", element: page(passwordPages, "ForgotPasswordPage") },
   { path: "/set-password", element: page(passwordPages, "SetPasswordPage") },
+  { path: "/accept-terms", element: page(legalWorkspace, "LegalGatePage") },
   {
     path: "/admin",
     element: (
@@ -148,7 +157,11 @@ export const router = createBrowserRouter([
       { path: "sms-wallet", element: page(walletAdmin, "AdminSmsWalletPage") },
       { path: "finance", element: page(walletAdmin, "AdminFinancePage") },
       { path: "api", element: page(configPages, "AdminApiPage") },
-      { path: "terms", element: page(configPages, "AdminTermsPage") },
+      { path: "terms", element: <Navigate to="/admin/legal" replace /> },
+      { path: "legal", element: page(legalAdmin, "AdminLegalPage") },
+      { path: "legal/documents/:id", element: page(legalAdmin, "AdminLegalDocumentPage") },
+      { path: "legal/versions/:id/edit", element: page(legalAdmin, "AdminLegalEditorPage") },
+      { path: "legal/versions/:a/compare/:b", element: page(legalAdmin, "AdminLegalComparePage") },
       { path: "subscriptions", element: page(platformPages, "AdminSubscriptionsPage") },
       { path: "health", element: page(platformPages, "AdminHealthPage") },
       { path: "audit", element: page(activityPages, "AdminAuditPage") },
@@ -181,6 +194,7 @@ export const router = createBrowserRouter([
       { path: "design", element: page(() => import("@/features/workspace/DesignPage"), "DesignPage") },
       { path: "sms", element: page(smsPages, "WorkspaceSmsPage") },
       { path: "subscription", element: page(() => import("@/features/workspace/SubscriptionPage"), "SubscriptionPage") },
+      { path: "legal", element: page(legalWorkspace, "LegalPoliciesPage") },
       { path: "account", element: page(accountPage, "AccountPage") },
     ],
   },

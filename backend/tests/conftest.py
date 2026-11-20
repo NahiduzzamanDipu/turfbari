@@ -20,6 +20,7 @@ def reseed_reference_data():
         "apps.locations.migrations.0002_seed_bangladesh",
         "apps.turfs.migrations.0002_seed_amenities",
         "apps.subscriptions.migrations.0002_seed_plans",
+        "apps.legal.migrations.0002_seed_and_migrate_terms",
     ):
         importlib.import_module(module).seed(apps, None)
 

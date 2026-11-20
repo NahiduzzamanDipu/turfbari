@@ -266,6 +266,9 @@ class RechargeView(APIView):
             errors["trx_id"] = ["This Transaction ID was already submitted."]
         if errors:
             raise ValidationError(errors)
+        from apps.legal.services import require_for_user
+
+        require_for_user(request.user, "sms_recharge", request.tenant, request)
         try:
             with transaction.atomic():
                 r = SmsRechargeRequest.objects.create(

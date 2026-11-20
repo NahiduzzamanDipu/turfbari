@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/AppShell";
+import { LegalAcceptBox, legalPayload, usePendingLegal } from "@/components/legal/Legal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge, type BadgeTone, ErrorState, FormField, Input, Select, Table } from "@/components/ui/form";
@@ -32,6 +33,10 @@ export function SubscriptionPage() {
   const isOwner = useIsOwner();
   const sub = useSubscription();
   const [params, setParams] = useSearchParams();
+  // Plan policies are asked for only when there's a version this owner hasn't accepted yet.
+  const legal = usePendingLegal("subscription", isOwner);
+  const legalDocs = legal.data?.documents ?? [];
+  const [agree, setAgree] = useState(false);
 
   // Result of returning from the online checkout.
   useEffect(() => {
@@ -46,12 +51,18 @@ export function SubscriptionPage() {
   }, [params, setParams, qc]);
 
   const order = useMutation({
-    mutationFn: (period: string) => api<Invoice>("/workspace/subscription/order/", { method: "POST", json: { plan: period } }),
+    mutationFn: (period: string) =>
+      api<Invoice>("/workspace/subscription/order/", { method: "POST", json: { plan: period, ...legalPayload(legalDocs, agree) } }),
     onSuccess: () => {
       toast.success("Plan selected. Pay below to activate it.");
+      setAgree(false);
       qc.invalidateQueries({ queryKey: ["ws", "subscription"] });
+      qc.invalidateQueries({ queryKey: ["legal"] });
     },
-    onError: (e) => toast.error(errorText(e)),
+    onError: (e) => {
+      toast.error(errorText(e));
+      qc.invalidateQueries({ queryKey: ["legal", "pending"] });
+    },
   });
 
   if (sub.isPending) return <Skeleton className="h-96" />;
@@ -124,6 +135,13 @@ export function SubscriptionPage() {
             <CardTitle>{standing.current ? "Renew or change plan" : "Choose a plan"}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
+            <LegalAcceptBox
+              id="agree-plan-legal"
+              docs={legalDocs}
+              checked={agree}
+              onChange={setAgree}
+              intro="প্ল্যান বেছে নেওয়ার আগে: আমি সাবস্ক্রিপশন, বিলিং ও রিফান্ড নীতিমালা পড়েছি এবং সম্মত হয়েছি।"
+            />
             <div className="grid gap-3 sm:grid-cols-3">
               {plans.map((plan) => {
                 const save = savings(plan, plans);
@@ -149,7 +167,12 @@ export function SubscriptionPage() {
                         size="sm"
                         variant={isOrdered ? "default" : "outline"}
                         className="mt-auto"
-                        disabled={order.isPending || isOrdered || open_invoice?.status === "pending_verification"}
+                        disabled={
+                          order.isPending ||
+                          isOrdered ||
+                          open_invoice?.status === "pending_verification" ||
+                          (legalDocs.length > 0 && !agree)
+                        }
                         onClick={() => order.mutate(plan.period)}
                       >
                         {isOrdered ? "Selected" : isCurrent ? "Renew" : standing.current ? "Switch" : "Choose"}

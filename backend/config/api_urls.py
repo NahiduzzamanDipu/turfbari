@@ -13,6 +13,8 @@ from apps.bookings import workspace_views as ws
 from apps.common import platform_views as platform
 from apps.common.live import LiveView
 from apps.expenses.views import ExpenseViewSet
+from apps.legal import admin_views as legal_admin
+from apps.legal import views as legal
 from apps.notifications import campaigns as sms_campaigns
 from apps.notifications import usage as sms_usage
 from apps.notifications import views as sms
@@ -51,7 +53,17 @@ public_urls = [
     path("turfs/<slug:slug>/qr.svg", public.TurfQRCodeView.as_view()),
     path("bookings/lookup/", public.PublicBookingLookupView.as_view()),
     path("applications/", public.PublicApplicationView.as_view()),
-    path("terms/", platform.PublicTermsView.as_view()),
+    path("legal/", legal.PublicLegalIndexView.as_view()),
+    path("legal/required/", legal.PublicRequiredView.as_view()),
+    path("legal/versions/<int:pk>/", legal.PublicVersionView.as_view()),
+    path("legal/sector/<slug:slug>/", legal.PublicSectorLegalView.as_view()),
+    path("legal/<slug:slug>/", legal.PublicLegalDocumentView.as_view()),
+]
+
+legal_urls = [
+    path("status/", legal.LegalStatusView.as_view()),
+    path("pending/", legal.LegalPendingView.as_view()),
+    path("accept/", legal.LegalAcceptView.as_view()),
 ]
 
 auth_urls = [
@@ -83,9 +95,18 @@ admin_urls = [
     path("api-config/youtube/", platform.AdminYoutubeView.as_view()),
     path("api-config/bulksmsbd/", platform.AdminBulkSmsView.as_view()),
     path("api-config/booking/", platform.AdminBookingPolicyView.as_view()),
-    path("terms/", platform.AdminTermsView.as_view()),
-    path("terms/publish/", platform.AdminTermsPublishView.as_view()),
-    path("terms/switch/", platform.AdminTermsSwitchView.as_view()),
+    path("legal/", legal_admin.AdminLegalOverviewView.as_view()),
+    path("legal/sectors/", legal_admin.AdminSectorsView.as_view()),
+    path("legal/sectors/<uuid:pk>/", legal_admin.AdminSectorDetailView.as_view()),
+    path("legal/documents/", legal_admin.AdminDocumentsView.as_view()),
+    path("legal/documents/<uuid:pk>/", legal_admin.AdminDocumentDetailView.as_view()),
+    path("legal/documents/<uuid:pk>/versions/", legal_admin.AdminDocumentVersionsView.as_view()),
+    path("legal/versions/<int:pk>/", legal_admin.AdminVersionView.as_view()),
+    path("legal/versions/<int:pk>/publish/", legal_admin.AdminVersionPublishView.as_view()),
+    path("legal/versions/<int:pk>/unpublish/", legal_admin.AdminVersionUnpublishView.as_view()),
+    path("legal/versions/<int:pk>/compare/<int:other>/", legal_admin.AdminVersionCompareView.as_view()),
+    path("legal/acceptances/", legal_admin.AdminAcceptancesView.as_view()),
+    path("legal/pending/", legal_admin.AdminPendingView.as_view()),
     path("audit/", audit.AdminAuditView.as_view()),
     path("sms/", sms.AdminSmsOverviewView.as_view()),
     path("sms/messages/", sms.AdminSmsMessagesView.as_view()),
@@ -164,6 +185,7 @@ urlpatterns = [
     path("public/", include(public_urls)),
     path("payments/", include(payment_urls)),
     path("auth/", include(auth_urls)),
+    path("legal/", include(legal_urls)),
     path("admin/", include(admin_urls)),
     path("workspace/", include(workspace_urls)),
 ]

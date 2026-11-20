@@ -37,6 +37,7 @@ export interface Me {
     phone: string;
     is_platform_admin: boolean;
     must_change_password: boolean;
+    legal_pending?: boolean;
   } | null;
   memberships: Membership[];
   active_turf_id: string | null;
@@ -96,7 +97,8 @@ export interface TurfDetail extends TurfCard {
   theme: PageTheme;
   /** The platform-wide "how to book" video (same on every turf page). */
   youtube_video_id: string | null;
-  terms_version: { id: number; version: number } | null;
+  /** Legal documents a customer must accept to book here (platform + sector), in reading order. */
+  legal: LegalRef[];
   max_slots_per_customer: number;
   description: string;
   maps_url: string;
@@ -525,4 +527,45 @@ export interface WorkspacePhoto extends PublicPhoto {
   id: string;
   sort_order: number;
   created_at: string;
+}
+
+/** A published legal document version that has to be accepted (or is shown) somewhere. */
+export interface LegalRef {
+  version_id: number;
+  version: number;
+  category: string;
+  scope: "platform" | "sector";
+  title_en: string;
+  title_bn: string;
+  url: string;
+  sector_slug: string | null;
+}
+
+export interface LegalEntry extends LegalRef {
+  document_id: string;
+  category_label: string;
+  sector_id: string | null;
+  sector_name_en: string | null;
+  sector_name_bn: string | null;
+  slug: string;
+  audiences: string[];
+  actions: string[];
+  mandatory: boolean;
+  effective_at: string | null;
+  published_at: string | null;
+}
+
+export interface LegalVersionBody extends LegalEntry {
+  body_en: string;
+  body_bn: string;
+  change_summary: string;
+  status: string;
+}
+
+export interface LegalHistoryItem {
+  version: number;
+  published_at: string;
+  effective_at: string;
+  change_summary: string;
+  withdrawn: boolean;
 }

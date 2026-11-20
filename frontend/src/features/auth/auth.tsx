@@ -63,6 +63,9 @@ export function RequireRole({ role, children }: { role: "admin" | "workspace"; c
     return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />;
   }
   if (me.data.user?.must_change_password) return <Navigate to="/set-password" replace />;
+  if (role === "workspace" && me.data.user?.legal_pending) {
+    return <Navigate to={`/accept-terms?next=${encodeURIComponent(location.pathname)}`} replace />;
+  }
   const allowed =
     role === "admin" ? me.data.user?.is_platform_admin : me.data.memberships.length > 0;
   if (!allowed) return <Navigate to={me.data.home === location.pathname ? "/" : me.data.home} replace />;

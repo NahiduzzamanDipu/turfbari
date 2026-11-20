@@ -23,6 +23,9 @@ class TurfApplication(BaseModel):
     )
     address = models.CharField(max_length=255)
     turf_type = models.CharField(max_length=10, default="outdoor")
+    sector = models.ForeignKey(
+        "legal.Sector", on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
     number_of_fields = models.PositiveSmallIntegerField(default=1)
     message = models.TextField(blank=True)
 

@@ -76,6 +76,7 @@ LOCAL_APPS = [
     "apps.subscriptions",
     "apps.audit",
     "apps.notifications",
+    "apps.legal",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -90,6 +91,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "apps.accounts.middleware.AdminSessionLimitMiddleware",
     "apps.accounts.middleware.PasswordChangeRequiredMiddleware",
+    "apps.accounts.middleware.LegalAcceptanceRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Must be last: lockout after repeated failed logins.

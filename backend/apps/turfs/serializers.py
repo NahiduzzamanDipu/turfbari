@@ -160,12 +160,12 @@ class PublicTurfDetailSerializer(PublicTurfCardSerializer):
             "payment",
             "price_categories",
             "youtube_video_id",
-            "terms_version",
+            "legal",
             "max_slots_per_customer",
         ]
 
     youtube_video_id = serializers.SerializerMethodField()
-    terms_version = serializers.SerializerMethodField()
+    legal = serializers.SerializerMethodField()
     max_slots_per_customer = serializers.SerializerMethodField()
 
     def get_youtube_video_id(self, obj):
@@ -173,11 +173,15 @@ class PublicTurfDetailSerializer(PublicTurfCardSerializer):
 
         return PlatformSettings.load().youtube_video_id or None  # one global video for every turf
 
-    def get_terms_version(self, obj):
-        from apps.common.models import TermsVersion
+    def get_legal(self, obj):
+        """Documents a customer must accept to book here (platform + this business's sector), in order."""
+        from apps.legal import services
 
-        current = TermsVersion.current()
-        return {"id": current.pk, "version": current.version} if current else None
+        keep = ("version_id", "version", "category", "scope", "title_en", "title_bn", "url", "sector_slug")
+        return [
+            {k: e[k] for k in keep}
+            for e in services.required("booking", "customer", services.sector_id_of(obj))
+        ]
 
     def get_max_slots_per_customer(self, obj):
         from apps.common.models import PlatformSettings

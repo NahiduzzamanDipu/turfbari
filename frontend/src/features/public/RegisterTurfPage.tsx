@@ -1,11 +1,13 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
+import { LegalAcceptBox } from "@/components/legal/Legal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormField, Input, Select, Textarea } from "@/components/ui/form";
 import { ApiError, api } from "@/lib/api";
+import type { LegalRef } from "@/lib/types";
 import { useLocations } from "./shared";
 
 const EMPTY = {
@@ -20,11 +22,27 @@ const EMPTY = {
   number_of_fields: "1",
   message: "",
   website: "",
+  sector: "",
 };
+
+interface RequiredLegal {
+  sector: { slug: string; name_en: string; name_bn: string } | null;
+  sectors: { slug: string; name_en: string; name_bn: string }[];
+  documents: LegalRef[];
+}
 
 export function RegisterTurfPage() {
   const locations = useLocations();
   const [form, setForm] = useState(EMPTY);
+  const [agree, setAgree] = useState(false);
+  const qc = useQueryClient();
+  // Which documents a new business in the chosen sector must accept (from the server, never hard-coded).
+  const legal = useQuery({
+    queryKey: ["public", "legal-required", "registration", form.sector],
+    queryFn: () =>
+      api<RequiredLegal>(`/public/legal/required/?action=registration${form.sector ? `&sector=${form.sector}` : ""}`),
+  });
+  const docs = legal.data?.documents ?? [];
   const set = (key: keyof typeof EMPTY) => (e: { target: { value: string } }) =>
     setForm((f) => ({ ...f, [key]: e.target.value, ...(key === "district" ? { area: "" } : {}) }));
 
@@ -32,8 +50,21 @@ export function RegisterTurfPage() {
     mutationFn: () =>
       api<{ detail: string }>("/public/applications/", {
         method: "POST",
-        json: { ...form, area: form.area || null, number_of_fields: Number(form.number_of_fields) },
+        json: {
+          ...form,
+          sector: form.sector || legal.data?.sector?.slug || null,
+          area: form.area || null,
+          number_of_fields: Number(form.number_of_fields),
+          agree_legal: agree,
+          accepted_versions: docs.map((d) => d.version_id),
+        },
       }),
+    onError: (e) => {
+      if (e instanceof ApiError && e.fields?.code?.[0] === "legal_versions_changed") {
+        setAgree(false);
+        void qc.invalidateQueries({ queryKey: ["public", "legal-required"] });
+      }
+    },
   });
   const errors = submit.error instanceof ApiError ? submit.error.fields : null;
   const districts = (locations.data ?? []).flatMap((d) => d.districts).sort((a, b) => a.name.localeCompare(b.name));
@@ -127,6 +158,27 @@ export function RegisterTurfPage() {
               <FormField label="Address" error={errors?.address}>
                 {(id) => <Input id={id} required value={form.address} onChange={set("address")} />}
               </FormField>
+              {(legal.data?.sectors.length ?? 0) > 1 && (
+                <FormField label="Business sector" error={errors?.sector}>
+                  {(id) => (
+                    <Select
+                      id={id}
+                      value={form.sector || legal.data?.sector?.slug || ""}
+                      onChange={(e) => {
+                        setAgree(false);
+                        setForm((f) => ({ ...f, sector: e.target.value }));
+                      }}
+                    >
+                      {legal.data?.sectors.map((s) => (
+                        <option key={s.slug} value={s.slug}>
+                          {s.name_en}
+                          {s.name_bn ? ` · ${s.name_bn}` : ""}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </FormField>
+              )}
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField label="Type" error={errors?.turf_type}>
                   {(id) => (
@@ -145,12 +197,19 @@ export function RegisterTurfPage() {
                 {(id) => <Textarea id={id} rows={3} value={form.message} onChange={set("message")} />}
               </FormField>
               <input type="text" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" value={form.website} onChange={set("website")} />
+              <LegalAcceptBox
+                docs={docs}
+                checked={agree}
+                onChange={setAgree}
+                intro="আমি TurfBari-র শর্তাবলী, প্ল্যাটফর্মের নিয়মাবলী ও প্রযোজ্য নীতিমালা পড়েছি এবং সম্মত হয়েছি।"
+                error={errors?.agree_legal?.[0]}
+              />
               {submit.error && !errors && (
                 <p role="alert" className="text-sm text-destructive">
                   {submit.error.message}
                 </p>
               )}
-              <Button type="submit" size="lg" disabled={submit.isPending}>
+              <Button type="submit" size="lg" disabled={submit.isPending || legal.isPending || (docs.length > 0 && !agree)}>
                 {submit.isPending && <Loader2 className="animate-spin" />}
                 Submit application
               </Button>

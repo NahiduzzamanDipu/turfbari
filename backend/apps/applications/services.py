@@ -8,6 +8,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.passwords import create_user_with_temporary_password
+from apps.legal.services import copy_application_acceptances, default_sector
 from apps.subscriptions.models import Plan
 from apps.subscriptions.services import assign_plan
 from apps.turfs.models import TenantMembership, Turf
@@ -32,6 +33,7 @@ def create_turf_with_owner(
     plan=None,
     payment_received=True,
     assigned_by=None,
+    sector=None,
 ) -> tuple[Turf, object, str | None]:
     """Returns (turf, owner_user, temp_password or None if the owner already had an account).
 
@@ -59,6 +61,7 @@ def create_turf_with_owner(
         owner_phone=owner_phone,
         public_phone=owner_phone,
         weekend_days=[4, 5],
+        sector=sector or default_sector(),
     )
     TenantMembership.objects.create(user=owner, turf=turf, role=TenantMembership.Role.OWNER)
     provision_defaults(turf, fields=number_of_fields, hourly_rate=hourly_rate)
@@ -95,7 +98,9 @@ def approve_application(
         plan=plan,
         payment_received=payment_received,
         assigned_by=reviewer,
+        sector=application.sector,
     )
+    copy_application_acceptances(application, owner, turf)
     application.status = TurfApplication.Status.APPROVED
     application.reviewed_by = reviewer
     application.reviewed_at = timezone.now()

@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from apps.audit.services import Category, record
 from apps.common.tenancy import ACTIVE_TURF_SESSION_KEY, memberships_for, resolve_membership
+from apps.legal.services import account_gate_pending
 from apps.turfs.models import MANAGER_PERMISSIONS
 
 from .passwords import (
@@ -53,6 +54,8 @@ def me_payload(request) -> dict:
             "phone": user.phone,
             "is_platform_admin": user.is_platform_admin,
             "must_change_password": user.must_change_password,
+            # Owners/managers must accept updated platform documents before using the workspace.
+            "legal_pending": bool(memberships) and not user.is_platform_admin and account_gate_pending(user),
         },
         "memberships": [
             {

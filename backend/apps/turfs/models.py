@@ -84,6 +84,10 @@ class Turf(BaseModel):
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
     turf_type = models.CharField(max_length=10, choices=TurfType.choices, default=TurfType.OUTDOOR)
+    # Business sector (decides which sector-specific legal documents apply). Admin-managed list.
+    sector = models.ForeignKey(
+        "legal.Sector", on_delete=models.PROTECT, null=True, blank=True, related_name="turfs"
+    )
     surface = models.CharField(max_length=10, choices=Surface.choices, default=Surface.ARTIFICIAL)
     amenities = models.ManyToManyField(Amenity, blank=True, related_name="turfs")
 

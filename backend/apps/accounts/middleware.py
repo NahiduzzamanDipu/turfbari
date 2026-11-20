@@ -31,6 +31,35 @@ class AdminSessionLimitMiddleware:
         return self.get_response(request)
 
 
+class LegalAcceptanceRequiredMiddleware:
+    """Server-side sign-in gate: an owner/manager with unaccepted mandatory platform documents gets 403
+    from every workspace API until they accept (via /api/legal/). Only the workspace is blocked — public
+    pages, sign-out and the legal endpoints keep working. Other actions (bookings, plan orders, SMS
+    recharges) check their own documents when they happen."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = getattr(request, "user", None)
+        if (
+            user is not None
+            and user.is_authenticated
+            and not user.is_platform_admin
+            and not user.must_change_password
+            and request.path.startswith("/api/workspace/")
+        ):
+            from apps.legal.services import account_gate_pending
+
+            if account_gate_pending(user):
+                return _error(
+                    "legal_acceptance_required",
+                    "Please review and accept the updated TurfBari terms and policies to continue.",
+                    403,
+                )
+        return self.get_response(request)
+
+
 # What a user on a temporary password may still call.
 PASSWORD_CHANGE_ALLOWED = (
     "/api/auth/me/",

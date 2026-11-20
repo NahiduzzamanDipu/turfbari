@@ -10,12 +10,13 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.bookings.models import Booking
-from apps.common.models import PlatformSettings, TermsVersion
+from apps.common.models import PlatformSettings
 from apps.notifications.models import SmsAttempt, SmsConfig, SmsMessage
 from apps.notifications.providers import MemoryProvider
 from apps.notifications.services import queue_sms, retry_due
 from apps.turfs.models import TenantMembership
 
+from .legal_helpers import doc_id, draft, publish
 from .test_core import PASSWORD, bkash, client_for, make_turf, tomorrow_at
 from .test_subscriptions import admin_client
 
@@ -26,11 +27,6 @@ LIMIT_BN = "একজন গ্রাহক প্রতিদিন সর্�
 
 def page(turf):
     return APIClient().get(f"/api/public/turfs/{turf.slug}/").json()
-
-
-def publish_terms(admin, terms="# Terms\n- Be on time", rules="1. Pay the advance"):
-    admin.put("/api/admin/terms/", {"terms_body": terms, "rules_body": rules}, format="json")
-    return admin.post("/api/admin/terms/publish/").json()["published"]
 
 
 def book(turf, hour=18, phone="01912345678", visitor=None, key=None, terms=None, field=None, length=1):
@@ -48,7 +44,7 @@ def book(turf, hour=18, phone="01912345678", visitor=None, key=None, terms=None,
         **bkash(),
     }
     if terms:
-        body.update(agree_terms=True, terms_version=terms["id"])
+        body.update(agree_terms=True, accepted_versions=terms)
     return APIClient().post(f"/api/public/turfs/{turf.slug}/book/", body, format="json", **headers)
 
 
@@ -79,43 +75,43 @@ def test_1_2_3_global_video_is_admin_only_and_same_on_every_page():
     assert page(b)["youtube_video_id"] is None
 
 
-# ------------------------------------------------------------------ 5-8 terms
+# ------------------------------------------------------------------ 5-8 terms (now the legal system)
 def test_5_admin_publishes_and_updates_terms_with_history():
     admin, _ = admin_client()
-    v1 = publish_terms(admin)
-    assert v1["version"] == 1 and APIClient().get("/api/public/terms/").json()["version"] == 1
-    admin.put("/api/admin/terms/", {"terms_body": "Draft only", "rules_body": "x"}, format="json")
-    assert (
-        APIClient().get("/api/public/terms/").json()["terms_body"].startswith("# Terms")
-    )  # draft not public
-    v2 = admin.post("/api/admin/terms/publish/").json()
-    assert v2["published"]["version"] == 2 and [h["status"] for h in v2["history"]] == [
-        "published",
-        "archived",
-    ]
-    admin.put("/api/admin/terms/switch/", {"enabled": False}, format="json")
-    assert APIClient().get("/api/public/terms/").status_code == 404
+    v1 = publish(admin, "terms", body_en="<h2>Terms</h2><ul><li>Be on time</li></ul>")
+    assert v1["version"] == 1 and APIClient().get("/api/public/legal/terms/").json()["version"] == 1
+    draft(admin, "terms", body_en="<p>Draft only</p>")
+    assert "Be on time" in APIClient().get("/api/public/legal/terms/").json()["body_en"]  # draft not public
+    d = admin.get(f"/api/admin/legal/documents/{doc_id('terms')}/").json()
+    v2 = admin.post(
+        f"/api/admin/legal/versions/{d['draft']['id']}/publish/", {"reacceptance": "none"}, format="json"
+    )
+    assert v2.json()["version"] == 2
+    d = admin.get(f"/api/admin/legal/documents/{doc_id('terms')}/").json()
+    assert [v["state"] for v in d["versions"]] == ["current", "superseded"]
+    old = APIClient().get("/api/public/legal/terms/?version=1").json()
+    assert "Be on time" in old["body_en"] and old["is_current"] is False
     _, owner = make_turf()
-    assert client_for(owner).get("/api/admin/terms/").status_code == 403
+    assert client_for(owner).get("/api/admin/legal/documents/").status_code == 403
 
 
 def test_6_7_8_agreement_is_required_stored_and_kept_after_updates():
     turf, _ = make_turf()
     admin, _ = admin_client()
-    v1 = publish_terms(admin)
-    assert page(turf)["terms_version"] == {"id": v1["id"], "version": 1}
+    v1 = publish(admin, "booking", body_en="<p>Pay the advance</p>")
+    assert [d["version_id"] for d in page(turf)["legal"]] == [v1["id"]]
     refused = book(turf)
     assert refused.status_code == 400 and "agree_terms" in refused.json()["error"]["fields"]
-    ok = book(turf, terms=v1)
+    ok = book(turf, terms=[v1["id"]])
     assert ok.status_code == 201, ok.json()
     booking = Booking.objects.get(reference=ok.json()["reference"])
-    assert booking.terms_version_id == v1["id"] and booking.terms_agreed_at is not None
-    v2 = publish_terms(admin, terms="# New terms")
-    stale = book(turf, hour=20, phone="01812345678", terms=v1)  # page opened before the update
+    assert booking.terms_agreed_at is not None
+    assert list(booking.legal_acceptances.values_list("version_id", flat=True)) == [v1["id"]]
+    v2 = publish(admin, "booking", body_en="<p>New rules</p>")
+    stale = book(turf, hour=20, phone="01812345678", terms=[v1["id"]])  # page opened before the update
     assert stale.status_code == 400 and str(v2["id"]) in str(stale.json())
-    booking.refresh_from_db()
-    assert booking.terms_version.version == 1  # existing booking keeps what was agreed
-    assert TermsVersion.objects.get(pk=v1["id"]).terms_body.startswith("# Terms")
+    # The existing booking keeps exactly what was agreed, and that text is unchanged.
+    assert booking.legal_acceptances.get().version.body_en == "<p>Pay the advance</p>"
 
 
 # ------------------------------------------------------------------ 9-11 SMS usage

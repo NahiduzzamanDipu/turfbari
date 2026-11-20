@@ -126,6 +126,9 @@ class SubscriptionOrderView(WorkspaceSubscriptionMixin, APIView):
     def post(self, request):
         data = OrderSerializer(data=request.data)
         data.is_valid(raise_exception=True)
+        from apps.legal.services import require_for_user
+
+        require_for_user(request.user, "subscription", request.tenant, request)
         invoice = create_order(request.tenant, data.validated_data["plan"], created_by=request.user)
         record(
             "subscription.ordered",

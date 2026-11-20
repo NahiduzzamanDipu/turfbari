@@ -294,3 +294,79 @@ Admin: `sms/pricing/`, `sms/recharges/` (+ `<id>/approve|reject/`), `sms/wallets
 2. Admin → API → **Payments to TurfBari**: the recharge bKash number (and optionally the subscription bKash number and
    charge).
 3. Owners recharge their wallets; approve the requests in Admin → SMS wallets.
+
+---
+
+# Version 4 — Legal & Compliance management
+
+> TurfBari provides the tools to write, version and record agreement to documents. It does **not** check that the
+> wording is legally sufficient. Have a qualified legal professional in Bangladesh review each document before you
+> publish it (the admin screens show the same notice).
+
+## What it replaces
+The single "Terms & Rules" page (V2) is now **Admin → Legal & Compliance**. Nothing was lost:
+- every old Terms version became the same version number of **Terms & Conditions** (terms text) and
+  **Booking & Reservation Policy** (the old booking-rules text), with the same status and publish date;
+- every booking that agreed to old version N now has acceptance records for exactly those two versions,
+  dated when the customer agreed. `Booking.terms_version` stays in the database for history.
+- The old endpoints `/api/public/terms/` and `/api/admin/terms/*` were removed; `/terms` and `/admin/terms` redirect.
+
+## Documents (modules)
+Platform-wide: Terms & Conditions, Privacy, Platform Rules, Account Usage, Prohibited Activities, Booking &
+Reservation, Payment/Refund/Cancellation, Subscription & Billing, SMS Wallet & Communication.
+Per sector: Sector Terms and Sector Rules (more can be added for any category). Sectors are an admin-managed list
+(first one: *Football Turf & Sports Facilities*); every business has one. Sector documents **add** to the platform
+documents, in this order: platform terms → platform rules → sector terms → sector rules → service/booking policies.
+Platform Terms, Privacy and Prohibited Activities can't be made optional.
+
+Each module has: who it applies to (customers / owners / managers), when agreement is asked (registration, sign-in,
+booking, plan order, SMS recharge), mandatory on/off, retire/restore. New modules start empty and **unpublished
+modules are never shown or required** — nothing placeholder is published.
+
+## Versions
+Draft → preview → publish now or schedule (Bangladesh time) → withdraw. Published text can never be edited (checked in
+the database layer too); editing starts a new draft copied from the latest version. Bengali and English bodies; the
+rich-text editor allows headings, paragraphs, lists, bold/italic/underline, links (http/https/mailto/tel), quotes and
+tables, and the server re-cleans everything with an allow-list (`nh3`) on save. Version history and a line-by-line
+compare of any two versions are in the admin; the public pages show the current version with its version number,
+effective date and last-updated date, plus earlier published versions.
+
+## Who has to accept, and when
+- **Registration** (`/register-turf`): unchecked box listing the required documents for the chosen sector; checked on the
+  server. Accepted versions are stored against the application and copied to the owner's account when approved, so they
+  aren't asked again at first sign-in.
+- **Sign-in gate**: an owner/manager with an unaccepted mandatory "sign-in" document gets `403 legal_acceptance_required`
+  from every workspace API (middleware + permission class) and the app shows a full-screen accept page
+  (`/accept-terms`). Public pages, sign-out and `/api/legal/*` keep working. Platform admins are never gated.
+- **Every booking**: the customer ticks the current booking documents (platform + the turf's sector). The request sends
+  the exact version ids; if anything changed meanwhile the server answers `legal_versions_changed` and the page reloads
+  the new list. Acceptance rows are linked to the booking; bKash verification is unchanged.
+- **Plan orders / SMS recharges**: asked only for relevant documents the owner hasn't accepted yet (never twice).
+- **Re-acceptance when publishing**: everyone / one sector / only owners & managers / only at the next relevant action /
+  nobody. People who never accepted a document always have to accept its current version.
+
+## Records
+`LegalAcceptance` rows store user (or none for customers), business, booking, exact version, document, category,
+sector, action, reference and time; they can't be updated or deleted. Admin → Legal & Compliance → *Acceptance
+records* searches and exports CSV (no phone numbers or IPs; a salted IP hash is stored only). Publishing, withdrawing,
+sector and settings changes, and exports are in the audit log. Owners and managers see what applies to them (platform /
+sector / their own cancellation policy) and their own history under **Workspace → Legal & Policies**.
+
+## Migrations
+`legal.0001_initial`, `legal.0002_seed_and_migrate_terms` (sector, empty modules, old terms + booking agreements),
+`turfs.0012_turf_sector`, `applications.0003_business_sector`. New dependency: `nh3`.
+
+## New endpoints
+Public: `GET /api/public/legal/`, `/legal/<slug>/` (`?version=N`), `/legal/sector/<slug>/`, `/legal/required/`,
+`/legal/versions/<id>/`; turf detail now has `legal` (list) instead of `terms_version`; booking takes
+`accepted_versions`; applications take `sector`, `agree_legal`, `accepted_versions`.
+Signed-in: `GET /api/legal/status/`, `GET /api/legal/pending/?action=`, `POST /api/legal/accept/`.
+Admin: `/api/admin/legal/` (overview), `sectors/`, `documents/`, `documents/<id>/versions/`, `versions/<id>/`
+(GET/PUT/DELETE draft), `versions/<id>/publish/`, `unpublish/`, `versions/<a>/compare/<b>/`, `acceptances/`
+(`?export=csv`), `pending/`.
+
+## After deploying
+1. Admin → Legal & Compliance: check the migrated Terms and Booking policy, then write, have reviewed, and publish
+   the other documents. Choose the re-acceptance scope carefully — "everyone" stops every owner at next sign-in.
+2. Note: the migrated Terms document asks owners/managers to accept it at their next sign-in (they never accepted it
+   before; previously only customers did). Change its "Ask for agreement at" settings first if you don't want that.
