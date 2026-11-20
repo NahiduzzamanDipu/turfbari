@@ -97,13 +97,13 @@ export function SubscriptionPage() {
     invoiceStatus: open_invoice?.status ?? null,
   });
   const planCardTone = {
-    active: "border-emerald-400/30 bg-gradient-to-br from-primary via-primary to-emerald-950 text-primary-foreground shadow-xl shadow-primary/20",
-    expiring: "border-amber-300/40 bg-gradient-to-br from-amber-700 via-amber-800 to-stone-950 text-white shadow-xl shadow-amber-950/20",
-    grace: "border-rose-300/30 bg-gradient-to-br from-rose-800 via-rose-950 to-slate-950 text-white shadow-xl shadow-rose-950/20",
-    expired: "border-rose-300/30 bg-gradient-to-br from-rose-900 via-red-950 to-slate-950 text-white shadow-xl shadow-red-950/20",
+    active: "border-2 border-emerald-300/50 bg-gradient-to-br from-emerald-700 via-emerald-800 to-slate-900 !text-white shadow-lg shadow-emerald-950/15",
+    expiring: "border-2 border-amber-300/50 bg-gradient-to-br from-amber-700 via-amber-800 to-stone-950 !text-white shadow-lg shadow-amber-950/15",
+    grace: "border-2 border-rose-300/45 bg-gradient-to-br from-rose-800 via-rose-950 to-slate-950 !text-white shadow-lg shadow-rose-950/15",
+    expired: "border-2 border-rose-300/45 bg-gradient-to-br from-rose-900 via-red-950 to-slate-950 !text-white shadow-lg shadow-red-950/15",
     none: "border-border bg-gradient-to-br from-muted via-card to-muted/50",
-    pending: "border-sky-300/30 bg-gradient-to-br from-sky-800 via-indigo-950 to-slate-950 text-white shadow-xl shadow-indigo-950/20",
-    suspended: "border-slate-400/30 bg-gradient-to-br from-slate-700 via-slate-900 to-zinc-950 text-white shadow-xl shadow-slate-950/20",
+    pending: "border-2 border-sky-300/45 bg-gradient-to-br from-sky-800 via-indigo-950 to-slate-950 !text-white shadow-lg shadow-indigo-950/15",
+    suspended: "border-2 border-slate-300/40 bg-gradient-to-br from-slate-700 via-slate-900 to-zinc-950 !text-white shadow-lg shadow-slate-950/15",
   }[planCardState];
   const planStatusLabel = turf_status === "suspended" ? "Suspended" :
     !standing.current && open_invoice?.status === "pending_verification" ? "Pending approval" : STANDING_LABEL[standing.state];
@@ -114,15 +114,15 @@ export function SubscriptionPage() {
     <>
       <PageHeader title="Subscription" description="Your TurfBari plan. Plans never renew automatically — you choose and pay for each period." />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-        <Card className={cn("overflow-hidden border transition-shadow duration-300 hover:shadow-2xl", planCardTone)}>
-          <CardHeader>
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <Card className={cn("h-fit overflow-hidden rounded-2xl transition-shadow duration-300 hover:shadow-xl", planCardTone)}>
+          <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-2"><Sparkles className="size-5" /> Current plan</span>
               <Badge tone={planStatusTone} className="border border-current/20 bg-background/15 text-current backdrop-blur-sm">{planStatusLabel}</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-5 text-sm">
+          <CardContent className={cn("flex flex-col gap-4 text-sm", planCardState !== "none" && "!text-white")}>
             {standing.current ? (
               <>
                 <div className="flex flex-wrap items-end justify-between gap-3">
@@ -130,14 +130,14 @@ export function SubscriptionPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-75">Your subscription</p>
                     <p className="mt-1 break-words font-display text-3xl font-extrabold uppercase leading-tight sm:text-4xl">{standing.current.plan.name}</p>
                   </div>
-                  {standing.current.plan.months > 0 && (
+                  {standing.current.plan.months > 1 && (
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-current/20 bg-background/10 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm">
                       <CalendarClock className="size-4" /> {standing.current.plan.months === 1 ? "Monthly" : `${standing.current.plan.months} months`}
                     </span>
                   )}
                 </div>
                 {standing.current.plan.description && <p className="max-w-xl text-sm leading-relaxed opacity-85">{standing.current.plan.description}</p>}
-                <dl className="grid gap-3 sm:grid-cols-2">
+                <dl className="grid gap-2 sm:grid-cols-2">
                   <PlanInfo icon={<CalendarDays />} label="Start date" value={fmtPlainDate(standing.current.starts_on)} onDark={planCardState !== "none"} />
                   <PlanInfo icon={<CalendarClock />} label="Expiry date · paid through" value={fmtPlainDate(standing.paid_until)} emphasis onDark={planCardState !== "none"} />
                   <PlanInfo icon={<Clock />} label="Time remaining" value={standing.days_left === null ? "—" : `${Math.max(0, standing.days_left)} ${Math.max(0, standing.days_left) === 1 ? "day" : "days"}`} emphasis={standing.state === "expiring"} onDark={planCardState !== "none"} />
@@ -313,7 +313,7 @@ function PlanInfo({ icon, label, value, emphasis = false, onDark = false }: {
   icon: React.ReactNode; label: string; value: string; emphasis?: boolean; onDark?: boolean;
 }) {
   return (
-    <div className={cn("min-w-0 rounded-xl border p-3", onDark ? "border-current/15 bg-background/10" : "border-border bg-background/70")}>
+    <div className={cn("min-w-0 rounded-xl border p-2.5", onDark ? "border-white/20 bg-white/10 text-white" : "border-border bg-background/70 text-card-foreground")}>
       <dt className="flex items-center gap-2 text-xs font-medium opacity-75">{icon}<span>{label}</span></dt>
       <dd className={cn("mt-1 break-words font-semibold tabular-nums", emphasis && "text-amber-300")}>{value}</dd>
     </div>
