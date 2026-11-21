@@ -32,6 +32,7 @@ def test_public_status_does_not_expose_provider_credentials():
     response = APIClient().get("/api/public/assistant/status/")
     assert response.status_code == 200
     assert response.json()["available"] is False  # invalid encrypted data is never treated as ready
+    assert response.json()["welcome"]["bn"]
     assert "api_key" not in str(response.json())
 
 

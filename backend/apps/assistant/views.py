@@ -144,7 +144,11 @@ class PublicAssistantStatusView(APIView):
                 "enabled": config.enabled,
                 "available": ready,
                 "display_name": config.display_name,
-                "welcome": {"en": config.welcome_en, "bn": config.welcome_bn},
+                "welcome": {
+                    "en": config.welcome_en,
+                    "bn": config.welcome_bn
+                    or "টার্ফবাড়ির বুকিং, সাবস্ক্রিপশন, SMS এবং অ্যাকাউন্ট সম্পর্কে আমাকে জিজ্ঞাসা করুন।",
+                },
                 "default_language": config.default_language,
                 "provider_state": _provider_state(config) if ready else "unavailable",
                 "suggested_questions": [{"en": q.question_en, "bn": q.question_bn} for q in questions],
