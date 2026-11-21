@@ -35,6 +35,7 @@ from .models import (
     Conversation,
     ConversationMessage,
     KnowledgeArticle,
+    KnowledgeChunk,
     KnowledgeSource,
     SuggestedQuestion,
 )
@@ -238,10 +239,10 @@ class PublicConversationView(APIView):
                 )
         safe_message = user_message.content
         try:
-            if not KnowledgeSource.objects.filter(
-                key="homepage:overview:en",
-                is_enabled=True,
-                status=KnowledgeSource.Status.INDEXED,
+            if not KnowledgeChunk.objects.filter(
+                source__key="homepage:overview:en",
+                source__is_enabled=True,
+                source__status=KnowledgeSource.Status.INDEXED,
             ).exists():
                 sync_knowledge()
             previous_questions = list(

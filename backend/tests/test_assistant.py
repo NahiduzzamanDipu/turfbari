@@ -99,6 +99,20 @@ def test_first_public_question_builds_empty_local_index_automatically():
     assert KnowledgeSource.objects.filter(key="homepage:overview:en").exists()
 
 
+def test_first_question_repairs_indexed_overview_missing_its_chunks():
+    KnowledgeSource.objects.create(
+        key="homepage:overview:en",
+        title="TURFBARI overview",
+        language="en",
+        content_hash="old-index",
+        status=KnowledgeSource.Status.INDEXED,
+    )
+    response = ask(start_conversation(), "What is TURFBARI?")
+    assert response.status_code == 200
+    assert "TURFBARI is a SaaS platform" in response.json()["message"]["content"]
+    assert KnowledgeChunk.objects.filter(source__key="homepage:overview:en").exists()
+
+
 def test_bengali_answer_uses_bengali_published_material():
     source = add_source(
         "faq:bn-1",

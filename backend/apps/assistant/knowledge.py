@@ -55,7 +55,11 @@ def _replace_source(
     source, _ = KnowledgeSource.objects.get_or_create(
         key=key, defaults={"title": title, "language": language}
     )
-    if source.content_hash == digest and source.status == KnowledgeSource.Status.INDEXED:
+    if (
+        source.content_hash == digest
+        and source.status == KnowledgeSource.Status.INDEXED
+        and source.chunks.exists()
+    ):
         return {"key": key, "status": source.status, "changed": False}
     source.title, source.language, source.version = title, language, version
     source.public_url = public_url
