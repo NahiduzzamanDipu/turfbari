@@ -1,7 +1,6 @@
 """Public, approved TURFBARI knowledge ingestion and retrieval."""
 
 import hashlib
-import math
 import re
 
 from django.utils import timezone
@@ -11,8 +10,7 @@ from apps.homepage.models import HomepageFAQ
 from apps.notifications.models import SmsPricing
 from apps.subscriptions.models import Plan
 
-from .models import AssistantSettings, KnowledgeArticle, KnowledgeChunk, KnowledgeSource
-from .provider import ProviderError, embed
+from .models import KnowledgeArticle, KnowledgeChunk, KnowledgeSource
 
 
 def _hash(value: str) -> str:
@@ -50,7 +48,6 @@ def _replace_source(
     version: str,
     content: str,
     *,
-    config,
     public_url: str = "",
 ) -> dict:
     content = _clean(content)
@@ -69,26 +66,20 @@ def _replace_source(
     try:
         rows = []
         for ordinal, chunk in enumerate(split_chunks(content)):
-            vector = embed(chunk, config=config) if config.api_key_encrypted else []
-            rows.append(
-                KnowledgeChunk(
-                    source=source, ordinal=ordinal, text=chunk, embedding=vector, content_hash=_hash(chunk)
-                )
-            )
+            rows.append(KnowledgeChunk(source=source, ordinal=ordinal, text=chunk, content_hash=_hash(chunk)))
         KnowledgeChunk.objects.bulk_create(rows)
         source.status = KnowledgeSource.Status.INDEXED
         source.indexed_at = timezone.now()
         source.save(update_fields=["status", "indexed_at", "updated_at"])
         return {"key": key, "status": source.status, "changed": True}
-    except ProviderError as exc:
-        source.status, source.error_code = KnowledgeSource.Status.FAILED, exc.code
+    except Exception:
+        source.status, source.error_code = KnowledgeSource.Status.FAILED, "index_failed"
         source.save(update_fields=["status", "error_code", "updated_at"])
-        return {"key": key, "status": source.status, "changed": True}
+        raise
 
 
 def sync_knowledge() -> dict:
     """Rebuild published public sources and admin-published articles only. Drafts are excluded."""
-    config = AssistantSettings.load()
     results = []
     overview = (
         "TURFBARI is a SaaS platform for football turf businesses in Bangladesh. "
@@ -105,7 +96,21 @@ def sync_knowledge() -> dict:
             "en",
             "homepage-v1",
             overview,
-            config=config,
+        )
+    )
+    overview_bn = (
+        "টার্ফবাড়ি বাংলাদেশের ফুটবল টার্ফ ব্যবসার জন্য একটি ব্যবস্থাপনা প্ল্যাটফর্ম। "
+        "মালিকেরা নিজস্ব বুকিং পেজ, QR কোড, মাঠ, খোলার সময়, কাস্টম স্লট ও মূল্য পরিচালনা করতে পারেন। "
+        "তারা বুকিং, গ্রাহক, কর্মী, bKash পেমেন্ট যাচাই, SMS Wallet এবং রিপোর্টও পরিচালনা করতে পারেন। "
+        "গ্রাহকেরা টার্ফের পাবলিক পেজ থেকে স্লট বুক করতে পারেন।"
+    )
+    results.append(
+        _replace_source(
+            "homepage:overview:bn",
+            "টার্ফবাড়ি প্ল্যাটফর্ম পরিচিতি",
+            "bn",
+            "homepage-v1",
+            overview_bn,
         )
     )
     for faq in HomepageFAQ.objects.filter(is_published=True):
@@ -121,7 +126,6 @@ def sync_knowledge() -> dict:
                         language,
                         str(faq.updated_at),
                         f"{question}\n\n{answer}",
-                        config=config,
                         public_url="/#faq-title",
                     )
                 )
@@ -143,7 +147,6 @@ def sync_knowledge() -> dict:
                 "en",
                 str(plan.updated_at),
                 body,
-                config=config,
                 public_url="/#plans",
             )
         )
@@ -161,7 +164,6 @@ def sync_knowledge() -> dict:
                 str(rate.effective_from),
                 f"Current SMS price is BDT {rate.price_per_segment} per segment, "
                 f"effective {rate.effective_from:%Y-%m-%d}.",
-                config=config,
             )
         )
     from apps.legal.services import current_versions_qs
@@ -182,7 +184,6 @@ def sync_knowledge() -> dict:
                         language,
                         f"v{version.version}",
                         f"{title}\n\n{plain}",
-                        config=config,
                         public_url=(
                             f"/legal/sector/{version.document.sector.slug}#{version.document.category}"
                             if version.document.sector_id
@@ -203,7 +204,6 @@ def sync_knowledge() -> dict:
                         language,
                         str(article.updated_at),
                         f"{title}\n\n{body}",
-                        config=config,
                     )
                 )
     active_keys = {r["key"] for r in results}
@@ -216,76 +216,128 @@ def sync_knowledge() -> dict:
     }
 
 
-def live_facts(question: str) -> str:
-    """Fetch live values for relevant questions; don't trust old price embeddings."""
+def live_facts(question: str) -> list[str]:
+    """Fetch current platform values directly from TURFBARI's database."""
     q = question.casefold()
     snippets = []
-    if any(
-        word in q for word in ("price", "cost", "plan", "subscription", "sms", "টাকা", "দাম", "খরচ", "সাবস্ক্রিপশন")
-    ):
+    money_terms = (
+        "price",
+        "cost",
+        "plan",
+        "subscription",
+        "sms",
+        "\u09a6\u09be\u09ae",
+        "\u0996\u09b0\u099a",
+        "\u09b8\u09be\u09ac\u09b8\u09cd\u0995\u09cd\u09b0\u09bf\u09aa\u09b6\u09a8",
+        "\u099f\u09be\u0995\u09be",
+    )
+    if any(word in q for word in money_terms):
         plans = Plan.objects.filter(is_active=True, is_public=True).order_by("display_order", "months")
-        snippets.extend(
-            f"Live plan: {p.name}, BDT {p.price}, {p.months} months. {p.description}" for p in plans
-        )
+        snippets.extend(f"{p.name}: BDT {p.price}, {p.months} months. {p.description}" for p in plans)
         sms = (
             SmsPricing.objects.filter(effective_from__lte=timezone.now())
             .order_by("-effective_from", "-id")
             .first()
         )
-        if sms and any(word in q for word in ("sms", "segment", "এসএমএস")):
-            snippets.append(f"Live SMS price: BDT {sms.price_per_segment} per billable segment.")
-    if any(word in q for word in ("contact", "phone", "email", "যোগাযোগ", "ফোন")):
-        s = PlatformSettings.load()
-        if s.contact_enabled:
+        if sms and any(word in q for word in ("sms", "segment", "\u098f\u09b8\u098f\u09ae\u098f\u09b8")):
+            snippets.append(f"SMS: BDT {sms.price_per_segment} per billable segment.")
+    contact_terms = (
+        "contact",
+        "phone",
+        "email",
+        "\u09af\u09cb\u0997\u09be\u09af\u09cb\u0997",
+        "\u09ab\u09cb\u09a8",
+        "\u0987\u09ae\u09c7\u0987\u09b2",
+    )
+    if any(word in q for word in contact_terms):
+        settings = PlatformSettings.load()
+        if settings.contact_enabled:
             snippets.extend(
-                x
-                for x in (
-                    f"Public support phone: {s.contact_phone}"
-                    if s.contact_show_phone and s.contact_phone
+                value
+                for value in (
+                    f"Support phone: {settings.contact_phone}"
+                    if settings.contact_show_phone and settings.contact_phone
                     else "",
-                    f"Public support email: {s.contact_email}"
-                    if s.contact_show_email and s.contact_email
+                    f"Support email: {settings.contact_email}"
+                    if settings.contact_show_email and settings.contact_email
                     else "",
-                    f"Facebook: {s.contact_facebook_url}"
-                    if s.contact_show_facebook and s.contact_facebook_url
+                    f"Facebook: {settings.contact_facebook_url}"
+                    if settings.contact_show_facebook and settings.contact_facebook_url
                     else "",
                 )
-                if x
+                if value
             )
-    return "\n".join(snippets)
+    return snippets
 
 
-def retrieve(question: str, limit: int = 5) -> list[KnowledgeChunk]:
-    config = AssistantSettings.load()
+def retrieve(question: str, limit: int = 4, language: str = "en") -> list[KnowledgeChunk]:
+    """Rank published local knowledge with lightweight bilingual lexical search."""
     candidates = list(
-        KnowledgeChunk.objects.filter(source__is_enabled=True, source__status=KnowledgeSource.Status.INDEXED)
-        .exclude(source__key__startswith="sms-pricing:")
-        .select_related("source")[:1500]
+        KnowledgeChunk.objects.filter(
+            source__is_enabled=True, source__status=KnowledgeSource.Status.INDEXED
+        ).select_related("source")[:1500]
     )
-    if not candidates:
+    terms = set(re.findall(r"[a-z0-9\u0980-\u09ff]{2,}", question.casefold()))
+    terms -= {
+        "what",
+        "how",
+        "does",
+        "do",
+        "can",
+        "the",
+        "and",
+        "for",
+        "with",
+        "from",
+        "this",
+        "that",
+        "please",
+        "tell",
+        "about",
+        "কী",
+        "কি",
+        "কীভাবে",
+        "কিভাবে",
+        "আমার",
+        "আমাকে",
+        "একটি",
+        "এর",
+        "জন্য",
+        "করে",
+        "বলুন",
+    }
+    if not terms:
         return []
-    try:
-        query_vector = embed(question, config=config) if config.api_key_encrypted else []
-    except ProviderError:
-        query_vector = []
-    if query_vector:
+    ranked = []
+    for chunk in candidates:
+        content = f"{chunk.source.title} {chunk.text}".casefold()
+        content_terms = set(re.findall(r"[a-z0-9\u0980-\u09ff]{2,}", content))
+        score = len(terms & content_terms) / len(terms)
+        if question.casefold() in content:
+            score += 1
+        if chunk.source.language == language:
+            score += 0.12
+        if score >= 0.12:
+            ranked.append((score, chunk))
+    ranked.sort(key=lambda item: (-item[0], item[1].source.title, item[1].ordinal))
+    return [chunk for _, chunk in ranked[:limit]]
 
-        def similarity(chunk):
-            vector = chunk.embedding
-            if len(vector) != len(query_vector):
-                return 0.0
-            dot = sum(a * b for a, b in zip(vector, query_vector, strict=False))
-            norm = math.sqrt(sum(x * x for x in vector)) * math.sqrt(sum(x * x for x in query_vector))
-            return dot / norm if norm else 0.0
 
-        candidates.sort(key=similarity, reverse=True)
-        return [c for c in candidates[:limit] if similarity(c) > 0.12]
-    words = {word for word in re.findall(r"[a-z0-9\u0980-\u09ff]{2,}", question.casefold())}
-    ranked = sorted(
-        candidates,
-        key=lambda c: len(
-            words & set(re.findall(r"[a-z0-9\u0980-\u09ff]{2,}", f"{c.source.title} {c.text}".casefold()))
-        ),
-        reverse=True,
-    )
-    return ranked[:limit]
+def local_answer(language: str, chunks: list[KnowledgeChunk], facts: list[str]) -> str:
+    """Compose an extractive answer only from published knowledge and live DB facts."""
+    paragraphs = list(facts)
+    for chunk in chunks:
+        text = re.sub(r"\s+", " ", chunk.text).strip()
+        if text and text not in paragraphs:
+            paragraphs.append(text)
+    if not paragraphs:
+        return (
+            "প্রকাশিত TURFBARI তথ্যভাণ্ডারে এই প্রশ্নের নির্ভরযোগ্য উত্তর পাওয়া যায়নি। বিস্তারিত জানতে সাপোর্টের সাথে যোগাযোগ করুন।"
+            if language == "bn"
+            else (
+                "I couldn't find a verified answer in TURFBARI's published information. "
+                "Please contact support for help."
+            )
+        )
+    lead = "প্রকাশিত TURFBARI তথ্য থেকে:" if language == "bn" else "From TURFBARI's published information:"
+    return lead + "\n\n" + "\n\n".join(paragraphs[:4])[:3500]

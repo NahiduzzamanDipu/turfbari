@@ -1,12 +1,12 @@
-# AI Assistant Verification
+﻿# TURFBARI Website Assistant Verification
 
-Run backend tests from `backend/`:
+Backend tests:
 
 ```powershell
 python -m pytest -q tests/test_assistant.py
 ```
 
-Run frontend checks from `frontend/`:
+Frontend checks:
 
 ```powershell
 npm run typecheck
@@ -14,6 +14,6 @@ npm test -- --reporter=dot
 npm run build
 ```
 
-The backend suite covers encrypted/masked credentials, admin authorization, conversation-token isolation, PII redaction, request idempotency and retry, provider failure, daily caps, draft exclusion, published article indexing and live price retrieval. Provider tests use a controlled test double; real-provider smoke testing is the Admin **Test provider** button and requires configured credentials. A real provider integration is not claimed before that external credential/configuration exists.
+Coverage includes local-only status, no external provider configuration, approved-source retrieval, bilingual output, follow-up context, honest no-match behavior, PII redaction, idempotency, daily limits, draft exclusion, indexing, and admin permissions.
 
-For a manual UI check, open the public homepage at desktop and mobile widths, tab to the floating assistant, open/minimize/close it, start a fresh conversation, send English/Bengali/Banglish questions, retry a failed request, clear history, and use the source links. Verify the homepage continues to work if provider status is unavailable.
+Manual UI check: at desktop and mobile widths, keyboard-open the homepage widget, switch language, ask a published FAQ question, follow a suggested question, inspect citations, retry and clear the conversation. Re-index after publishing new knowledge. Verify the widget remains available without any third-party AI credentials.

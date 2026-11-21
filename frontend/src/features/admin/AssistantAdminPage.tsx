@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bot, BookOpen, CircleHelp, Database, RefreshCw, Save, Send, ShieldCheck } from "lucide-react";
+import { Bot, BookOpen, CircleHelp, Database, RefreshCw, Save, ShieldCheck } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/AppShell";
@@ -11,12 +11,11 @@ import { api } from "@/lib/api";
 
 type Settings = {
   enabled: boolean; display_name: string; welcome_en: string; welcome_bn: string; default_language: "en" | "bn";
-  base_url: string; model: string; embedding_model: string; api_key_masked: string; configured: boolean;
-  temperature: string; max_response_tokens: number; context_messages: number; daily_message_limit: number; retention_days: number; provider_state: string; input_cost_per_million: string; output_cost_per_million: string;
+  context_messages: number; daily_message_limit: number; retention_days: number; service_mode: "local_knowledge";
 };
 type Article = { id: string; title_en: string; title_bn: string; body_en: string; body_bn: string; is_published: boolean; source_type: string; source_url: string };
 type Source = { id: string; title: string; language: string; version: string; status: string; indexed_at: string | null; error_code: string; chunks: number; is_enabled: boolean };
-type Analytics = { conversations: number; messages_today: number; messages_this_month: number; user_messages_today: number; responses_today: number; failed_today: number; bengali_conversations: number; english_conversations: number; prompt_tokens_today: number; completion_tokens_today: number; estimated_cost_usd_today: string | null; cost_estimate_configured: boolean; feedback_helpful: number; feedback_not_helpful: number; recent?: { id: string; language: string; message_count: number; updated_at: string; source_count: number }[] };
+type Analytics = { conversations: number; messages_today: number; messages_this_month: number; user_messages_today: number; responses_today: number; failed_today: number; bengali_conversations: number; english_conversations: number; feedback_helpful: number; feedback_not_helpful: number; recent?: { id: string; language: string; message_count: number; updated_at: string; source_count: number }[] };
 type SuggestedQuestion = { id: string; question_en: string; question_bn: string; display_order: number; is_active: boolean };
 
 const emptyArticle = { title_en: "", title_bn: "", body_en: "", body_bn: "", is_published: false };
@@ -29,7 +28,6 @@ export function AdminAssistantPage() {
   const analyticsQuery = useQuery({ queryKey: ["admin", "assistant", "analytics"], queryFn: () => api<Analytics>("/admin/assistant/analytics/") });
   const questionsQuery = useQuery({ queryKey: ["admin", "assistant", "questions"], queryFn: () => api<SuggestedQuestion[]>("/admin/assistant/questions/") });
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [key, setKey] = useState("");
   const [article, setArticle] = useState(emptyArticle);
   const [articleId, setArticleId] = useState<string | null>(null);
   const [question, setQuestion] = useState({ question_en: "", question_bn: "", display_order: 0, is_active: true });
@@ -40,19 +38,9 @@ export function AdminAssistantPage() {
   useEffect(() => { if (settingsQuery.data) setSettings(settingsQuery.data); }, [settingsQuery.data]);
 
   const saveSettings = useMutation({
-    mutationFn: () => api<Settings>("/admin/assistant/settings/", { method: "PUT", json: { ...settings, api_key: key } }),
-    onSuccess: (data) => { setSettings(data); setKey(""); qc.invalidateQueries({ queryKey: ["admin", "assistant"] }); toast.success("AI Assistant settings saved."); },
+    mutationFn: () => api<Settings>("/admin/assistant/settings/", { method: "PUT", json: settings }),
+    onSuccess: (data) => { setSettings(data); qc.invalidateQueries({ queryKey: ["admin", "assistant"] }); toast.success("Local assistant settings saved."); },
     onError: (e: Error) => toast.error(e.message),
-  });
-  const clearCredential = useMutation({
-    mutationFn: () => api<Settings>("/admin/assistant/settings/", { method: "PUT", json: { ...settings, api_key: "", clear_api_key: true } }),
-    onSuccess: (data) => { setSettings(data); qc.invalidateQueries({ queryKey: ["admin", "assistant"] }); toast.success("Provider credential removed. Assistant replies are now unavailable."); },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const testProvider = useMutation({
-    mutationFn: () => api<{ ok: boolean }>("/admin/assistant/test/", { method: "POST", json: {} }),
-    onSuccess: () => { toast.success("AI provider connection succeeded."); qc.invalidateQueries({ queryKey: ["admin", "assistant", "settings"] }); },
-    onError: (e: Error) => toast.error(`Provider test failed: ${e.message}`),
   });
   const saveArticle = useMutation({
     mutationFn: () => api<Article>(articleId ? `/admin/assistant/articles/${articleId}/` : "/admin/assistant/articles/", { method: "POST", json: article }),
@@ -86,7 +74,7 @@ export function AdminAssistantPage() {
 
   const counts = analyticsQuery.data;
   return <div className="space-y-6">
-    <PageHeader title="AI Assistant" description="Configure the public informational assistant and manage its approved knowledge." />
+    <PageHeader title="Website Assistant" description="Manage the local bilingual assistant and its approved knowledge." />
     <aside className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
       <p className="flex items-center gap-2 font-semibold"><ShieldCheck className="size-4" /> Safe, read-only support</p>
       <p className="mt-1">The assistant must not approve bookings, verify payments, modify subscriptions, or perform account actions. Answers can be incomplete; visitors should verify important details with support.</p>
@@ -97,30 +85,20 @@ export function AdminAssistantPage() {
     </div>}
 
     <Card>
-      <CardHeader><CardTitle className="flex items-center gap-2"><Bot className="size-5" /> Provider and behavior</CardTitle></CardHeader>
+      <CardHeader><CardTitle className="flex items-center gap-2"><Bot className="size-5" /> Local knowledge assistant</CardTitle></CardHeader>
       <CardContent className="grid gap-4 md:grid-cols-2">
+        <aside className="rounded-lg border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100 md:col-span-2">This assistant uses only TURFBARI’s published knowledge and live platform data. It makes no external AI or embedding calls and needs no API key. Answers are retrieved and quoted from approved sources.</aside>
         <Checkbox label="Enable assistant on the public homepage" checked={settings.enabled} onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })} />
         <FormField label="Assistant display name">{(id) => <Input id={id} value={settings.display_name} onChange={(e) => setSettings({ ...settings, display_name: e.target.value })} />}</FormField>
         <FormField label="Default response language">{(id) => <Select id={id} value={settings.default_language} onChange={(e) => setSettings({ ...settings, default_language: e.target.value as "en" | "bn" })}><option value="en">English</option><option value="bn">বাংলা</option></Select>}</FormField>
-        <FormField label="OpenAI-compatible API base URL" hint="Must use HTTPS. The credential stays encrypted on the server.">{(id) => <Input id={id} type="url" value={settings.base_url} onChange={(e) => setSettings({ ...settings, base_url: e.target.value })} />}</FormField>
-        <FormField label="Chat model">{(id) => <Input id={id} value={settings.model} onChange={(e) => setSettings({ ...settings, model: e.target.value })} />}</FormField>
-        <FormField label="Embedding model">{(id) => <Input id={id} value={settings.embedding_model} onChange={(e) => setSettings({ ...settings, embedding_model: e.target.value })} />}</FormField>
-        <FormField label="API credential" hint={settings.configured ? `Saved: ${settings.api_key_masked}. Leave blank to keep it.` : "Add the provider key to enable real AI responses."}>{(id) => <Input id={id} type="password" autoComplete="new-password" value={key} onChange={(e) => setKey(e.target.value)} placeholder={settings.configured ? settings.api_key_masked : "Provider API key"} />}</FormField>
         <FormField label="Daily message cap">{(id) => <Input id={id} type="number" min={1} max={100000} value={settings.daily_message_limit} onChange={(e) => setSettings({ ...settings, daily_message_limit: Number(e.target.value) })} />}</FormField>
         <FormField label="Conversation retention (days)">{(id) => <Input id={id} type="number" min={1} max={365} value={settings.retention_days} onChange={(e) => setSettings({ ...settings, retention_days: Number(e.target.value) })} />}</FormField>
-        <FormField label="Input cost per 1M tokens (USD)" hint="Optional model price for estimated usage cost.">{(id) => <Input id={id} type="number" min={0} step="0.000001" value={settings.input_cost_per_million} onChange={(e) => setSettings({ ...settings, input_cost_per_million: e.target.value })} />}</FormField>
-        <FormField label="Output cost per 1M tokens (USD)" hint="Optional model price for estimated usage cost.">{(id) => <Input id={id} type="number" min={0} step="0.000001" value={settings.output_cost_per_million} onChange={(e) => setSettings({ ...settings, output_cost_per_million: e.target.value })} />}</FormField>
-        <FormField label="Maximum response tokens">{(id) => <Input id={id} type="number" min={100} max={2000} value={settings.max_response_tokens} onChange={(e) => setSettings({ ...settings, max_response_tokens: Number(e.target.value) })} />}</FormField>
         <FormField label="Context messages">{(id) => <Input id={id} type="number" min={2} max={20} value={settings.context_messages} onChange={(e) => setSettings({ ...settings, context_messages: Number(e.target.value) })} />}</FormField>
-        <FormField label="Temperature (0–1)">{(id) => <Input id={id} type="number" min={0} max={1} step="0.05" value={settings.temperature} onChange={(e) => setSettings({ ...settings, temperature: e.target.value })} />}</FormField>
         <FormField label="English welcome message">{(id) => <Textarea id={id} rows={3} value={settings.welcome_en} onChange={(e) => setSettings({ ...settings, welcome_en: e.target.value })} />}</FormField>
         <FormField label="Bengali welcome message">{(id) => <Textarea id={id} rows={3} value={settings.welcome_bn} onChange={(e) => setSettings({ ...settings, welcome_bn: e.target.value })} />}</FormField>
         <div className="flex flex-wrap items-center gap-2 md:col-span-2">
           <Button onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}><Save className="size-4" /> Save settings</Button>
-          {settings.configured && <Button variant="outline" onClick={() => { if (window.confirm("Remove the saved AI provider credential?")) clearCredential.mutate(); }} disabled={clearCredential.isPending}>Remove credential</Button>}
-          <Button variant="outline" onClick={() => testProvider.mutate()} disabled={!settings.configured || testProvider.isPending}><Send className="size-4" /> Test provider</Button>
-          <Badge tone={settings.provider_state === "healthy" ? "green" : settings.provider_state === "unavailable" ? "red" : "amber"}>Provider: {settings.provider_state}</Badge>
-          <span className="text-xs text-muted-foreground">Test makes a small billable request to the configured provider.</span>
+          <Badge tone={settings.enabled ? "green" : "amber"}>{settings.enabled ? "Local search ready" : "Disabled"}</Badge>
         </div>
       </CardContent>
     </Card>
@@ -161,8 +139,8 @@ export function AdminAssistantPage() {
           <div className="divide-y rounded-lg border">{questionsQuery.data?.map((item) => <div key={item.id} className="flex items-center gap-2 p-3"><div className="min-w-0 flex-1"><p className="text-sm">{item.question_en}</p><p className="text-xs text-muted-foreground">{item.question_bn || "No Bengali text"} · {item.is_active ? "Active" : "Inactive"}</p></div><Button size="sm" variant="outline" onClick={() => { setQuestionId(item.id); setQuestion({ question_en: item.question_en, question_bn: item.question_bn, display_order: item.display_order, is_active: item.is_active }); }}>Edit</Button><Button size="sm" variant="ghost" onClick={() => deleteQuestion.mutate(item.id)}>Delete</Button></div>)}</div>
         </CardContent></Card>
         <Card><CardHeader><CardTitle className="flex items-center gap-2"><CircleHelp className="size-5" /> Usage and feedback</CardTitle></CardHeader><CardContent className="grid grid-cols-2 gap-3 text-sm">
-          <p>Visitor questions today <strong className="block text-lg">{counts?.user_messages_today ?? 0}</strong></p><p>Provider tokens today <strong className="block text-lg">{(counts?.prompt_tokens_today ?? 0) + (counts?.completion_tokens_today ?? 0)}</strong></p><p>Helpful <strong className="block text-lg">{counts?.feedback_helpful ?? 0}</strong></p><p>Not helpful <strong className="block text-lg">{counts?.feedback_not_helpful ?? 0}</strong></p>
-          <p className="col-span-2 text-xs text-muted-foreground">Provider tokens are shown when reported. Estimated chat-completion cost today: {counts?.estimated_cost_usd_today ? `USD $${counts.estimated_cost_usd_today}` : counts?.cost_estimate_configured ? "Unavailable (provider did not return token usage)." : "Not configured; enter the model's input/output price per million tokens above."} This estimate excludes embedding/indexing costs. Conversation text is not displayed in this dashboard.</p>
+          <p>Visitor questions today <strong className="block text-lg">{counts?.user_messages_today ?? 0}</strong></p><p>Answers today <strong className="block text-lg">{counts?.responses_today ?? 0}</strong></p><p>Helpful <strong className="block text-lg">{counts?.feedback_helpful ?? 0}</strong></p><p>Not helpful <strong className="block text-lg">{counts?.feedback_not_helpful ?? 0}</strong></p>
+          <p className="col-span-2 text-xs text-muted-foreground">This local search assistant makes no third-party model or embedding calls and has no API usage charges. Conversation text is not displayed in this dashboard.</p>
           <div className="col-span-2 space-y-2"><p className="font-medium">Recent conversation metadata</p>{counts?.recent?.slice(0, 20).map((row) => <div key={row.id} className="flex flex-wrap justify-between gap-2 border-t pt-2 text-xs text-muted-foreground"><span>{row.id.slice(0, 8)} · {row.language.toUpperCase()} · {row.message_count} messages · {row.source_count} source references</span><time>{new Date(row.updated_at).toLocaleString()}</time></div>)}</div>
         </CardContent></Card>
       </div>

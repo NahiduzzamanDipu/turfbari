@@ -120,7 +120,6 @@ admin_urls = [
     path("assistant/sources/<uuid:pk>/", assistant.AdminKnowledgeSourcesView.as_view()),
     path("assistant/reindex/", assistant.AdminKnowledgeReindexView.as_view()),
     path("assistant/analytics/", assistant.AdminAssistantAnalyticsView.as_view()),
-    path("assistant/test/", assistant.AdminAssistantTestView.as_view()),
     path("assistant/questions/", assistant.AdminSuggestedQuestionsView.as_view()),
     path("assistant/questions/<uuid:pk>/", assistant.AdminSuggestedQuestionsView.as_view()),
     path("language-settings/", platform.AdminLanguageSettingsView.as_view()),

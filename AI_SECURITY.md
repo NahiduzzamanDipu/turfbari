@@ -1,31 +1,29 @@
-# TURFBARI AI Security and Privacy
+﻿# TURFBARI Local Assistant Security
 
 ## Boundaries
 
-The assistant is public, read-only and cannot invoke booking, payment, subscription, account, SQL or shell operations. Source text is quoted reference data and never supersedes system rules. Answers are not payment verification or legal advice. The assistant does not claim to be a human agent.
+The assistant is read-only. It cannot invoke booking, payment, subscription, account, database write, or shell operations. It searches published public content and selected public platform facts only. It does not provide legal or payment verification.
 
-## Provider secrets and outbound requests
+## No external AI service
 
-- API keys are Fernet-encrypted at rest using the existing Django secret and masked in the admin interface/API.
-- Provider calls run only on Django over HTTPS. HTTP, credentials embedded in provider URLs, non-public DNS addresses and redirects are rejected.
-- The admin “Test provider” action makes a real, potentially billable provider request.
-- Rotating `DJANGO_SECRET_KEY` makes previously encrypted credentials unreadable; save the provider key again afterward.
+- No LLM, embedding API, model provider, API key or third-party AI network call is used.
+- Knowledge chunks and search results remain inside the TurfBari application database.
+- Website imports are admin-triggered, same-site only, HTTPS, public-address validated, redirect-disabled and limited to text up to 1 MB.
+- The migration clears any legacy encrypted provider credential before removing the credential column.
 
 ## Conversations
 
-- Anonymous IDs use UUIDs and high-entropy tokens; only token hashes are stored.
+- Anonymous conversations use UUIDs and high-entropy tokens; only token hashes are stored.
 - Authenticated conversations are bound to their creator. There is no public transcript-list endpoint.
-- Email and phone-like patterns are redacted before model submission/storage; obvious password/payment-credential submissions are rejected. Visitors are told not to submit sensitive data.
-- Conversation content is removed after the configured retention period (1–365 days, default 30) by the periodic maintenance tick. The admin analytics view shows metadata, not message text.
-- Daily request caps and IP/conversation rate limits bound abuse and provider costs.
+- Email and phone-like patterns are redacted before storage; obvious password/payment credential submissions are rejected.
+- Conversation text is removed after the configured retention period (1–365 days, default 30) by the periodic maintenance tick. Admin analytics shows metadata, not message contents.
+- Daily limits and IP/conversation rate limits reduce abuse.
 
-## Retrieval and uploads
+## Knowledge sources
 
-- Retrieval includes only approved public material; no tenant data, customer records, payment records, internal admin notes, credentials, unpublished drafts or inactive plans.
-- Live plan prices, SMS segment pricing and public contact fields are queried from authoritative platform settings/models.
-- Help uploads are UTF-8 text or Markdown up to 1 MB, imported as unpublished drafts. Website imports are restricted to the configured public-site host, require HTTPS and public DNS, disallow redirects, and accept only text content up to 1 MB.
-- Retrieved text is treated as untrusted prompt-injection input. Uploads are never executed and chat responses are rendered without injecting HTML.
+- Search includes only enabled, indexed public materials. Tenant-private records, customer lists, bookings, payment data, internal notes, credentials, unpublished drafts and inactive plans are excluded.
+- Live plan/SMS prices and public contact data come from their current database settings.
+- Imported files are UTF-8 text or Markdown up to 1 MB and are unpublished drafts until reviewed.
+- Source text is escaped/rendered as text and never executed as HTML or instructions.
 
-## Retention and cost
-
-Prompt/completion tokens reported by the provider are stored. An optional estimate is calculated from admin-configured USD rates per million chat tokens; it excludes embedding/indexing costs. No cost is shown as exact provider billing. Configure daily caps conservatively and monitor provider invoices.
+The assistant is a retrieval feature, not a trained model. It cites source material and returns a no-match message instead of inventing unsupported facts.

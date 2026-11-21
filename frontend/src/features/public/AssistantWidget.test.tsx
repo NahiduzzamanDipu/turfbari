@@ -18,7 +18,7 @@ describe("homepage AI assistant", () => {
     mocks.api.mockResolvedValue({ enabled: false });
     render(<MemoryRouter><AssistantWidget /></MemoryRouter>);
     await waitFor(() => expect(mocks.api).toHaveBeenCalled());
-    expect(screen.queryByRole("button", { name: "Ask TURFBARI AI" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ask TURFBARI Assistant" })).not.toBeInTheDocument();
   });
 
   it("opens in the selected language and submits a real backend conversation", async () => {
@@ -27,8 +27,9 @@ describe("homepage AI assistant", () => {
       if (path === "/public/assistant/status/") return Promise.resolve({
         enabled: true,
         available: true,
-        provider_state: "configured",
-        display_name: "TURFBARI AI Assistant",
+        service_state: "ready",
+        service_mode: "local_knowledge",
+        display_name: "TURFBARI Assistant",
         welcome: { en: "Hello", bn: "বাংলায় স্বাগতম" },
         suggested_questions: [{ en: "What is TURFBARI?", bn: "TURFBARI কী?" }],
         privacy_note: "Do not share private information.",
@@ -38,7 +39,7 @@ describe("homepage AI assistant", () => {
       return Promise.resolve({});
     });
     render(<MemoryRouter><AssistantWidget /></MemoryRouter>);
-    fireEvent.click(await screen.findByRole("button", { name: "Ask TURFBARI AI" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Ask TURFBARI Assistant" }));
     expect(await screen.findByText("বাংলায় স্বাগতম")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "TURFBARI কী?" }));
     expect(await screen.findByText("TURFBARI manages turf bookings.")).toBeInTheDocument();

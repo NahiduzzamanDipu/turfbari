@@ -1,35 +1,28 @@
-# TURFBARI AI Provider Setup
+﻿# TURFBARI Local Website Assistant Setup
 
-## Provider
+The assistant requires no AI provider, API key, model account, or paid external service. It searches locally indexed, published TurfBari content and live values from the application database.
 
-The backend implements the common OpenAI-compatible `/chat/completions` and `/embeddings` APIs. No provider SDK or frontend key is used. The admin chooses a provider HTTPS base URL, chat model and embedding model.
+## Enable and populate
 
-## Configure
+1. Sign in as Platform Admin and open **Website Assistant**.
+2. Enable the assistant, set English/Bengali welcome text and daily limits, then save.
+3. Review published FAQs, active public plans, current SMS pricing, published legal documents and public contact settings. Those are indexed from the site's own data.
+4. Add bilingual help articles as needed. Imported pages/uploads are drafts; review and publish them before visitors can receive those excerpts.
+5. Use **Re-index public knowledge** after publishing changes. The existing system maintenance tick processes pending indexing if no Celery worker is available.
+6. Ask test questions in English, Bengali and Banglish on the homepage.
 
-1. Ensure `DJANGO_SECRET_KEY` is set to a strong, persistent production secret.
-2. Ensure Redis/Celery is configured for asynchronous knowledge indexing. On Render, the existing periodic `POST /api/system/tick/` job can process pending indexing when a worker is unavailable.
-3. Sign in as Platform Admin and open **AI Assistant**.
-4. Enter the provider HTTPS URL, supported chat model, supported embedding model, and provider API key. Save. The key is encrypted and only a masked form is shown later.
-5. Set generation length, context, retention, daily message cap, token rates, welcome messages and default language. Token rates are per million tokens in USD; leave zero if unknown.
-6. Use **Test provider**. It performs a real one-word completion request and can incur a small fee.
-7. Re-index public knowledge. Verify sources show Indexed, then ask a test question in English and Bengali.
+## How answers work
 
-## Required environment/configuration
+This is a local retrieval assistant, not a generative LLM. It finds matching approved content and quotes the relevant passages with links. When the site's published data does not contain an answer, it says so rather than guessing. It does not learn/train a model; publishing and re-indexing updates its searchable website knowledge.
 
-No new provider environment variable is required: the key and endpoint are set under Admin → AI Assistant and the encrypted key uses `DJANGO_SECRET_KEY`. Existing deployment requirements still apply:
+## No external AI connection
 
-- `DJANGO_SECRET_KEY` stable and private.
-- Existing database, Redis broker and Celery worker/beat, or Render’s configured system tick endpoint.
-- Outbound HTTPS access from backend to the provider.
-- Admin-only access to AI configuration.
-
-Do not place a provider key in `VITE_*`, frontend `.env`, Git, logs or chat.
+The assistant code makes no external LLM or embedding requests and stores no model API key. Its old provider settings and encrypted credential are removed by migration. It has no provider test button because no provider is involved.
 
 ## Troubleshooting
 
-- “Not configured”: save a valid provider key.
-- “Provider rejected request”: confirm endpoint and model names/API access.
-- “Provider unavailable”: check outbound network, provider status, DNS, credential validity and rate limits.
-- Sources remain Pending without Celery: verify the external system tick is configured and authorized.
-- Changing/rotating Django `SECRET_KEY`: re-enter the provider credential because old ciphertext cannot be decrypted.
-- No current plan/SMS price: the authoritative platform data may not be configured; the assistant is instructed to say it cannot verify that value.
+- If the widget is hidden, confirm **Enable assistant on the public homepage** is on.
+- If a question has no useful result, publish a relevant FAQ/help article and re-index.
+- Check source status in **Website Assistant → Knowledge indexing**.
+- Current plan, SMS price and public support details are queried directly from current platform data; verify those settings if they are missing.
+- The assistant is intentionally limited to published material and cannot answer arbitrary general questions reliably.

@@ -99,7 +99,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/admin/sms-usage", label: "SMS usage", icon: <BarChart3 /> },
   { to: "/admin/finance", label: "Finance", icon: <Landmark /> },
   { to: "/admin/api", label: "API", icon: <PlugZap /> },
-  { to: "/admin/assistant", label: "AI Assistant", icon: <Bot /> },
+  { to: "/admin/assistant", label: "Website Assistant", icon: <Bot /> },
   { to: "/admin/settings/contact", label: "Contact information", icon: <Settings /> },
   { to: "/admin/settings/language", label: "Language settings", icon: <Languages /> },
   { to: "/admin/homepage-faqs", label: "Homepage FAQs", icon: <HelpCircle /> },

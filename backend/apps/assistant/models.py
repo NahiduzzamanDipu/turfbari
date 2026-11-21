@@ -1,5 +1,4 @@
 import uuid
-from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
@@ -8,39 +7,27 @@ from apps.common.models import BaseModel
 
 
 class AssistantSettings(models.Model):
-    """Singleton configuration. Provider credentials are Fernet-encrypted at rest."""
+    """Singleton settings for the local, source-grounded support assistant."""
 
-    PROVIDERS = [("openai_compatible", "OpenAI-compatible API")]
     default_language = models.CharField(
         max_length=2, choices=[("en", "English"), ("bn", "Bengali")], default="en"
     )
     enabled = models.BooleanField(default=True)
-    display_name = models.CharField(max_length=80, default="TURFBARI AI Assistant")
+    display_name = models.CharField(max_length=80, default="TURFBARI Assistant")
     welcome_en = models.TextField(
         default="Hello! Ask me about TURFBARI features, bookings, subscriptions, SMS and account setup."
     )
     welcome_bn = models.TextField(blank=True)
-    provider = models.CharField(max_length=30, choices=PROVIDERS, default="openai_compatible")
-    base_url = models.URLField(max_length=300, blank=True, default="https://api.openai.com/v1")
-    model = models.CharField(max_length=120, default="gpt-4o-mini")
-    embedding_model = models.CharField(max_length=120, default="text-embedding-3-small")
-    api_key_encrypted = models.TextField(blank=True)
-    temperature = models.DecimalField(max_digits=3, decimal_places=2, default="0.20")
-    max_response_tokens = models.PositiveSmallIntegerField(default=600)
     context_messages = models.PositiveSmallIntegerField(default=10)
     daily_message_limit = models.PositiveIntegerField(default=2000)
     retention_days = models.PositiveSmallIntegerField(default=30)
-    input_cost_per_million = models.DecimalField(max_digits=12, decimal_places=6, default=Decimal("0"))
-    output_cost_per_million = models.DecimalField(max_digits=12, decimal_places=6, default=Decimal("0"))
-    last_provider_success_at = models.DateTimeField(null=True, blank=True)
-    last_provider_error_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name_plural = "assistant settings"
 
     def __str__(self):
-        return "TURFBARI AI Assistant settings"
+        return "TURFBARI website assistant settings"
 
     @classmethod
     def load(cls):
@@ -94,7 +81,6 @@ class KnowledgeChunk(BaseModel):
     source = models.ForeignKey(KnowledgeSource, on_delete=models.CASCADE, related_name="chunks")
     ordinal = models.PositiveSmallIntegerField()
     text = models.TextField()
-    embedding = models.JSONField(default=list, blank=True)
     content_hash = models.CharField(max_length=64)
 
     class Meta:
@@ -132,10 +118,6 @@ class ConversationMessage(models.Model):
     content = models.TextField()
     status = models.CharField(max_length=16, default="ok")
     source_ids = models.JSONField(default=list, blank=True)
-    model = models.CharField(max_length=120, blank=True)
-    prompt_tokens = models.PositiveIntegerField(null=True, blank=True)
-    completion_tokens = models.PositiveIntegerField(null=True, blank=True)
-    estimated_cost_usd = models.DecimalField(max_digits=12, decimal_places=8, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:

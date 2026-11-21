@@ -7,7 +7,7 @@ import { FormattedText } from "@/components/content/FormattedText";
 
 type Status = {
   enabled: boolean; available: boolean; display_name: string;
-  welcome: { en: string; bn: string }; provider_state: "healthy" | "configured" | "unavailable";
+  welcome: { en: string; bn: string }; service_state: "ready" | "disabled"; service_mode: "local_knowledge";
   suggested_questions: { en: string; bn: string }[]; privacy_note: string;
 };
 type Citation = { title: string; url: string; version: string; language: string };
@@ -90,15 +90,15 @@ export function AssistantWidget() {
 
   if (!status?.enabled) return null;
   const welcome = language === "bn" ? status.welcome.bn || t(status.welcome.en) : status.welcome.en;
-  const ready = status.available && status.provider_state !== "unavailable";
-  const stateLabel = status.provider_state === "healthy" ? t("AI service ready") : status.provider_state === "configured" ? t("AI service configured") : t("AI service unavailable");
-  const btnLabel = t("Ask TURFBARI AI");
+  const ready = status.available && status.service_state === "ready";
+  const stateLabel = ready ? t("TURFBARI knowledge ready") : t("Assistant disabled");
+  const btnLabel = t("Ask TURFBARI Assistant");
 
   return <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 sm:right-6">
     {open ? <section aria-label={status.display_name} className="mb-3 flex h-[min(680px,calc(100dvh-7rem))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl">
       <header className="flex items-center gap-3 border-b bg-primary px-4 py-3 text-primary-foreground">
         <span className="grid size-10 place-items-center rounded-full bg-white/15"><Bot className="size-5" /></span>
-        <div className="min-w-0 flex-1"><p className="truncate font-semibold">{status.display_name}</p><p className="flex items-center gap-1.5 text-xs opacity-90"><span className={`size-2 rounded-full ${status.provider_state === "healthy" ? "bg-lime-300" : "bg-amber-300"}`} />{stateLabel}</p></div>
+        <div className="min-w-0 flex-1"><p className="truncate font-semibold">{status.display_name}</p><p className="flex items-center gap-1.5 text-xs opacity-90"><span className={`size-2 rounded-full ${ready ? "bg-lime-300" : "bg-amber-300"}`} />{stateLabel}</p></div>
         <button type="button" onClick={() => void newConversation()} className="rounded p-2 hover:bg-white/10" aria-label={t("New conversation")} title={t("New conversation")}><RotateCcw className="size-4" /></button>
         <button type="button" onClick={() => void clearConversation()} className="rounded p-2 hover:bg-white/10" aria-label={t("Clear conversation")} title={t("Clear conversation")}><Trash2 className="size-4" /></button>
         <button type="button" onClick={() => setOpen(false)} className="rounded p-2 hover:bg-white/10" aria-label={t("Minimize assistant")}><Minus className="size-4" /></button>

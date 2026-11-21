@@ -1,26 +1,25 @@
-# TURFBARI AI Knowledge Base
+﻿# TURFBARI Website Assistant Knowledge Base
 
-## Approved source types
+## Approved sources
 
-The index includes published homepage FAQs, public active subscription plans, the current SMS price, current effective published legal versions, and administrator-published bilingual help articles. The platform overview is a reviewed built-in article. Dynamic prices and public contact details are queried live on relevant questions rather than trusted from an old embedding.
+The local search index contains published homepage FAQs, public active subscription plans, current SMS price, current published legal documents, administrator-published bilingual help articles and a reviewed product overview. Current prices and public contact data are read from authoritative database settings when relevant.
 
-Only these safe public routes may be returned as source/navigation links: FAQ (`/#faq-title`), plans (`/#plans`), legal document routes, turf registration (`/register-turf`), demo pages, contact (`/#contact`) and legal index (`/legal`). The browser renders returned answer text as text/Markdown components, not raw HTML.
+Only internal application routes are returned as links. Answers are rendered as text/Markdown, never raw HTML.
 
-## Add a help article
+## Publish an article
 
-1. In Admin → AI Assistant, enter English title/content and optional Bengali title/content.
-2. Save as a draft and review the content for accuracy and privacy.
-3. Enable “Published and available to the public assistant”, then save.
-4. The source is marked pending and indexed in the background. Use **Re-index public knowledge** if needed.
-5. Check the source status in the Knowledge indexing card.
+1. In **Admin → Website Assistant**, add English content and optional Bengali translation.
+2. Save it as a draft and review accuracy and privacy.
+3. Publish the article when ready.
+4. Re-index public knowledge and confirm the source shows **Indexed**.
 
-Website imports and text/Markdown uploads are drafts. Imported pages are static snapshots; re-import when that page changes. Never include internal support notes, API credentials, account data, customer information, or payment records.
+Website imports and text/Markdown uploads are drafts. Re-import a page to refresh its stored copy. Do not publish internal notes, credentials, customer information or payment records.
 
 ## Index status
 
-- Pending: content changed or awaits a worker/tick.
-- Processing: chunking and optional embedding generation are running.
-- Indexed: retrieval can use the source.
-- Failed: inspect the safe error code; the source does not become model context until successfully indexed.
+- Pending: content changed or awaits background processing.
+- Processing: text is being split into local searchable chunks.
+- Indexed: local lexical search can use the source.
+- Failed: inspect the safe error code; failed sources are not available to visitors.
 
-Unpublished FAQ/article content and draft, archived, future-effective or superseded legal text is excluded. Disable a source in Admin → AI Assistant to remove it from retrieval immediately; re-indexing reconciles removed and unpublished records.
+No embeddings or external model calls are used. Unpublished FAQs/articles, draft or archived policies, inactive plans and tenant-private data are excluded.
