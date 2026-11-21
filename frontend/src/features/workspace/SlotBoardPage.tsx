@@ -455,9 +455,10 @@ export function SlotBoardPage() {
 function SlotDetailDialog({ slot, onClose, onChanged }: { slot: BoardSlot | null; onClose: () => void; onChanged: () => void }) {
   const b = slot?.booking;
   const setStatus = useMutation({
-    mutationFn: (status: string) => api(`/workspace/bookings/${b?.id}/status/`, { method: "POST", json: { status } }),
-    onSuccess: (_, status) => {
+    mutationFn: (status: string) => api<{ sms?: SmsOutcome | null }>(`/workspace/bookings/${b?.id}/status/`, { method: "POST", json: { status } }),
+    onSuccess: (result, status) => {
       toast.success(status === "confirmed" ? "Booking confirmed" : "Booking updated");
+      if (status === "confirmed") showSmsOutcome(result.sms);
       onChanged();
       onClose();
     },

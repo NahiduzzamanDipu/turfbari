@@ -381,6 +381,41 @@ def test_20_21_owner_booking_sms_and_empty_wallet_never_blocks_booking():
     )
 
 
+def test_manager_confirming_staff_booking_sends_sms_and_returns_delivery_status():
+    from django.contrib.auth import get_user_model
+
+    from apps.turfs.models import TenantMembership
+
+    turf, _owner = make_turf()
+    manager = get_user_model().objects.create_user("manager-sms@example.com", "a-strong-pass-123")
+    TenantMembership.objects.create(user=manager, turf=turf, role=TenantMembership.Role.MANAGER)
+    client = client_for(manager)
+    response = client.post(
+        "/api/workspace/bookings/",
+        {
+            "field": str(turf.fields.first().id),
+            "start": tomorrow_at(18).isoformat(),
+            "end": tomorrow_at(19).isoformat(),
+            "customer_name": "Manager Booking",
+            "customer_phone": "01712345678",
+            "status": "pending",
+        },
+        format="json",
+    )
+    assert response.status_code == 201 and response.json()["sms"] is None
+
+    confirmed = client.post(
+        f"/api/workspace/bookings/{response.json()['id']}/status/",
+        {"status": "confirmed"},
+        format="json",
+    )
+    assert confirmed.status_code == 200 and confirmed.json()["status"] == Booking.Status.CONFIRMED
+    assert confirmed.json()["sms"]["status"] == SmsMessage.Status.SENT
+    sms = SmsMessage.objects.get(booking_id=response.json()["id"], kind="owner_booking_confirmed")
+    assert sms.to == "8801712345678"
+    assert sms.dedupe_key == f"booking:{response.json()['id']}:owner_booking_confirmed"
+
+
 # ====================================================================== daily limit 22-27
 def test_22_23_24_two_per_bangladesh_day_and_more_next_day():
     a, _ = make_turf()

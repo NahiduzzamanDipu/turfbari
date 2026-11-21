@@ -626,8 +626,11 @@ function BookingDetailDialog({ id, onClose, onEdit }: { id: string; onClose: () 
     qc.invalidateQueries({ queryKey: ["ws", "dashboard"] });
   };
   const status = useMutation({
-    mutationFn: (to: BookingStatus) => api<Booking>(`/workspace/bookings/${id}/status/`, { method: "POST", json: { status: to } }),
-    onSuccess: (b) => done(b, `Booking ${b.status_label.toLowerCase()}`),
+    mutationFn: (to: BookingStatus) => api<Booking & { sms?: SmsOutcome | null }>(`/workspace/bookings/${id}/status/`, { method: "POST", json: { status: to } }),
+    onSuccess: (b) => {
+      done(b, `Booking ${b.status_label.toLowerCase()}`);
+      if (b.status === "confirmed") showSmsOutcome(b.sms);
+    },
     onError: (e) => toast.error(errorText(e)),
   });
   const pay = useMutation({

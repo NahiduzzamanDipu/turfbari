@@ -322,12 +322,16 @@ class BookingViewSet(TenantViewSet):
         submission = PaymentSubmission.objects.filter(
             booking=before, status__in=[PaymentSubmission.Status.PENDING, PaymentSubmission.Status.EXPIRED]
         ).first()
+        sms = None
         if submission and target in (Booking.Status.CONFIRMED, Booking.Status.REJECTED):
             # Online bookings with a bKash submission are confirmed/rejected only through verification.
             if not request.membership.can("approve_payments"):
                 raise PermissionDenied("Your turf owner hasn't allowed you to approve or reject payments.")
             if target == Booking.Status.CONFIRMED:
                 booking = payments.approve(submission, user=request.user)
+                from apps.notifications.models import SmsMessage
+
+                sms = SmsMessage.objects.filter(dedupe_key=f"booking:{booking.pk}:booking_confirmed").first()
             else:
                 booking = payments.reject(submission, user=request.user)
         else:
@@ -341,7 +345,7 @@ class BookingViewSet(TenantViewSet):
                 )
             payments.notify_cancelled(booking, before.status)
             if booking.status == Booking.Status.CONFIRMED and before.status == Booking.Status.PENDING:
-                payments.notify_owner_booking(booking)  # a staff-made pending booking confirmed
+                sms = payments.notify_owner_booking(booking)  # a staff-made pending booking confirmed
         record(
             "booking.status",
             f"{old_status} → {booking.get_status_display()}: {booking_label(booking)}",
@@ -350,7 +354,8 @@ class BookingViewSet(TenantViewSet):
             target=booking,
             data={"from": old_status, "to": booking.status},
         )
-        return Response(BookingDetailSerializer(self.get_queryset().get(pk=booking.pk)).data)
+        body = BookingDetailSerializer(self.get_queryset().get(pk=booking.pk)).data
+        return Response(body | {"sms": sms_outcome(sms)})
 
     @extend_schema(request=PaymentSerializer, responses=BookingDetailSerializer)
     @action(detail=True, methods=["post"])
