@@ -148,11 +148,11 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          "relative max-h-[96dvh] w-full overflow-y-auto rounded-t-2xl border bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-xl sm:max-h-[92dvh] sm:rounded-xl sm:p-6",
+          "relative max-h-[96dvh] w-full overflow-y-auto rounded-t-2xl border bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-xl sm:max-h-[92dvh] sm:rounded-xl sm:p-5",
           wide ? "sm:max-w-2xl" : "sm:max-w-lg",
         )}
       >
-        <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <h2 id={titleId} className="text-lg font-semibold">
               {title}
@@ -184,8 +184,8 @@ export function EmptyState({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center">
-      {icon && <div className="text-muted-foreground [&_svg]:size-10">{icon}</div>}
+    <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center">
+      {icon && <div className="text-muted-foreground [&_svg]:size-8">{icon}</div>}
       <p className="font-semibold">{title}</p>
       {children && <div className="max-w-sm text-sm text-muted-foreground">{children}</div>}
     </div>
@@ -194,7 +194,7 @@ export function EmptyState({
 
 export function ErrorState({ error, onRetry }: { error: Error; onRetry?: () => void }) {
   return (
-    <div role="alert" className="flex flex-col items-center gap-3 px-4 py-10 text-center text-sm">
+    <div role="alert" className="flex flex-col items-center gap-2 px-4 py-8 text-center text-sm">
       <p className="font-semibold">Couldn't load this</p>
       <p className="text-muted-foreground">{error.message}</p>
       {onRetry && (
@@ -247,7 +247,7 @@ export function Table({ className, children, ...props }: React.ComponentProps<"t
     <div className="overflow-x-auto">
       <table
         className={cn(
-          "responsive-table w-full text-left text-sm [&_td]:px-3 [&_td]:py-2.5 [&_th]:whitespace-nowrap [&_th]:px-3 [&_th]:py-2 [&_th]:text-xs [&_th]:font-medium [&_th]:text-muted-foreground [&_tbody_tr]:border-t",
+          "responsive-table w-full text-left text-sm [&_td]:px-2.5 [&_td]:py-2 [&_th]:whitespace-nowrap [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:text-xs [&_th]:font-medium [&_th]:text-muted-foreground [&_tbody_tr]:border-t",
           className,
         )}
         {...props}

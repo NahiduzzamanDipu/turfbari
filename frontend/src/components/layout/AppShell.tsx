@@ -229,8 +229,8 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
           </aside>
         </div>
       )}
-      <main className="min-w-0 px-4 py-5 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6 sm:pb-6 lg:px-8 lg:pb-8">
-        <div className="mx-auto w-full max-w-screen-2xl">
+      <main className="min-w-0 px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-5 sm:py-5 sm:pb-5 lg:px-6 lg:pb-6">
+        <div className="mx-auto w-full max-w-[90rem]">
           {area === "workspace" && <SubscriptionBanner />}
           <Outlet />
         </div>
@@ -266,7 +266,7 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-4 flex flex-col gap-2.5 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{title}</h1>
         {description && <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">{description}</p>}
@@ -288,12 +288,12 @@ export function StatCard({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="h-full rounded-xl border bg-card p-3.5 shadow-sm sm:p-5">
+    <div className="h-full rounded-xl border bg-card p-[var(--card-padding)] shadow-sm">
       <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground [&_svg]:size-4">
         <span>{label}</span>
         {icon && <span aria-hidden="true">{icon}</span>}
       </div>
-      <p className="tabular mt-2 text-2xl font-semibold leading-none">{value}</p>
+      <p className="tabular mt-1.5 text-2xl font-semibold leading-none">{value}</p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
