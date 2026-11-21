@@ -10,8 +10,10 @@ import { Checkbox, FormField, Input } from "@/components/ui/form";
 import { ApiError, api } from "@/lib/api";
 import type { Me } from "@/lib/types";
 import { meKey, useMe } from "./auth";
+import { useLanguage } from "@/lib/i18n";
 
 export function LoginPage() {
+  const { t } = useLanguage();
   const me = useMe();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -95,7 +97,7 @@ export function LoginPage() {
             <CardContent className="flex flex-col gap-5">
               <div>
                 <h1 className="flex items-center gap-2 text-xl font-semibold">
-                  <ShieldCheck className="size-5 text-primary" /> {byEmail ? "Check your email" : "Two-factor check"}
+                  <ShieldCheck className="size-5 text-primary" /> {t(byEmail ? "Check your email" : "Two-factor check")}
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   {byEmail ? (
@@ -105,7 +107,7 @@ export function LoginPage() {
                       {challenge.can_use_authenticator && " You can also use your authenticator app or a recovery code."}
                     </>
                   ) : (
-                    "Enter the 6-digit code from your authenticator app, or one of your recovery codes."
+                    t("Enter the 6-digit code from your authenticator app, or one of your recovery codes.")
                   )}
                 </p>
               </div>
@@ -116,7 +118,7 @@ export function LoginPage() {
                   verify.mutate();
                 }}
               >
-                <FormField label="Code" error={verify.error instanceof ApiError ? verify.error.fields?.code : null}>
+                <FormField label={t("Code")} error={verify.error instanceof ApiError ? verify.error.fields?.code : null}>
                   {(id) => (
                     <Input
                       id={id}
@@ -138,12 +140,12 @@ export function LoginPage() {
                 )}
                 <Button type="submit" disabled={verify.isPending}>
                   {verify.isPending ? <Loader2 className="animate-spin" /> : <ShieldCheck />}
-                  Verify and sign in
+                  {t("Verify and sign in")}
                 </Button>
                 {byEmail && (
                   <div className="text-center text-xs">
                     {resend.isSuccess ? (
-                      <p className="text-primary">A new code is on its way.</p>
+                      <p className="text-primary">{t("A new code is on its way.")}</p>
                     ) : (
                       <button
                         type="button"
@@ -165,16 +167,16 @@ export function LoginPage() {
                     setCode("");
                   }}
                 >
-                  Use a different account
+                  {t("Use a different account")}
                 </button>
               </form>
             </CardContent>
           ) : (
           <CardContent className="flex flex-col gap-5">
             <div>
-              <h1 className="text-xl font-semibold">Sign in</h1>
+              <h1 className="text-xl font-semibold">{t("Sign in")}</h1>
               <p className="text-sm text-muted-foreground">
-                One login for turf owners and their managers.
+                {t("One login for turf owners and their managers.")}
               </p>
             </div>
             <form
@@ -184,7 +186,7 @@ export function LoginPage() {
                 login.mutate();
               }}
             >
-              <FormField label="Email or username" error={error?.fields?.identifier}>
+              <FormField label={t("Email or username")} error={error?.fields?.identifier}>
                 {(id) => (
                   <Input
                     id={id}
@@ -195,7 +197,7 @@ export function LoginPage() {
                   />
                 )}
               </FormField>
-              <FormField label="Password" error={error?.fields?.password}>
+              <FormField label={t("Password")} error={error?.fields?.password}>
                 {(id) => (
                   <Input
                     id={id}
@@ -209,12 +211,12 @@ export function LoginPage() {
               </FormField>
               <div className="flex items-center justify-between gap-2">
                 <Checkbox
-                  label="Keep me signed in"
+                  label={t("Keep me signed in")}
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
                 />
                 <Link to="/forgot-password" className="text-sm font-medium text-primary hover:underline">
-                  Forgot password?
+                  {t("Forgot password?")}
                 </Link>
               </div>
               {login.error && !error?.fields && (
@@ -224,16 +226,16 @@ export function LoginPage() {
               )}
               <Button type="submit" disabled={login.isPending}>
                 {login.isPending ? <Loader2 className="animate-spin" /> : <LogIn />}
-                Sign in
+                {t("Sign in")}
               </Button>
             </form>
           </CardContent>
           )}
         </Card>
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Own a turf?{" "}
+          {t("Own a turf?")} {" "}
           <Link to="/register-turf" className="font-semibold text-primary hover:underline">
-            Register it on TurfBari
+            {t("Register it on TurfBari")}
           </Link>
         </p>
       </div>

@@ -50,5 +50,11 @@ const en = {
   "Notes (optional)": "Notes (optional)", "Clear selection": "Clear selection", "Someone is booking": "Someone is booking",
   Requested: "Requested", Past: "Past", "How to book": "How to book", "The confirmation SMS comes to this number.": "The confirmation SMS comes to this number.",
   Free: "Free", Yours: "Yours", "Requested / booked": "Requested / booked", "Closed on this day.": "Closed on this day.",
+  "One login for turf owners and their managers.": "One login for turf owners and their managers.",
+  "Email or username": "Email or username", "Keep me signed in": "Keep me signed in", "Own a turf?": "Own a turf?",
+  "Register it on TurfBari": "Register it on TurfBari", "Check your email": "Check your email", "Two-factor check": "Two-factor check",
+  "Verify and sign in": "Verify and sign in", "A new code is on its way.": "A new code is on its way.",
+  "Use a different account": "Use a different account", "Enter the 6-digit code from your authenticator app, or one of your recovery codes.": "Enter the 6-digit code from your authenticator app, or one of your recovery codes.",
+  Password: "Password", Code: "Code",
 } as const;
 export default en;
