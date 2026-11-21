@@ -21,6 +21,7 @@ import {
   Textarea,
 } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MobileRecordCard } from "@/components/ui/responsive";
 import { api } from "@/lib/api";
 import {
   PAYMENT_METHODS,
@@ -296,7 +297,27 @@ function BookingList({
           {list.isError && <ErrorState error={list.error} onRetry={() => list.refetch()} />}
           {list.data?.count === 0 && <EmptyState icon={<CalendarX2 />} title="No bookings match" />}
           {list.data && list.data.count > 0 && (
-            <Table className={cn(list.isFetching && "opacity-70")}>
+            <>
+            <div className={cn("grid gap-3 md:hidden", list.isFetching && "opacity-70")}>
+              {list.data.results.map((b) => (
+                <MobileRecordCard key={b.id} className="p-3">
+                  <button type="button" onClick={() => onOpen(b.id)} className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0"><p className="truncate font-semibold">{b.team_name || b.customer.name}</p><p className="mt-0.5 text-sm text-muted-foreground">{b.customer.phone} · {b.reference}</p></div>
+                      <Badge tone={STATUS_TONE[b.status]}>{b.status_label}</Badge>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 border-t pt-3 text-sm">
+                      <div><p className="text-xs text-muted-foreground">Date & time</p><p className="font-medium">{fmtDay(b.start)}</p><p>{fmtRange(b.start, b.end)}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Field</p><p className="font-medium">{b.field_name}</p>{b.series && <SeriesTag series={b.series} />}</div>
+                      <div><p className="text-xs text-muted-foreground">Total</p><p className="tabular font-medium">{formatBDT(b.total)}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Due</p><p className={cn("tabular font-medium", Number(b.due) > 0 && "text-destructive")}>{Number(b.due) > 0 ? formatBDT(b.due) : "—"}</p></div>
+                    </div>
+                  </button>
+                </MobileRecordCard>
+              ))}
+            </div>
+            <div className={cn("hidden md:block", list.isFetching && "opacity-70")}>
+            <Table>
               <thead>
                 <tr>
                   <th>When</th>
@@ -335,6 +356,8 @@ function BookingList({
                 ))}
               </tbody>
             </Table>
+            </div>
+            </>
           )}
           {pages > 1 && (
             <div className="mt-4 flex items-center justify-center gap-3">

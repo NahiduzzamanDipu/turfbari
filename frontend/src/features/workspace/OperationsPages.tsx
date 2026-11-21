@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, EmptyState, ErrorState, FormField, Input, Select, Table, Textarea } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MobileRecordCard } from "@/components/ui/responsive";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { PAYMENT_METHODS, addDays, dhakaISO, fmtDate, fmtDay, fmtRange, todayISO } from "@/lib/format";
@@ -116,7 +117,25 @@ export function CustomersPage() {
           {list.isError && <ErrorState error={list.error} onRetry={() => list.refetch()} />}
           {list.data?.count === 0 && <EmptyState icon={<Users />} title={q ? t("No customers match this search.") : "No customers yet"} />}
           {list.data && list.data.count > 0 && (
-            <Table className={cn(list.isFetching && "opacity-70")}>
+            <>
+            <div className={cn("grid gap-3 md:hidden", list.isFetching && "opacity-70")}>
+              {list.data.results.map((c) => (
+                <MobileRecordCard key={c.id} className="p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0"><p className="truncate font-semibold">{c.name}</p>{c.email && <p className="truncate text-sm text-muted-foreground">{c.email}</p>}</div>
+                    <Button size="sm" variant="outline" onClick={() => setEditing(c)}>Edit</Button>
+                  </div>
+                  <a href={`tel:${c.phone}`} className="mt-2 inline-flex min-h-11 items-center font-medium text-primary">{c.phone}</a>
+                  <div className="mt-2 grid grid-cols-2 gap-2 border-t pt-3 text-sm">
+                    <div><p className="text-xs text-muted-foreground">Bookings</p><Link className="font-medium text-primary" to={`/workspace/bookings?view=list&q=${encodeURIComponent(c.phone)}`}>{c.bookings_count}</Link></div>
+                    <div><p className="text-xs text-muted-foreground">Total paid</p><p className="tabular font-medium">{formatBDT(c.total_paid)}</p></div>
+                    <div className="col-span-2"><p className="text-xs text-muted-foreground">Last booking</p><p>{c.last_booking ? fmtDate(c.last_booking) : "—"}</p></div>
+                  </div>
+                </MobileRecordCard>
+              ))}
+            </div>
+            <div className={cn("hidden md:block", list.isFetching && "opacity-70")}>
+            <Table>
               <thead>
                 <tr>
                   <th>Name</th>
@@ -155,6 +174,8 @@ export function CustomersPage() {
                 ))}
               </tbody>
             </Table>
+            </div>
+            </>
           )}
           {pages > 1 && (
             <div className="mt-4 flex items-center justify-center gap-3">

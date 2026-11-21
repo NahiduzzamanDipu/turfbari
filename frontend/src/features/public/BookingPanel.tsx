@@ -339,10 +339,11 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
   }
 
   return (
+    <>
     <Card>
       {header}
       {video}
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className={cn("flex flex-col gap-4", chosen.length > 0 && payment.accepts_online && "pb-28 sm:pb-6")}>
         {submitted && !done && (
           <p role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
             <span>
@@ -499,6 +500,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
 
         {chosen.length > 0 && payment.accepts_online && (
           <form
+            id="public-booking-form"
             className="mt-2 flex flex-col gap-3 border-t pt-4"
             onSubmit={(e) => {
               e.preventDefault();
@@ -615,6 +617,20 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
         )}
       </CardContent>
     </Card>
+    {chosen.length > 0 && payment.accepts_online && (
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-3 pt-2 pb-[calc(.5rem+env(safe-area-inset-bottom))] shadow-lg backdrop-blur sm:hidden">
+        <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-xs text-muted-foreground">{fmtRange(chosen[0]!.start, chosen.at(-1)!.end)}</p>
+            <p className="tabular font-semibold">{formatMoney(total)}</p>
+          </div>
+          <Button type="button" onClick={() => document.getElementById("public-booking-form")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" })}>
+            {t("Continue")}
+          </Button>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

@@ -4,6 +4,8 @@ const en = {
   Dashboard: "Dashboard", "Sign in": "Sign in", "Sign out": "Sign out", Workspace: "Workspace",
   "Super Admin": "Super Admin", "View public page": "View public page", "My account & password": "My account & password",
   "Close menu": "Close menu", "Open menu": "Open menu", Terms: "Terms", Privacy: "Privacy",
+  "Navigation menu": "Navigation menu", "Primary navigation": "Primary navigation", Home: "Home",
+  Calendar: "Calendar", More: "More", "Install app": "Install app",
   "All policies": "All policies", "Try it before you decide": "Try it before you decide",
   "Try the live demo": "Try the live demo", "Customer booking demo": "Customer booking demo",
   "Turf owner dashboard demo": "Turf owner dashboard demo", "Try customer booking": "Try customer booking",

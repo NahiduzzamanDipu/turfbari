@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n";
 import { AssistantWidget } from "@/features/public/AssistantWidget";
+import { InstallAppButton } from "./InstallAppButton";
 
 const NAV = [
   { to: "/#contact", label: "Contact" },
@@ -47,6 +48,7 @@ export function PublicLayout() {
           </nav>
           <div className="flex items-center gap-2">
             <LanguageSwitcher compact />
+            <span className="hidden sm:inline-flex"><InstallAppButton /></span>
             {signedIn ? (
               <Button asChild size="sm">
                 <Link to={me.data?.home ?? "/"}>
@@ -71,17 +73,18 @@ export function PublicLayout() {
           </div>
         </div>
         {open && (
-          <nav className="border-t px-4 py-2 md:hidden" aria-label="Mobile">
+          <nav className="grid gap-1 border-t px-4 py-2 md:hidden" aria-label="Mobile">
             {NAV.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
                 onClick={() => setOpen(false)}
-                className="block rounded-md px-2 py-3 text-sm font-medium"
+                className="flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-medium"
               >
                 {t(item.label)}
               </Link>
             ))}
+            <InstallAppButton />
           </nav>
         )}
       </header>

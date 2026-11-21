@@ -181,6 +181,15 @@ spin-down, upgrade that Web Service to paid compute in the Render Dashboard; see
 [`docs/RENDER_ALWAYS_ON.md`](docs/RENDER_ALWAYS_ON.md) for the audit, health-check path, current official pricing,
 and verification steps. `/health/` is a lightweight liveness probe only; it does not keep a Free instance awake.
 
+## Mobile install and offline behavior
+
+The React app includes a web app manifest and registers a small service worker in production. Browsers that support
+installation expose an **Install app** action in the mobile navigation. The worker caches only versioned static
+`/assets/` files and the offline fallback; `/api/`, `/media/`, authentication, booking availability, payment data,
+and customer records are never cached. If offline, TurfBari shows an informational page and does not queue or confirm
+business actions. A waiting service-worker update activates after existing app tabs close, avoiding a forced reload
+while a user may be editing a form.
+
 ## Tests and checks
 
 ```powershell

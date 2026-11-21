@@ -1,13 +1,13 @@
 import { X } from "lucide-react";
-import type * as React from "react";
+import * as React from "react";
 import { useEffect, useId } from "react";
 import { cn } from "@/lib/utils";
 
 const control =
-  "w-full rounded-md border border-input bg-card/80 px-3 text-sm shadow-xs outline-none transition placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30 disabled:opacity-60 aria-invalid:border-destructive";
+  "w-full rounded-md border border-input bg-card px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30 disabled:opacity-60 aria-invalid:border-destructive";
 
 export function Input({ className, ...props }: React.ComponentProps<"input">) {
-  return <input className={cn(control, "h-10", className)} {...props} />;
+  return <input className={cn(control, "h-11", className)} {...props} />;
 }
 
 export function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
@@ -15,7 +15,7 @@ export function Textarea({ className, ...props }: React.ComponentProps<"textarea
 }
 
 export function Select({ className, ...props }: React.ComponentProps<"select">) {
-  return <select className={cn(control, "h-10 pr-8", className)} {...props} />;
+  return <select className={cn(control, "h-11 pr-8", className)} {...props} />;
 }
 
 export function Label({ className, ...props }: React.ComponentProps<"label">) {
@@ -148,7 +148,7 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          "relative max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl bg-background p-5 shadow-2xl sm:rounded-2xl sm:p-6",
+          "relative max-h-[96dvh] w-full overflow-y-auto rounded-t-2xl border bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-xl sm:max-h-[92dvh] sm:rounded-xl sm:p-6",
           wide ? "sm:max-w-2xl" : "sm:max-w-lg",
         )}
       >
@@ -206,16 +206,54 @@ export function ErrorState({ error, onRetry }: { error: Error; onRetry?: () => v
   );
 }
 
-export function Table({ className, ...props }: React.ComponentProps<"table">) {
+function visibleText(node: React.ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(visibleText).join("");
+  if (React.isValidElement<{ children?: React.ReactNode }>(node)) return visibleText(node.props.children);
+  return "";
+}
+
+export function Table({ className, children, ...props }: React.ComponentProps<"table">) {
+  const parts = React.Children.toArray(children);
+  const head = parts.find((part) => React.isValidElement(part) && part.type === "thead");
+  const headRow = head && React.isValidElement<{ children?: React.ReactNode }>(head)
+    ? React.Children.toArray(head.props.children).find((row) => React.isValidElement(row) && row.type === "tr")
+    : undefined;
+  const labels = headRow && React.isValidElement<{ children?: React.ReactNode }>(headRow)
+    ? React.Children.toArray(headRow.props.children).map(visibleText)
+    : [];
+  const responsiveParts = parts.map((part) => {
+    if (!React.isValidElement<{ children?: React.ReactNode }>(part) || part.type !== "tbody") return part;
+    return React.cloneElement(
+      part,
+      undefined,
+      React.Children.map(part.props.children, (row) => {
+        if (!React.isValidElement<{ children?: React.ReactNode }>(row) || row.type !== "tr") return row;
+        let cellIndex = 0;
+        return React.cloneElement(
+          row,
+          undefined,
+          React.Children.map(row.props.children, (cell) => {
+            if (!React.isValidElement<{ children?: React.ReactNode; "data-label"?: string }>(cell) || cell.type !== "td") return cell;
+            const label = labels[cellIndex++]?.trim();
+            return label ? React.cloneElement(cell, { "data-label": label }) : cell;
+          }),
+        );
+      }),
+    );
+  });
+
   return (
     <div className="overflow-x-auto">
       <table
         className={cn(
-          "w-full text-left text-sm [&_td]:px-3 [&_td]:py-2.5 [&_th]:whitespace-nowrap [&_th]:px-3 [&_th]:py-2 [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-muted-foreground [&_tbody_tr]:border-t",
+          "responsive-table w-full text-left text-sm [&_td]:px-3 [&_td]:py-2.5 [&_th]:whitespace-nowrap [&_th]:px-3 [&_th]:py-2 [&_th]:text-xs [&_th]:font-medium [&_th]:text-muted-foreground [&_tbody_tr]:border-t",
           className,
         )}
         {...props}
-      />
+      >
+        {responsiveParts}
+      </table>
     </div>
   );
 }

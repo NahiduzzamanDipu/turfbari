@@ -10,11 +10,17 @@
  * ([data-tenant-theme]) so one tenant's theme can never leak into another view.
  */
 :root {
-  --radius: 0.875rem;
+  --radius: 0.75rem;
+  --page-gutter: clamp(1rem, 2vw, 2rem);
+  --section-gap: 1.5rem;
+  --card-padding: clamp(1rem, 1.5vw, 1.5rem);
+  --control-height: 2.75rem;
+  --motion-fast: 150ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   --background: oklch(0.985 0.006 155);
   --foreground: oklch(0.21 0.03 160);
-  --card: oklch(1 0 0 / 0.72);
+  --card: oklch(1 0 0);
   --card-foreground: var(--foreground);
   --popover: oklch(1 0 0 / 0.92);
   --popover-foreground: var(--foreground);
@@ -50,7 +56,7 @@ html[data-language="bn"] body {
 .dark {
   --background: oklch(0.17 0.02 165);
   --foreground: oklch(0.96 0.01 155);
-  --card: oklch(0.23 0.025 165 / 0.7);
+  --card: oklch(0.23 0.025 165);
   --popover: oklch(0.23 0.025 165 / 0.95);
   --primary: oklch(0.72 0.14 160);
   --primary-foreground: oklch(0.17 0.03 165);
@@ -113,8 +119,95 @@ html[data-language="bn"] body {
     @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "cv11", "ss01";
   }
+  #root {
+    min-height: 100dvh;
+    min-width: 0;
+  }
+  #public-booking-form {
+    scroll-margin-top: 5rem;
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (max-width: 639px) {
+  button:not([data-compact="true"]),
+  [role="button"] {
+    min-height: 2.75rem;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]),
+  select {
+    min-height: 2.75rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .responsive-table {
+    display: block;
+    border-collapse: separate;
+  }
+  .responsive-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+  .responsive-table tbody {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .responsive-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--card);
+  }
+  .responsive-table tbody td {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.125rem;
+    padding: 0.25rem !important;
+    text-align: start !important;
+    overflow-wrap: anywhere;
+  }
+  .responsive-table tbody td::before {
+    content: attr(data-label);
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  .responsive-table tbody td:only-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

@@ -1,7 +1,7 @@
-import { ExternalLink, KeyRound, LogOut, Menu, X } from "lucide-react";
+import { CalendarDays, ExternalLink, Home, KeyRound, LogOut, Menu, MoreHorizontal, X } from "lucide-react";
 import type * as React from "react";
-import { useState } from "react";
-import { Link, NavLink, Outlet } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { useLogout, useMe, useSwitchTurf } from "@/features/auth/auth";
@@ -11,6 +11,7 @@ import { SubscriptionBanner } from "@/features/workspace/SubscriptionBanner";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n";
+import { InstallAppButton } from "./InstallAppButton";
 
 export interface NavItem {
   to: string;
@@ -39,7 +40,10 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
   const logout = useLogout();
   const switchTurf = useSwitchTurf();
   const [open, setOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const drawer = useRef<HTMLElement>(null);
   const live = useLiveSync(area);
+  const location = useLocation();
   const data = me.data;
   const { t } = useLanguage();
   const active = data?.memberships.find((m) => m.turf_id === data.active_turf_id);
@@ -50,6 +54,47 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
       isOwner ||
       (!item.ownerOnly && (!item.permission || Boolean(active?.permissions?.[item.permission]))),
   );
+  const primaryMobileItems = area === "workspace"
+    ? [
+        { to: "/workspace", label: "Home", icon: <Home />, end: true },
+        items.find((item) => item.to === "/workspace/bookings"),
+        { to: "/workspace/book", label: "Calendar", icon: <CalendarDays /> },
+        items.find((item) => item.to === "/workspace/customers"),
+      ].filter((item): item is NavItem => Boolean(item))
+    : [];
+
+  useEffect(() => {
+    if (!open) return;
+    const oldOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        menuButton.current?.focus();
+      }
+      if (event.key === "Tab" && drawer.current) {
+        const focusable = drawer.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (!focusable.length) return;
+        const first = focusable[0]!;
+        const last = focusable[focusable.length - 1]!;
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    drawer.current?.querySelector<HTMLElement>("a[href], button:not([disabled])")?.focus();
+    return () => {
+      document.body.style.overflow = oldOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
 
   const sidebar = (
     <div className="flex h-full flex-col gap-4 p-4">
@@ -92,7 +137,7 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
             onClick={() => setOpen(false)}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground [&_svg]:size-4",
+                "flex min-h-9 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground [&_svg]:size-4",
                 isActive && "bg-secondary text-foreground",
               )
             }
@@ -120,6 +165,7 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
           <ExternalLink className="size-3.5" /> View public page
         </a>
       )}
+      <div className="px-2"><InstallAppButton /></div>
       <div className="border-t pt-3">
         <div className="mb-2 px-2"><LanguageSwitcher /></div>
         <p className="truncate px-3 text-sm font-medium">{data?.user?.full_name || data?.user?.email}</p>
@@ -150,14 +196,16 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
   );
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
       <aside className="sticky top-0 hidden h-dvh border-r bg-card/50 lg:block">{sidebar}</aside>
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background/85 px-4 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-30 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-end justify-between border-b bg-background px-4 pt-[env(safe-area-inset-top)] lg:hidden">
         <Logo className="[&_span]:text-xl" />
+        <div className="flex items-center gap-1">
         <LanguageSwitcher compact />
-        <Button variant="ghost" size="icon" aria-label="Open menu" onClick={() => setOpen(true)}>
+        <Button ref={menuButton} variant="ghost" size="icon" aria-label={t("Open menu")} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
           <Menu />
         </Button>
+        </div>
       </header>
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
@@ -167,7 +215,7 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
             className="absolute inset-0 bg-black/40"
             onClick={() => setOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto bg-background shadow-xl">
+          <aside ref={drawer} role="dialog" aria-modal="true" aria-label={t("Navigation menu")} className="absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto border-r bg-background pt-[env(safe-area-inset-top)] pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-xl">
             <Button
               variant="ghost"
               size="icon"
@@ -181,10 +229,29 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
           </aside>
         </div>
       )}
-      <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-8">
-        {area === "workspace" && <SubscriptionBanner />}
-        <Outlet />
+      <main className="min-w-0 px-4 py-5 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6 sm:pb-6 lg:px-8 lg:pb-8">
+        <div className="mx-auto w-full max-w-screen-2xl">
+          {area === "workspace" && <SubscriptionBanner />}
+          <Outlet />
+        </div>
       </main>
+      {area === "workspace" && primaryMobileItems.length > 0 && (
+        <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t bg-background/95 px-1 pt-1 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" aria-label={t("Primary navigation")}>
+          {primaryMobileItems.map((item) => {
+            const activePage = item.end ? location.pathname === item.to : location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
+            const count = item.badge ? (live?.[item.badge] ?? 0) : 0;
+            return (
+              <NavLink key={item.to} to={item.to} end={item.end} onClick={() => setOpen(false)} aria-label={t(item.label)} className={cn("relative flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-1 text-[11px] font-medium text-muted-foreground transition-colors", activePage && "text-primary")}>
+                <span className="relative [&_svg]:size-5">{item.icon}{count > 0 && <span className="absolute -right-2 -top-1 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] leading-4 text-primary-foreground">{count}</span>}</span>
+                <span className="max-w-full truncate">{t(item.label)}</span>
+              </NavLink>
+            );
+          })}
+          <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog" className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-secondary">
+            <MoreHorizontal className="size-5" />{t("More")}
+          </button>
+        </nav>
+      )}
     </div>
   );
 }
@@ -199,10 +266,10 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="font-display text-3xl font-extrabold uppercase tracking-tight sm:text-4xl">{title}</h1>
-        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+        <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{title}</h1>
+        {description && <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
     </div>
@@ -221,12 +288,12 @@ export function StatCard({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="glass rounded-xl p-4">
-      <div className="flex items-center justify-between text-sm text-muted-foreground [&_svg]:size-4">
+    <div className="h-full rounded-xl border bg-card p-4 shadow-sm sm:p-5">
+      <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground [&_svg]:size-4">
         <span>{label}</span>
-        {icon}
+        {icon && <span aria-hidden="true">{icon}</span>}
       </div>
-      <p className="tabular mt-2 text-2xl font-bold">{value}</p>
+      <p className="tabular mt-2 text-2xl font-semibold leading-none">{value}</p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );

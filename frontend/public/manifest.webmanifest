@@ -1,0 +1,15 @@
+{
+  "id": "/",
+  "name": "TurfBari — Turf Management",
+  "short_name": "TurfBari",
+  "description": "Bookings, slots, payments and turf operations for Bangladesh.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f8faf8",
+  "theme_color": "#065f46",
+  "icons": [
+    { "src": "/pwa-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
