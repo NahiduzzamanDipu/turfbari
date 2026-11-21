@@ -276,14 +276,33 @@ def test_no_public_directory_only_published_active_turf_pages(alpha, beta):
 def test_owner_and_manager_download_their_own_qr(alpha):
     turf, owner = alpha
     client = client_for(owner)
-    png = client.get("/api/workspace/booking-page/qr.png?download=1")
+    png = client.get("/api/workspace/booking-page/qr.png?download=1&scale=32")
     assert png.status_code == 200 and png["Content-Type"] == "image/png"
     assert png.content[1:4] == b"PNG"
     assert "attachment" in png["Content-Disposition"]
+    assert png["Cache-Control"] == "private, no-store"
     svg = client.get("/api/workspace/booking-page/qr.svg")
     assert svg.status_code == 200 and b"<svg" in svg.content
+    assert client.get("/api/workspace/booking-page/qr.svg?scale=49").status_code == 400
     assert client.get("/api/workspace/booking-page/qr.gif").status_code == 404
     assert APIClient().get("/api/workspace/booking-page/qr.png").status_code in (401, 403)
+
+
+def test_booking_poster_info_uses_tenant_booking_url_and_configured_site(settings, alpha, beta):
+    settings.FRONTEND_URL = "https://turf-preview.example"
+    turf_a, owner_a = alpha
+    turf_b, owner_b = beta
+
+    info_a = client_for(owner_a).get("/api/workspace/booking-page/poster-info/")
+    info_b = client_for(owner_b).get("/api/workspace/booking-page/poster-info/")
+
+    assert info_a.status_code == info_b.status_code == 200
+    assert info_a.json() == {
+        "booking_url": f"https://turf-preview.example/turfs/{turf_a.slug}",
+        "website_url": "https://turf-preview.example",
+    }
+    assert info_b.json()["booking_url"] == f"https://turf-preview.example/turfs/{turf_b.slug}"
+    assert info_a.json()["booking_url"] != info_b.json()["booking_url"]
 
 
 def test_public_detail_never_leaks_private_fields(alpha):

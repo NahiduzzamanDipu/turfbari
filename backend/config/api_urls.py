@@ -214,6 +214,7 @@ workspace_urls = [
     path("settings/", setup.SettingsView.as_view()),
     path("profile-picture/", setup.ProfilePictureView.as_view()),
     path("booking-page/qr.<str:kind>", setup.BookingQRView.as_view()),
+    path("booking-page/poster-info/", setup.BookingPosterInfoView.as_view()),
     path("managers/", setup.ManagersView.as_view()),
     path("managers/<uuid:pk>/", setup.ManagerDetailView.as_view()),
     path("activity/", audit.WorkspaceActivityView.as_view()),

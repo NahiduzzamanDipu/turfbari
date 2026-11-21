@@ -454,22 +454,24 @@ def booking_page_url(turf: Turf) -> str:
     return f"{settings.FRONTEND_URL.rstrip('/')}/turfs/{turf.slug}"
 
 
-def qr_response(turf: Turf, kind: str = "svg", *, download: bool = False) -> HttpResponse:
+def qr_response(
+    turf: Turf, kind: str = "svg", *, download: bool = False, scale: int | None = None
+) -> HttpResponse:
     """The turf's booking-page QR code as SVG or PNG."""
     qr = segno.make(booking_page_url(turf), error="m")
     buffer = io.BytesIO()
     if kind == "png":
-        qr.save(buffer, kind="png", scale=16, dark="#064e3b", light="#ffffff", border=3)
+        qr.save(buffer, kind="png", scale=scale or 16, dark="#064e3b", light="#ffffff", border=4)
         content_type = "image/png"
     else:
         # A standalone SVG document (with xmlns) so it renders in <img> tags and as a downloaded file.
         qr.save(
             buffer,
             kind="svg",
-            scale=8,
+            scale=scale or 8,
             dark="#064e3b",
             light="#ffffff",
-            border=2,
+            border=4,
             xmldecl=False,
             title=f"{turf.name} booking page",
         )

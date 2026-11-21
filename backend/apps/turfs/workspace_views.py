@@ -1,5 +1,6 @@
 """Workspace configuration: fields, hours, pricing, turf settings, managers."""
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -167,7 +168,45 @@ class BookingQRView(APIView):
 
         if kind not in ("svg", "png"):
             raise Http404
-        return qr_response(request.tenant, kind, download=request.query_params.get("download") == "1")
+        try:
+            scale = int(request.query_params.get("scale", "0")) or None
+        except ValueError:
+            raise ValidationError({"scale": ["Scale must be an integer between 8 and 48."]}) from None
+        if scale is not None and not 8 <= scale <= 48:
+            raise ValidationError({"scale": ["Scale must be between 8 and 48."]})
+        response = qr_response(
+            request.tenant,
+            kind,
+            download=request.query_params.get("download") == "1",
+            scale=scale,
+        )
+        response["Cache-Control"] = "private, no-store"
+        return response
+
+
+class BookingPosterInfoView(APIView):
+    """Authoritative same-tenant URLs for building a printable booking poster."""
+
+    permission_classes = [IsTenantMember]
+
+    @extend_schema(tags=["workspace"])
+    def get(self, request):
+        from urllib.parse import urlsplit
+
+        from rest_framework.exceptions import ValidationError
+
+        from .public_views import booking_page_url
+
+        site_url = settings.FRONTEND_URL.rstrip("/")
+        parsed = urlsplit(site_url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValidationError({"booking_url": ["The public website URL is not configured correctly."]})
+        return Response(
+            {
+                "booking_url": booking_page_url(request.tenant),
+                "website_url": site_url,
+            }
+        )
 
 
 class ManagerSerializer(serializers.Serializer):

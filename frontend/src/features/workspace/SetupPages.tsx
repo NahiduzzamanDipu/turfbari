@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Crosshair, Download, Loader2, MapPinned, Pencil, Plus, Trash2, UserPlus } from "lucide-react";
+import { Copy, Crosshair, Loader2, MapPinned, Pencil, Plus, Trash2, UserPlus } from "lucide-react";
 import { Link } from "react-router";
 import type * as React from "react";
 import { useEffect, useState } from "react";
@@ -28,6 +28,7 @@ import { SURFACE_LABEL, WEEKDAYS, WEEKDAYS_SHORT, fmtClock, weekdayLabel } from 
 import type { Field, Hours, Manager, ManagerPermissions, PricingRule, TurfSettings } from "@/lib/types";
 import { formatBDT } from "@/lib/utils";
 import { errorText, useFields, useIsOwner } from "./hooks";
+import { BookingPoster } from "./BookingPoster";
 import { PicturesCard } from "./PicturesCard";
 
 // ------------------------------------------------------------------ fields
@@ -543,7 +544,10 @@ export function SettingsPage() {
                 <Checkbox label="Publish my booking page (its link and QR code open for players)" checked={form.is_listed} onChange={(e) => set("is_listed", e.target.checked)} />
                 <Checkbox label="Accept online booking requests" checked={form.public_booking_enabled} onChange={(e) => set("public_booking_enabled", e.target.checked)} />
                 <Checkbox label="Show prices publicly" checked={form.show_pricing} onChange={(e) => set("show_pricing", e.target.checked)} />
-                <BookingPageQR slug={form.slug} published={form.is_listed} />
+                <BookingPageQR
+                  turf={settings.data ? { ...form, profile_image_url: settings.data.profile_image_url } : form}
+                  published={form.is_listed}
+                />
               </CardContent>
             </Card>
             <Card>
@@ -881,40 +885,34 @@ export function ManagersPage() {
 }
 
 /** The turf's own booking link and QR code. Owners and managers can download it to print or share. */
-export function BookingPageQR({ slug, published }: { slug: string; published: boolean }) {
-  const url = `${window.location.origin}/turfs/${slug}`;
+export function BookingPageQR({ turf, published }: { turf: TurfSettings; published: boolean }) {
+  const posterInfo = useQuery({
+    queryKey: ["ws", "booking-poster-info", turf.slug],
+    queryFn: () => api<{ booking_url: string; website_url: string }>("/workspace/booking-page/poster-info/"),
+  });
+  const url = posterInfo.data?.booking_url;
   return (
-    <div className="flex flex-col gap-4 rounded-lg border p-3 sm:flex-row sm:items-center">
-      <img src="/api/workspace/booking-page/qr.svg" alt="Booking page QR code" className="size-32 shrink-0 rounded bg-white p-1" />
-      <div className="min-w-0 space-y-2 text-sm">
-        <a className="block truncate font-medium text-primary hover:underline" href={url} target="_blank" rel="noreferrer">
-          {url.replace(/^https?:\/\//, "")}
-        </a>
+    <div className="rounded-lg border p-3">
+      <div className="space-y-2 text-sm">
+        {posterInfo.isError ? <ErrorState error={posterInfo.error} onRetry={() => void posterInfo.refetch()} /> : url ? (
+          <a className="block truncate font-medium text-primary hover:underline" href={url} target="_blank" rel="noreferrer">
+            {url.replace(/^https?:\/\//, "")}
+          </a>
+        ) : <p role="status" className="text-sm text-muted-foreground">Loading booking link…</p>}
         <p className="text-muted-foreground">
           {published
-            ? "Print the QR at your counter or share the link on Facebook — players book straight from it."
-            : "Publish the page above first; until then the link and QR show “not found” to players."}
+            ? "Print this branded poster at your counter or share it on Facebook and WhatsApp."
+            : "Publish the page above first; its booking link and QR will then be ready for players."}
         </p>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild size="sm" variant="outline">
-            <a href="/api/workspace/booking-page/qr.png?download=1">
-              <Download /> PNG
-            </a>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <a href="/api/workspace/booking-page/qr.svg?download=1">
-              <Download /> SVG (print)
-            </a>
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={() => navigator.clipboard.writeText(url).then(() => toast.success("Link copied"), () => toast.error("Couldn't copy the link"))}
-          >
-            <Copy /> Copy link
-          </Button>
-        </div>
+        {url && <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => navigator.clipboard.writeText(url).then(() => toast.success("Link copied"), () => toast.error("Couldn't copy the link"))}
+        >
+          <Copy /> Copy link
+        </Button>}
+        <BookingPoster turf={turf} published={published} />
       </div>
     </div>
   );
