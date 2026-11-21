@@ -1,5 +1,5 @@
-# Single-service TurfBari image for free hosts such as Render: builds the React app, then runs
-# Django (gunicorn), which serves the API, the built site and uploaded media in one process.
+# Single-service TurfBari image for hosts such as Render: builds the React app, then runs Django
+# (gunicorn), which serves the API, the built site and uploaded media in one process.
 # The multi-container setup for a VPS is docker-compose.prod.yml.
 FROM node:22-alpine AS frontend
 WORKDIR /app

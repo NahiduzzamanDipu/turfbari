@@ -43,6 +43,26 @@ def test_health_endpoint_reports_up():
     assert response.json() == {"status": "ok", "checks": {"database": "up", "cache": "up"}}
 
 
+def test_root_liveness_is_minimal_and_independent_of_dependencies(monkeypatch):
+    from apps.common import views
+
+    def unexpected_dependency_check():
+        raise AssertionError("liveness must not query dependencies")
+
+    monkeypatch.setattr(views, "_check_database", unexpected_dependency_check)
+    monkeypatch.setattr(views, "_check_cache", unexpected_dependency_check)
+    response = APIClient().get("/health/")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_root_liveness_is_not_redirected_to_https(settings):
+    settings.SECURE_SSL_REDIRECT = True
+    settings.SECURE_REDIRECT_EXEMPT = [r"^health/$"]
+    response = APIClient().get("/health/", secure=False)
+    assert response.status_code == 200
+
+
 def test_csrf_endpoint_sets_cookie():
     response = APIClient().get("/api/auth/csrf/")
     assert response.status_code == 200

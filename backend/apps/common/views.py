@@ -2,6 +2,7 @@ import logging
 
 from django.core.cache import cache
 from django.db import connection
+from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from drf_spectacular.utils import OpenApiTypes, extend_schema
@@ -10,6 +11,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 logger = logging.getLogger(__name__)
+
+
+def liveness(request):
+    """Minimal process liveness probe for hosting platforms; performs no I/O."""
+    return JsonResponse({"status": "ok"})
 
 
 class HealthView(APIView):

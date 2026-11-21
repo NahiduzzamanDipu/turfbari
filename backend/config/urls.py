@@ -5,8 +5,11 @@ from django.urls import include, path, re_path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.common.permissions import IsPlatformAdmin
+from apps.common.views import liveness
 
 urlpatterns = [
+    # Hosting-platform liveness probe. Keep this dependency-free and before the SPA fallback.
+    path("health/", liveness, name="liveness"),
     # Django's built-in admin is kept for emergency data repair only, at a non-obvious path.
     path("django-admin/", admin.site.urls),
     path("api/", include("apps.common.urls")),

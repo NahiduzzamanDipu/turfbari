@@ -173,6 +173,14 @@ docker compose -f docker-compose.prod.yml --env-file .env.production exec api py
 - Back up the `mysqldata` and `media` volumes; they hold all bookings and pictures.
 - Only one `beat` container may run (the schedule is stored in MySQL by django-celery-beat).
 
+## Render always-on deployment
+
+The repository's root `Dockerfile` builds the React app and serves it with Django/Gunicorn as one Render
+Web Service. Render's instance plan is account-side and is not declared in this repository. To avoid free-tier
+spin-down, upgrade that Web Service to paid compute in the Render Dashboard; see
+[`docs/RENDER_ALWAYS_ON.md`](docs/RENDER_ALWAYS_ON.md) for the audit, health-check path, current official pricing,
+and verification steps. `/health/` is a lightweight liveness probe only; it does not keep a Free instance awake.
+
 ## Tests and checks
 
 ```powershell
