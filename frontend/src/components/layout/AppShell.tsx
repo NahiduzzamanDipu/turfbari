@@ -288,7 +288,7 @@ export function StatCard({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="h-full rounded-xl border bg-card p-4 shadow-sm sm:p-5">
+    <div className="h-full rounded-xl border bg-card p-3.5 shadow-sm sm:p-5">
       <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground [&_svg]:size-4">
         <span>{label}</span>
         {icon && <span aria-hidden="true">{icon}</span>}

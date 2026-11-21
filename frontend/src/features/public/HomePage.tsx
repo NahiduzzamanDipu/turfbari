@@ -77,18 +77,18 @@ export function HomePage() {
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_30rem_at_10%_-10%,color-mix(in_oklch,var(--accent)_40%,transparent),transparent),radial-gradient(50rem_30rem_at_110%_10%,color-mix(in_oklch,var(--primary)_28%,transparent),transparent)]"
         />
-        <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-14 sm:pt-24">
+        <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-10 sm:pb-16 sm:pt-24">
           <p className="mb-3 inline-flex rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent-foreground">
             টার্ফ ম্যানেজমেন্ট সফটওয়্যার · For turf owners in Bangladesh
           </p>
-          <h1 className="max-w-3xl font-display text-5xl font-extrabold uppercase leading-[0.95] tracking-tight sm:text-7xl">
+          <h1 className="max-w-3xl font-display text-4xl font-extrabold uppercase leading-[1.05] tracking-tight sm:text-7xl">
             {t("Run your turf. Not a notebook.")}
           </h1>
-          <p className="mt-4 max-w-xl text-lg text-muted-foreground">
+          <p className="mt-3 max-w-xl text-base text-muted-foreground sm:mt-4 sm:text-lg">
             Bookings, bKash advances, slot pricing, managers, SMS and reports — in one workspace, with your own booking
             page and QR code for players.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-6 flex flex-wrap gap-2.5 sm:mt-8 sm:gap-3">
             {signedIn ? (
               <Button asChild size="lg">
                 <Link to={me.data?.home ?? "/"}>{t("Open my dashboard")}</Link>
@@ -118,24 +118,24 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-12" aria-labelledby="demo-title">
+      <section className="mx-auto max-w-6xl px-4 pb-8 sm:pb-12" aria-labelledby="demo-title">
         <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-          <div className="grid gap-5 bg-primary px-5 py-7 text-primary-foreground sm:px-8 sm:py-9 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="grid gap-4 bg-primary px-4 py-5 text-primary-foreground sm:gap-5 sm:px-8 sm:py-9 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
               <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[.16em] text-primary-foreground/75"><Play className="size-4" /> {t("Try it before you decide")}</p>
-              <h2 id="demo-title" className="mt-2 font-display text-3xl font-extrabold uppercase sm:text-4xl">{t("Try the live demo")}</h2>
+              <h2 id="demo-title" className="mt-2 font-display text-2xl font-extrabold uppercase sm:text-4xl">{t("Try the live demo")}</h2>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-primary-foreground/85">Experience TURFBARI from both sides. See how customers book a turf and how owners manage their business. Demo data is isolated and temporary.</p>
             </div>
             <Button asChild variant="accent" size="lg"><Link to="/demo-booking">Try Live Demo <ArrowRightIcon /></Link></Button>
           </div>
           <div className="grid gap-0 md:grid-cols-2">
-            <article className="p-5 sm:p-7">
+            <article className="p-4 sm:p-7">
               <span className="inline-flex rounded-xl bg-accent p-3 text-accent-foreground"><CalendarDays className="size-5" /></span>
               <h3 className="mt-4 text-lg font-bold">{t("Customer booking demo")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">Choose a date and available slot, enter your details, and submit a simulated booking request.</p>
               <Button asChild variant="outline" className="mt-4"><Link to="/demo-booking">{t("Try customer booking")} <ArrowRightIcon /></Link></Button>
             </article>
-            <article className="border-t p-5 md:border-l md:border-t-0 sm:p-7">
+            <article className="border-t p-4 md:border-l md:border-t-0 sm:p-7">
               <span className="inline-flex rounded-xl bg-accent p-3 text-accent-foreground"><PanelTop className="size-5" /></span>
               <h3 className="mt-4 text-lg font-bold">{t("Turf owner dashboard demo")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">Review demo bookings, update sample slot prices, explore customer records and reports.</p>
@@ -145,14 +145,14 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-12" aria-labelledby="features">
+      <section className="mx-auto max-w-6xl px-4 py-8 sm:py-12" aria-labelledby="features">
         <p className="mb-2 text-sm font-bold uppercase tracking-wider text-primary">{t("Built for day-to-day operations")}</p>
-        <h2 id="features" className="mb-3 font-display text-3xl font-extrabold uppercase">Why Choose TURFBARI?</h2>
-        <p className="mb-6 text-muted-foreground">Everything your turf business needs, organized in one simple platform.</p>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <h2 id="features" className="mb-2 font-display text-2xl font-extrabold uppercase sm:mb-3 sm:text-3xl">Why Choose TURFBARI?</h2>
+        <p className="mb-4 text-sm text-muted-foreground sm:mb-6 sm:text-base">Everything your turf business needs, organized in one simple platform.</p>
+        <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
           {FEATURES.map((f) => (
-            <div key={f.title} className="glass rounded-xl p-5">
-              <div className="mb-3 inline-flex rounded-lg bg-accent p-2 text-accent-foreground [&_svg]:size-5">{f.icon}</div>
+            <div key={f.title} className="glass rounded-xl p-4 sm:p-5">
+              <div className="mb-2 inline-flex rounded-lg bg-accent p-2 text-accent-foreground [&_svg]:size-5 sm:mb-3">{f.icon}</div>
               <h3 className="font-semibold">{f.title}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{f.text}</p>
             </div>
@@ -181,15 +181,15 @@ export function HomePage() {
       </section>
 
       <section id="plans" className="scroll-mt-24 border-y bg-muted/30" aria-labelledby="plans-title">
-        <div className="mx-auto max-w-6xl px-4 py-14">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
           <div className="mx-auto mb-8 max-w-2xl text-center">
             <p className="text-sm font-bold uppercase tracking-wider text-primary">Simple prepaid subscriptions</p>
-            <h2 id="plans-title" className="mt-2 font-display text-3xl font-extrabold uppercase">Choose the Right Plan for Your Turf</h2>
+            <h2 id="plans-title" className="mt-2 font-display text-2xl font-extrabold uppercase sm:text-3xl">Choose the Right Plan for Your Turf</h2>
             <p className="mt-3 text-muted-foreground">Flexible plans designed to help turf businesses manage bookings, customers, payments, and daily operations.</p>
           </div>
           {plans.isPending ? <p className="text-center text-sm text-muted-foreground" role="status">Loading available plans…</p> : plans.data?.length ? (
             <div className="grid items-stretch gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {plans.data.map((p) => <article key={p.id} className={`relative flex flex-col rounded-2xl border bg-card p-6 shadow-sm ${p.featured ? "border-primary ring-2 ring-primary/20" : ""}`}>
+              {plans.data.map((p) => <article key={p.id} className={`relative flex flex-col rounded-2xl border bg-card p-4 shadow-sm sm:p-6 ${p.featured ? "border-primary ring-2 ring-primary/20" : ""}`}>
                 {p.featured && <span className="absolute -top-3 right-5 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground"><Star className="size-3" /> Featured</span>}
                 <h3 className="font-display text-2xl font-extrabold">{p.name}</h3>
                 <p className="mt-1 min-h-10 text-sm text-muted-foreground">{p.description || `${p.months} month prepaid period`}</p>
@@ -209,10 +209,10 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-6 px-4 py-14 md:grid-cols-2" aria-labelledby="sms-price-title">
-        <div className="rounded-2xl bg-primary p-7 text-primary-foreground sm:p-9">
+      <section className="mx-auto grid max-w-6xl gap-4 px-4 py-10 sm:gap-6 sm:py-14 md:grid-cols-2" aria-labelledby="sms-price-title">
+        <div className="rounded-2xl bg-primary p-5 text-primary-foreground sm:p-9">
           <p className="inline-flex items-center gap-2 text-sm font-semibold"><MessageSquareText className="size-4" /> Prepaid messaging</p>
-          <h2 id="sms-price-title" className="mt-3 font-display text-3xl font-extrabold uppercase">Affordable SMS Communication</h2>
+          <h2 id="sms-price-title" className="mt-3 font-display text-2xl font-extrabold uppercase sm:text-3xl">Affordable SMS Communication</h2>
           {smsPrice.data?.configured && smsPrice.data.price_per_segment ? <>
             <p className="mt-5 text-4xl font-extrabold tabular">৳{new Intl.NumberFormat("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(Number(smsPrice.data.price_per_segment))} <span className="text-base font-medium">per SMS part</span></p>
             <p className="mt-2 text-sm text-primary-foreground/80">Booking confirmations, customer updates, reminders and promotional messages use your prepaid SMS wallet. Recharge before sending.</p>
@@ -220,9 +220,9 @@ export function HomePage() {
             <p className="mt-3 text-xs text-primary-foreground/75">Bengali and longer messages may use multiple parts depending on encoding and length. The final segment count and charge are shown before sending. Messages are not sent when wallet balance is insufficient; bookings continue normally.</p>
           </> : <p className="mt-4 text-sm text-primary-foreground/85">SMS service pricing is being configured. Contact TURFBARI for current rates. Messages use a prepaid wallet, and the applicable cost is shown before sending.</p>}
         </div>
-        <div className="rounded-2xl border bg-card p-7 sm:p-9">
+        <div className="rounded-2xl border bg-card p-5 sm:p-9">
           <div className="inline-flex rounded-lg bg-accent p-2 text-accent-foreground"><Headphones className="size-5" /></div>
-          <h2 className="mt-3 font-display text-3xl font-extrabold uppercase">Support &amp; Personal Training</h2>
+          <h2 className="mt-3 font-display text-2xl font-extrabold uppercase sm:text-3xl">Support &amp; Personal Training</h2>
           <p className="mt-3 text-muted-foreground">After your subscription is activated, TURFBARI support staff can guide you through the workspace and its day-to-day tools. Availability and response times can vary.</p>
           <ol className="mt-5 space-y-2 text-sm text-muted-foreground">
             {["Choose a plan and submit your registration payment for verification.", "Once approved, your account is activated.", "Arrange an onboarding session with the support team.", "Learn profile setup, slots and pricing, bookings, payment verification, QR sharing, SMS wallet, staff and reports.", "Contact support again when you need help."].map((step, i) => <li key={step} className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">{i + 1}</span>{step}</li>)}
