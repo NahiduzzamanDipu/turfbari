@@ -1,4 +1,4 @@
-import { Bot, LoaderCircle, MessageCircle, Minus, Plus, RotateCcw, Send, ThumbsDown, ThumbsUp, Trash2, X } from "lucide-react";
+import { Bot, LoaderCircle, Minus, RotateCcw, Send, ThumbsDown, ThumbsUp, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { api } from "@/lib/api";
@@ -92,10 +92,10 @@ export function AssistantWidget() {
   const welcome = language === "bn" ? status.welcome.bn || t(status.welcome.en) : status.welcome.en;
   const ready = status.available && status.service_state === "ready";
   const stateLabel = ready ? t("TURFBARI knowledge ready") : t("Assistant disabled");
-  const btnLabel = t("Ask TURFBARI Assistant");
+  const launcherLabel = open ? t("Close AI Assistant") : t("Open AI Assistant");
 
-  return <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 sm:right-6">
-    {open ? <section aria-label={status.display_name} className="mb-3 flex h-[min(680px,calc(100dvh-7rem))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl">
+  return <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+    {open ? <section aria-label={status.display_name} className="flex h-[min(680px,calc(100dvh-7rem))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl">
       <header className="flex items-center gap-3 border-b bg-primary px-4 py-3 text-primary-foreground">
         <span className="grid size-10 place-items-center rounded-full bg-white/15"><Bot className="size-5" /></span>
         <div className="min-w-0 flex-1"><p className="truncate font-semibold">{status.display_name}</p><p className="flex items-center gap-1.5 text-xs opacity-90"><span className={`size-2 rounded-full ${ready ? "bg-lime-300" : "bg-amber-300"}`} />{stateLabel}</p></div>
@@ -121,8 +121,17 @@ export function AssistantWidget() {
       </form>
       <p className="px-4 pb-2 text-center text-[10px] text-muted-foreground">{t("AI answers can be incomplete. Verify important details with TURFBARI support.")}</p>
     </section> : null}
-    <button type="button" onClick={() => setOpen((value) => !value)} className="ml-auto flex min-h-12 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-lg transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" aria-expanded={open} aria-label={open ? t("Close assistant") : btnLabel}>
-      {open ? <Plus className="size-5 rotate-45" /> : <MessageCircle className="size-5" />}{!open && <span>{btnLabel}</span>}
+    <button
+      type="button"
+      onClick={() => setOpen((value) => !value)}
+      className="group relative grid size-12 min-h-12 shrink-0 place-items-center rounded-full bg-primary p-0 text-primary-foreground shadow-md transition-[transform,box-shadow] duration-150 hover:scale-[1.04] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:size-[54px]"
+      aria-expanded={open}
+      aria-label={launcherLabel}
+    >
+      {open ? <X aria-hidden="true" className="size-5" /> : <Bot aria-hidden="true" className="size-6" />}
+      <span aria-hidden="true" className="pointer-events-none absolute bottom-full right-0 mb-2 hidden whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs font-medium text-background shadow-md sm:group-hover:block sm:group-focus-visible:block">
+        {open ? t("Close AI Assistant") : t("AI Assistant")}
+      </span>
     </button>
   </div>;
 }
