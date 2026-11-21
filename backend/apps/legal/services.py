@@ -8,6 +8,7 @@ unpublished drafts or empty modules never block anyone.
 from __future__ import annotations
 
 import hashlib
+import logging
 import uuid
 from datetime import datetime
 
@@ -19,9 +20,39 @@ from rest_framework.exceptions import ValidationError
 from . import catalog
 from .models import LegalAcceptance, LegalDocument, LegalDocumentVersion, Sector
 
+log = logging.getLogger(__name__)
+
 REV_KEY = "legal:rev"
 CURRENT_TTL = 60  # scheduled versions become current within a minute
 PENDING_TTL = 300
+
+
+def _cache_get(key: str):
+    """Cache is an optimization; a cache outage must not block legal operations."""
+    try:
+        return cache.get(key)
+    except Exception as exc:  # noqa: BLE001
+        log.warning(
+            "Legal cache read failed (%s); reading current data from the database", type(exc).__name__
+        )
+        return None
+
+
+def _cache_set(key: str, value, timeout=None) -> bool:
+    try:
+        cache.set(key, value, timeout)
+        return True
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Legal cache write failed (%s); continuing without cached data", type(exc).__name__)
+        return False
+
+
+def _cache_delete(key: str) -> None:
+    try:
+        cache.delete(key)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Legal cache invalidation failed (%s); continuing", type(exc).__name__)
+
 
 ACCEPT_MESSAGE = "Please read and accept the required terms and policies to continue."
 CHANGED_MESSAGE = "The terms and policies were just updated. Please read them again and accept."
@@ -29,16 +60,17 @@ CHANGED_MESSAGE = "The terms and policies were just updated. Please read them ag
 
 # ------------------------------------------------------------------ cache revision
 def _rev() -> str:
-    rev = cache.get(REV_KEY)
+    rev = _cache_get(REV_KEY)
     if rev is None:
         rev = uuid.uuid4().hex
-        cache.set(REV_KEY, rev, None)
+        _cache_set(REV_KEY, rev, None)
     return rev
 
 
 def bump_revision() -> None:
     """Call after anything that changes which versions are current (publish, unpublish, settings)."""
-    cache.set(REV_KEY, uuid.uuid4().hex, None)
+    # Cache invalidation must never roll back a successful legal publication.
+    _cache_set(REV_KEY, uuid.uuid4().hex, None)
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -98,7 +130,7 @@ def current_versions_qs(now=None):
 def current_entries() -> list[dict]:
     """Every document's current version (cached briefly; cleared on publish/unpublish)."""
     key = f"legal:current:{_rev()}"
-    cached = cache.get(key)
+    cached = _cache_get(key)
     if cached is not None:
         return cached
     seen, entries = set(), []
@@ -108,7 +140,7 @@ def current_entries() -> list[dict]:
         seen.add(v.document_id)
         entries.append(entry_for(v))
     entries = _sort(entries)
-    cache.set(key, entries, CURRENT_TTL)
+    _cache_set(key, entries, CURRENT_TTL)
     return entries
 
 
@@ -219,15 +251,15 @@ def _pending_key(user_id) -> str:
 def account_gate_pending(user) -> bool:
     """Cached yes/no for the sign-in gate (checked on every workspace request)."""
     key = _pending_key(user.pk)
-    value = cache.get(key)
+    value = _cache_get(key)
     if value is None:
         value = bool(pending_for_user(user, "account"))
-        cache.set(key, value, PENDING_TTL)
+        _cache_set(key, value, PENDING_TTL)
     return value
 
 
 def forget_pending(user) -> None:
-    cache.delete(_pending_key(user.pk))
+    _cache_delete(_pending_key(user.pk))
 
 
 # ------------------------------------------------------------------ recording

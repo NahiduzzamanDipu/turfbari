@@ -13,6 +13,7 @@ from rest_framework.test import APIClient
 
 from apps.bookings.models import Booking
 from apps.common.models import PlatformSettings, TermsVersion
+from apps.legal import services
 from apps.legal.models import LegalAcceptance, LegalDocument, LegalDocumentVersion, Sector
 from apps.turfs.models import TenantMembership
 
@@ -42,6 +43,39 @@ def book(turf, accepted=None, hour=18, phone="01912345678", agree=True):
         **bkash(),
     }
     return APIClient().post(f"/api/public/turfs/{turf.slug}/book/", body, format="json")
+
+
+def test_publish_succeeds_when_legal_cache_is_unavailable(monkeypatch):
+    admin, _ = admin_client()
+    draft_version = draft(admin, "terms", body_en="<p>Current terms</p>")
+    cache_set = services.cache.set
+    cache_get = services.cache.get
+
+    def fail_legal_set(key, *args, **kwargs):
+        if key == services.REV_KEY or key.startswith("legal:current:"):
+            raise ConnectionError("simulated cache outage")
+        return cache_set(key, *args, **kwargs)
+
+    def fail_legal_get(key, *args, **kwargs):
+        if key == services.REV_KEY or key.startswith("legal:current:"):
+            raise ConnectionError("simulated cache outage")
+        return cache_get(key, *args, **kwargs)
+
+    monkeypatch.setattr(services.cache, "set", fail_legal_set)
+    monkeypatch.setattr(services.cache, "get", fail_legal_get)
+
+    response = admin.post(
+        f"/api/admin/legal/versions/{draft_version['id']}/publish/",
+        {"reacceptance": "all"},
+        format="json",
+    )
+
+    assert response.status_code == 200, response.json()
+    published = LegalDocumentVersion.objects.get(pk=draft_version["id"])
+    assert published.status == LegalDocumentVersion.Status.PUBLISHED
+    public = APIClient().get("/api/public/legal/terms/")
+    assert public.status_code == 200
+    assert "Current terms" in public.json()["body_en"]
 
 
 def new_sector(admin, name="Badminton Courts", slug="badminton"):
