@@ -80,6 +80,13 @@ def test_chat_returns_published_local_source_and_redacts_personal_details():
     assert assistant.source_ids == [str(source.pk)]
 
 
+def test_first_public_question_builds_empty_local_index_automatically():
+    response = ask(start_conversation(), "What is TURFBARI?")
+    assert response.status_code == 200
+    assert "TURFBARI" in response.json()["message"]["content"]
+    assert KnowledgeSource.objects.filter(key="homepage:overview:en").exists()
+
+
 def test_bengali_answer_uses_bengali_published_material():
     source = add_source(
         "faq:bn-1",

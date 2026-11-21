@@ -294,6 +294,25 @@ def retrieve(question: str, limit: int = 4, language: str = "en") -> list[Knowle
         "please",
         "tell",
         "about",
+        "is",
+        "are",
+        "was",
+        "were",
+        "of",
+        "a",
+        "an",
+        "in",
+        "on",
+        "at",
+        "to",
+        "i",
+        "me",
+        "my",
+        "you",
+        "your",
+        "it",
+        "be",
+        "what's",
         "কী",
         "কি",
         "কীভাবে",
@@ -317,7 +336,7 @@ def retrieve(question: str, limit: int = 4, language: str = "en") -> list[Knowle
             score += 1
         if chunk.source.language == language:
             score += 0.12
-        if score >= 0.12:
+        if score >= 0.2:
             ranked.append((score, chunk))
     ranked.sort(key=lambda item: (-item[0], item[1].source.title, item[1].ordinal))
     return [chunk for _, chunk in ranked[:limit]]
