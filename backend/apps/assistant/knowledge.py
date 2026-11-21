@@ -331,6 +331,11 @@ def retrieve(question: str, limit: int = 4, language: str = "en") -> list[Knowle
     }
     if not terms:
         return []
+    if terms.issubset({"turfbari", "turf"}) or "টার্ফবাড়ি" in question:
+        overview = [chunk for chunk in candidates if chunk.source.key == f"homepage:overview:{language}"]
+        if not overview:
+            overview = [chunk for chunk in candidates if chunk.source.key == "homepage:overview:en"]
+        return overview[:1]
     ranked = []
     for chunk in candidates:
         content = f"{chunk.source.title} {chunk.text}".casefold()

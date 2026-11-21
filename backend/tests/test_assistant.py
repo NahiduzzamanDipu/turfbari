@@ -29,6 +29,7 @@ def add_source(key, title, text, language="en", url="/help"):
         key="homepage:overview:en",
         title="TURFBARI overview",
         language="en",
+        public_url="/#",
         status=KnowledgeSource.Status.INDEXED,
     )
     KnowledgeChunk.objects.create(
@@ -90,6 +91,14 @@ def test_chat_returns_published_local_source_and_redacts_personal_details():
     assert "01712345678" not in saved.content
     assistant = ConversationMessage.objects.get(role="assistant")
     assert assistant.source_ids == [str(source.pk)]
+
+
+def test_brand_overview_question_does_not_return_unrelated_faqs():
+    add_source("faq:sms-brand", "SMS wallet", "TURFBARI provides prepaid SMS wallet services.")
+    session = start_conversation()
+    response = ask(session, "What is TURFBARI?")
+    assert response.status_code == 200
+    assert response.json()["sources"][0]["title"] == "TURFBARI overview"
 
 
 def test_first_public_question_builds_empty_local_index_automatically():
@@ -166,7 +175,7 @@ def test_daily_limit_is_enforced_with_usage_counter():
 
 
 def test_duplicate_client_message_id_reuses_local_answer():
-    source = add_source(
+    add_source(
         "faq:dup", "Platform overview", "TURFBARI helps turf owners manage bookings and public pages."
     )
     session = start_conversation()
@@ -175,7 +184,7 @@ def test_duplicate_client_message_id_reuses_local_answer():
     second = ask(session, "What is TURFBARI?", request_id=request_id)
     assert first.status_code == second.status_code == 200
     assert second.json()["duplicate"] is True
-    assert source.title in [item["title"] for item in first.json()["sources"]]
+    assert "TURFBARI overview" in [item["title"] for item in first.json()["sources"]]
     assert ConversationMessage.objects.filter(role="user").count() == 1
     assert ConversationMessage.objects.filter(role="assistant").count() == 1
     assert AssistantUsageDay.objects.get().message_count == 1
