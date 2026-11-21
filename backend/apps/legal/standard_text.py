@@ -826,6 +826,10 @@ def standard_text(
 ) -> dict | None:
     """Title + HTML bodies for a module, or None if TurfBari has no standard text for it.
     Sector documents of a sector other than football get a neutral title with the sector name."""
+    if category == "terms":
+        from apps.legal.terms_content import terms_text
+
+        return terms_text()
     doc = DOCS.get(category)
     if doc is None:
         return None

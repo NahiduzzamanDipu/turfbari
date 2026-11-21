@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, FileText, History, Layers, Scale } from "lucide-react";
-import { useEffect } from "react";
+import { Mail, MapPin, Phone, ChevronRight, FileText, History, Layers, Printer, Scale, Share2 } from "lucide-react";
+import { useEffect, useMemo } from "react";
 import { Link, NavLink, useParams, useSearchParams } from "react-router";
-import { type Lang, LegalBody, legalDate, legalTitle } from "@/components/legal/Legal";
+import { type Lang, LangToggle, LegalBody, LegalHtml, legalDate, legalTitle } from "@/components/legal/Legal";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, ErrorState } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +18,16 @@ interface LegalIndex {
 
 function useLang(): Lang {
   return useLanguage().language;
+}
+
+export function linkedSections(html: string) {
+  const parsed = new DOMParser().parseFromString(html, "text/html");
+  const sections = Array.from(parsed.body.querySelectorAll("h2")).map((heading, index) => {
+    const id = `legal-section-${index + 1}`;
+    heading.id = id;
+    return { id, title: heading.textContent?.trim() || `Section ${index + 1}` };
+  });
+  return { html: parsed.body.innerHTML, sections };
 }
 
 function useLegalIndex() {
@@ -59,7 +69,7 @@ function LegalNav({ lang }: { lang: Lang }) {
 
 function LegalShell({ children, lang }: { children: React.ReactNode; lang: Lang }) {
   return (
-    <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 lg:grid-cols-[16rem_1fr]">
+    <div className="legal-shell mx-auto grid max-w-6xl gap-8 px-4 py-10 lg:grid-cols-[16rem_1fr]">
       <aside className="order-2 lg:order-1">
         <div className="lg:sticky lg:top-20">
           <Link to="/legal" className="mb-3 flex items-center gap-2 px-3 font-semibold">
@@ -187,7 +197,7 @@ export function LegalDocumentPage() {
   const { slug = "" } = useParams();
   const [params] = useSearchParams();
   const version = params.get("version");
-  const lang = useLang();
+  const { language: lang, setLanguage, canSwitch } = useLanguage();
   const doc = useQuery({
     queryKey: ["public", "legal", slug, version],
     queryFn: () =>
@@ -196,9 +206,34 @@ export function LegalDocumentPage() {
       ),
     retry: false,
   });
+  const contact = useQuery({
+    queryKey: ["public", "contact"],
+    queryFn: () => api<{ enabled: boolean; phone: string | null; email: string | null; facebook_url: string | null; address: string | null }>("/public/contact/"),
+    staleTime: 5 * 60_000,
+  });
+  const wantedBody = doc.data ? (lang === "bn" ? doc.data.body_bn : doc.data.body_en) : "";
+  const otherBody = doc.data ? (lang === "bn" ? doc.data.body_en : doc.data.body_bn) : "";
+  const bodyUnavailable = !wantedBody.trim() && Boolean(otherBody.trim());
+  const body = wantedBody.trim() ? wantedBody : otherBody;
+  const bodyLang: Lang = wantedBody.trim() ? lang : lang === "bn" ? "en" : "bn";
   useEffect(() => {
-    if (doc.data) document.title = `${legalTitle(doc.data, "en")} · TurfBari`;
-  }, [doc.data]);
+    if (!doc.data) return;
+    document.title = `${legalTitle(doc.data, lang)} · TurfBari`;
+    document.documentElement.lang = lang;
+    let description = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    if (!description) {
+      description = document.createElement("meta");
+      description.name = "description";
+      document.head.append(description);
+    }
+    const localizedBody = lang === "bn" ? doc.data.body_bn : doc.data.body_en;
+    const fallbackBody = localizedBody.trim() ? localizedBody : lang === "bn" ? doc.data.body_en : doc.data.body_bn;
+    description.content = new DOMParser().parseFromString(fallbackBody, "text/html").body.textContent?.slice(0, 250) ?? document.title;
+  }, [doc.data, lang]);
+  const prepared = useMemo(
+    () => (body ? linkedSections(body) : { html: "", sections: [] as { id: string; title: string }[] }),
+    [body],
+  );
   const missing = doc.error instanceof ApiError && doc.error.status === 404;
   return (
     <LegalShell lang={lang}>
@@ -208,7 +243,7 @@ export function LegalDocumentPage() {
       )}
       {doc.isError && !missing && <ErrorState error={doc.error} onRetry={() => doc.refetch()} />}
       {doc.data && (
-        <article>
+        <article className="legal-document">
           {!doc.data.is_current && (
             <p className="mb-4 rounded-md bg-amber-100 px-3 py-2 text-sm text-amber-900 dark:bg-amber-500/15 dark:text-amber-200">
               {lang === "bn" ? "আপনি একটি পুরনো সংস্করণ দেখছেন।" : "You are viewing an earlier version."}{" "}
@@ -217,11 +252,72 @@ export function LegalDocumentPage() {
               </Link>
             </p>
           )}
-          <h1 className="font-display text-3xl font-extrabold uppercase sm:text-4xl">{legalTitle(doc.data, lang)}</h1>
-          <DocMeta doc={doc.data} lang={lang} />
-          <div className="mt-6">
-            <LegalBody doc={doc.data} lang={lang} />
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 className="font-display text-3xl font-extrabold uppercase sm:text-4xl">{legalTitle(doc.data, lang)}</h1>
+              <DocMeta doc={doc.data} lang={lang} />
+            </div>
+            <div className="flex flex-wrap items-center gap-2 print:hidden">
+              {canSwitch && <LangToggle lang={lang} onChange={setLanguage} />}
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                <Printer className="size-4" /> {lang === "bn" ? "প্রিন্ট করুন" : "Print"}
+              </button>
+            </div>
           </div>
+          {prepared.sections.length > 0 && (
+            <nav
+              aria-label={lang === "bn" ? "এই পাতার বিষয়বস্তু" : "On this page"}
+              className="mt-5 rounded-xl border bg-card p-4 print:hidden"
+            >
+              <h2 className="mb-2 text-sm font-semibold">{lang === "bn" ? "এই পাতার বিষয়বস্তু" : "On this page"}</h2>
+              <ol className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+                {prepared.sections.map((section, index) => (
+                  <li key={section.id}>
+                    <a
+                      className="text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+                      href={`#${section.id}`}
+                    >
+                      {index + 1}. {section.title.replace(/^\d+[.)]\s*/, "")}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+          )}
+          <div className="mt-6">
+            {bodyUnavailable && (
+              <p className="mb-3 rounded-md bg-secondary px-3 py-2 text-xs text-muted-foreground">
+                {lang === "bn" ? "এই নথির বাংলা সংস্করণ নেই — ইংরেজি সংস্করণ দেখানো হচ্ছে।" : "This document is not available in English yet — showing the Bengali version."}
+              </p>
+            )}
+            <LegalHtml html={prepared.html} lang={bodyLang} />
+          </div>
+          <nav
+            aria-label={lang === "bn" ? "সম্পর্কিত নীতি" : "Related policies"}
+            className="mt-8 flex flex-wrap gap-4 border-t pt-4 text-sm print:hidden"
+          >
+            <Link className="text-primary underline-offset-4 hover:underline" to="/legal/privacy">
+              {lang === "bn" ? "গোপনীয়তা নীতি" : "Privacy Policy"}
+            </Link>
+            <Link className="text-primary underline-offset-4 hover:underline" to="/legal">
+              {lang === "bn" ? "সব আইনি নথি" : "All legal documents"}
+            </Link>
+          </nav>
+          {slug === "terms" && contact.data?.enabled && (contact.data.phone || contact.data.email || contact.data.facebook_url || contact.data.address) && (
+            <section className="mt-6 rounded-xl border bg-secondary/40 p-4" aria-labelledby="legal-contact-title">
+              <h2 id="legal-contact-title" className="font-semibold">{lang === "bn" ? "TurfBari-এর সঙ্গে যোগাযোগ" : "Contact TURFBARI"}</h2>
+              <ul className="mt-3 flex flex-col gap-2 text-sm">
+                {contact.data.phone && <li><a className="inline-flex items-center gap-2 hover:underline" href={`tel:${contact.data.phone.replace(/[^+\d]/g, "")}`}><Phone className="size-4" />{contact.data.phone}</a></li>}
+                {contact.data.email && <li><a className="inline-flex items-center gap-2 hover:underline" href={`mailto:${contact.data.email}`}><Mail className="size-4" />{contact.data.email}</a></li>}
+                {contact.data.facebook_url && <li><a className="inline-flex items-center gap-2 hover:underline" href={contact.data.facebook_url} target="_blank" rel="noopener noreferrer"><Share2 className="size-4" />{lang === "bn" ? "TurfBari Facebook পেজ" : "TurfBari Facebook page"}</a></li>}
+                {contact.data.address && <li className="inline-flex items-center gap-2"><MapPin className="size-4" />{contact.data.address}</li>}
+              </ul>
+            </section>
+          )}
           <VersionHistory history={doc.data.history} current={doc.data.version} base={`/legal/${slug}`} lang={lang} />
         </article>
       )}

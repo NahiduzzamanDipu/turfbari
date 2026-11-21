@@ -118,6 +118,16 @@ html[data-language="bn"] body {
   }
 }
 
+@media print {
+  body { background: #fff !important; color: #111 !important; }
+  header, footer, .legal-document .print\:hidden, aside { display: none !important; }
+  .legal-shell { display: block !important; max-width: none !important; padding: 0 !important; }
+  .legal-document { max-width: none !important; color: #111 !important; }
+  .legal-document h1, .legal-document h2, .legal-document h3 { break-after: avoid; color: #111 !important; }
+  .legal-document p, .legal-document li { orphans: 3; widows: 3; }
+  .legal-body a { color: #111 !important; text-decoration: none !important; }
+}
+
 @utility glass {
   background: var(--card);
   backdrop-filter: blur(var(--glass-blur)) saturate(140%);

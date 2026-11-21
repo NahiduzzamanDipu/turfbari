@@ -148,7 +148,7 @@ function LegalReviewNotice() {
       <p>
         These tools manage, version and record agreement to your documents — they don't check whether the wording is legally
         sufficient. Have a qualified legal professional in Bangladesh review each document (especially privacy, refunds and
-        payments) before publishing.
+        payments) before publishing. For Terms, also verify the official contact details in Admin → Contact are complete and monitored.
       </p>
     </div>
   );

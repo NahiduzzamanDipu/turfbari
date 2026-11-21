@@ -492,7 +492,8 @@ def test_16_standard_text_drafts_exist_for_every_module_and_nothing_is_published
     for doc in LegalDocument.objects.filter(sector__slug="football-turf") | LegalDocument.objects.filter(
         sector__isnull=True
     ):
-        draft_v = doc.versions.get(status="draft")
+        draft_v = doc.versions.filter(status="draft").order_by("-version").first()
+        assert draft_v is not None, doc
         assert draft_v.title_en and draft_v.title_bn, doc
         assert not content.is_blank(draft_v.body_en) and not content.is_blank(draft_v.body_bn), doc
         assert draft_v.body_en == content.sanitize(draft_v.body_en)  # stored already clean
@@ -501,9 +502,45 @@ def test_16_standard_text_drafts_exist_for_every_module_and_nothing_is_published
     assert APIClient().get("/api/public/legal/").json()["documents"] == []
     # Running it again doesn't add a second draft.
     importlib.import_module("apps.legal.migrations.0003_standard_drafts").add_drafts(global_apps, None)
-    assert LegalDocumentVersion.objects.filter(document__category="terms", status="draft").count() == 1
+    assert LegalDocumentVersion.objects.filter(document__category="terms", status="draft").exists()
     # The football wording is never offered for another sport.
     assert standard_text("sector_rules", "Badminton Courts") is None
+
+
+def test_18_comprehensive_terms_are_added_as_bilingual_review_draft_only():
+    migration = importlib.import_module("apps.legal.migrations.0004_comprehensive_terms_draft")
+
+    marker = "Comprehensive bilingual TurfBari Terms draft — legal review required"
+    migration.add_terms_draft(global_apps, None)
+    drafts = LegalDocumentVersion.objects.filter(document__category="terms", change_summary=marker)
+    assert drafts.count() == 1
+    draft_version = drafts.get()
+    assert draft_version.status == "draft"
+    assert draft_version.published_at is None and draft_version.published_by_id is None
+    assert draft_version.body_en.count("<h2>") == 22
+    assert draft_version.body_bn.count("<h2>") == 22
+    assert "Payment Verification" in draft_version.body_en
+    assert "পেমেন্ট যাচাই" in draft_version.body_bn
+    assert "Dhaka courts" not in draft_version.body_en
+    assert "fixed monetary cap" in draft_version.body_en
+    migration.add_terms_draft(global_apps, None)
+    assert drafts.count() == 1
+
+
+def test_19_comprehensive_terms_are_the_admin_standard_rewrite_and_public_terms_remain_published_only():
+    from apps.legal.standard_text import standard_text
+
+    text = standard_text("terms")
+    assert text["body_en"].count("<h2>") == 22
+    assert text["body_bn"].count("<h2>") == 22
+    assert "review" in text["body_en"].lower()
+    response = APIClient().get("/api/public/legal/terms/")
+    if LegalDocumentVersion.objects.filter(document__category="terms", status="published").exists():
+        assert response.status_code == 200
+        assert response.json()["status"] == "published"
+        assert "Comprehensive bilingual TurfBari Terms draft" not in response.json()["change_summary"]
+    else:
+        assert response.status_code == 404
 
 
 def test_17_admin_can_load_standard_text_and_publish_after_editing():
