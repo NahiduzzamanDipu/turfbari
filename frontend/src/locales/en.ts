@@ -56,5 +56,16 @@ const en = {
   "Verify and sign in": "Verify and sign in", "A new code is on its way.": "A new code is on its way.",
   "Use a different account": "Use a different account", "Enter the 6-digit code from your authenticator app, or one of your recovery codes.": "Enter the 6-digit code from your authenticator app, or one of your recovery codes.",
   Password: "Password", Code: "Code",
+  "List your turf on TurfBari": "List your turf on TurfBari", "Your turf": "Your turf", Plan: "Plan",
+  "Promo & total": "Promo & total", "Pay with bKash": "Pay with bKash", Done: "Done",
+  "Business & owner": "Business & owner", "Turf name": "Turf name", Email: "Email",
+  "Your owner login will use this email.": "Your owner login will use this email.", District: "District", "Area (optional)": "Area (optional)",
+  Address: "Address", "Business sector": "Business sector", Type: "Type", Outdoor: "Outdoor", Indoor: "Indoor", Rooftop: "Rooftop",
+  "Number of fields": "Number of fields", "Anything else? (optional)": "Anything else? (optional)", "Submit application": "Submit application",
+  "Choose your plan": "Choose your plan", "Plans never renew by themselves — you choose and pay for each period.": "Plans never renew by themselves — you choose and pay for each period.",
+  "Have a promo code?": "Have a promo code?", "Promo code": "Promo code", "Apply promo code": "Apply promo code", Remove: "Remove",
+  "After sending the money": "After sending the money", "bKash number you sent from": "bKash number you sent from", "Amount sent": "Amount sent",
+  "bKash Transaction ID (TrxID)": "bKash Transaction ID (TrxID)", "Note (optional)": "Note (optional)",
+  Back: "Back", Continue: "Continue", "Continue to payment": "Continue to payment", "Submit registration": "Submit registration",
 } as const;
 export default en;

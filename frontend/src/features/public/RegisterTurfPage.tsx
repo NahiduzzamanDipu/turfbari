@@ -11,6 +11,7 @@ import { ApiError, api } from "@/lib/api";
 import type { LegalRef } from "@/lib/types";
 import { cn, formatBDT } from "@/lib/utils";
 import { useLocations } from "./shared";
+import { useLanguage } from "@/lib/i18n";
 
 const EMPTY = {
   turf_name: "",
@@ -112,6 +113,7 @@ export function copy(text: string, what: string) {
 const STEPS = ["Your turf", "Plan", "Promo & total", "Pay with bKash", "Done"];
 
 export function RegisterTurfPage() {
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const requestedPlan = searchParams.get("plan") ?? "";
   const draft = loadDraft();
@@ -203,7 +205,7 @@ export function RegisterTurfPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="font-display text-4xl font-extrabold uppercase leading-none sm:text-5xl">List your turf on TurfBari</h1>
+      <h1 className="font-display text-4xl font-extrabold uppercase leading-none sm:text-5xl">{t("List your turf on TurfBari")}</h1>
       <p className="mt-3 text-muted-foreground">
         {withPayment
           ? "Choose a plan, pay the first period with bKash, and TurfBari activates your workspace after checking the payment."
@@ -220,7 +222,7 @@ export function RegisterTurfPage() {
                   i === step ? "border-primary bg-primary text-primary-foreground" : i < step ? "border-primary/40 text-primary" : "text-muted-foreground",
                 )}
               >
-                <span className="font-semibold">{i + 1}</span> {label}
+                <span className="font-semibold">{i + 1}</span> {t(label)}
               </span>
             </li>
           ))}
@@ -237,25 +239,25 @@ export function RegisterTurfPage() {
         {step === 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Business &amp; owner</CardTitle>
+              <CardTitle>{t("Business & owner")}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              <FormField label="Turf name" error={errors?.turf_name}>
+              <FormField label={t("Turf name")} error={errors?.turf_name}>
                 {(id) => <Input id={id} required value={form.turf_name} onChange={set("turf_name")} />}
               </FormField>
               <div className="grid gap-4 sm:grid-cols-2">
-                <FormField label="Your name" error={errors?.owner_name}>
+                <FormField label={t("Your name")} error={errors?.owner_name}>
                   {(id) => <Input id={id} required autoComplete="name" value={form.owner_name} onChange={set("owner_name")} />}
                 </FormField>
-                <FormField label="Mobile number" error={errors?.phone}>
+                <FormField label={t("Mobile number")} error={errors?.phone}>
                   {(id) => <Input id={id} required type="tel" placeholder="01XXXXXXXXX" value={form.phone} onChange={set("phone")} />}
                 </FormField>
               </div>
-              <FormField label="Email" error={errors?.email} hint="Your owner login will use this email.">
+              <FormField label={t("Email")} error={errors?.email} hint={t("Your owner login will use this email.")}>
                 {(id) => <Input id={id} required type="email" autoComplete="email" value={form.email} onChange={set("email")} />}
               </FormField>
               <div className="grid gap-4 sm:grid-cols-2">
-                <FormField label="District" error={errors?.district}>
+                <FormField label={t("District")} error={errors?.district}>
                   {(id) => (
                     <Select id={id} required value={form.district} onChange={set("district")}>
                       <option value="">Choose…</option>
@@ -267,7 +269,7 @@ export function RegisterTurfPage() {
                     </Select>
                   )}
                 </FormField>
-                <FormField label="Area (optional)" error={errors?.area}>
+                <FormField label={t("Area (optional)")} error={errors?.area}>
                   {(id) => (
                     <Select id={id} value={form.area} onChange={set("area")} disabled={areas.length === 0}>
                       <option value="">{areas.length ? "Choose…" : "—"}</option>
@@ -280,11 +282,11 @@ export function RegisterTurfPage() {
                   )}
                 </FormField>
               </div>
-              <FormField label="Address" error={errors?.address}>
+              <FormField label={t("Address")} error={errors?.address}>
                 {(id) => <Input id={id} required value={form.address} onChange={set("address")} />}
               </FormField>
               {(legal.data?.sectors.length ?? 0) > 1 && (
-                <FormField label="Business sector" error={errors?.sector}>
+                <FormField label={t("Business sector")} error={errors?.sector}>
                   {(id) => (
                     <Select
                       id={id}
@@ -305,27 +307,27 @@ export function RegisterTurfPage() {
                 </FormField>
               )}
               <div className="grid gap-4 sm:grid-cols-2">
-                <FormField label="Type" error={errors?.turf_type}>
+                <FormField label={t("Type")} error={errors?.turf_type}>
                   {(id) => (
                     <Select id={id} value={form.turf_type} onChange={set("turf_type")}>
-                      <option value="outdoor">Outdoor</option>
-                      <option value="indoor">Indoor</option>
-                      <option value="rooftop">Rooftop</option>
+                      <option value="outdoor">{t("Outdoor")}</option>
+                      <option value="indoor">{t("Indoor")}</option>
+                      <option value="rooftop">{t("Rooftop")}</option>
                     </Select>
                   )}
                 </FormField>
-                <FormField label="Number of fields" error={errors?.number_of_fields}>
+                <FormField label={t("Number of fields")} error={errors?.number_of_fields}>
                   {(id) => <Input id={id} type="number" min={1} max={20} required value={form.number_of_fields} onChange={set("number_of_fields")} />}
                 </FormField>
               </div>
-              <FormField label="Anything else? (optional)">{(id) => <Textarea id={id} rows={3} value={form.message} onChange={set("message")} />}</FormField>
+              <FormField label={t("Anything else? (optional)")}>{(id) => <Textarea id={id} rows={3} value={form.message} onChange={set("message")} />}</FormField>
               <input type="text" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" value={form.website} onChange={set("website")} />
               {!withPayment && (
                 <>
                   <LegalAcceptBox docs={docs} checked={agree} onChange={setAgree} error={errors?.agree_legal?.[0]} />
                   {submit.error && !errors && <p role="alert" className="text-sm text-destructive">{submit.error.message}</p>}
                   <Button type="submit" size="lg" disabled={submit.isPending || legal.isPending || (docs.length > 0 && !agree)}>
-                    {submit.isPending && <Loader2 className="animate-spin" />} Submit application
+                    {submit.isPending && <Loader2 className="animate-spin" />} {t("Submit application")}
                   </Button>
                 </>
               )}
@@ -336,7 +338,7 @@ export function RegisterTurfPage() {
         {step === 1 && (
           <Card>
             <CardHeader>
-              <CardTitle>Choose your plan</CardTitle>
+              <CardTitle>{t("Choose your plan")}</CardTitle>
               <CardDescription>Plans never renew by themselves — you choose and pay for each period.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Plan">
@@ -366,7 +368,7 @@ export function RegisterTurfPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TicketPercent className="size-5 text-primary" /> Have a promo code?
+                  <TicketPercent className="size-5 text-primary" /> {t("Have a promo code?")}
                 </CardTitle>
                 <CardDescription lang="bn">প্রোমো কোড থাকলে এখানে লিখুন</CardDescription>
               </CardHeader>
@@ -377,20 +379,20 @@ export function RegisterTurfPage() {
                       <CheckCircle2 className="size-4" /> Promo code <strong className="font-mono">{q.promo.code}</strong> applied — {q.promo.label}
                     </span>
                     <Button type="button" size="sm" variant="ghost" onClick={() => (setApplied(""), setPromoInput(""))}>
-                      <X /> Remove
+                      <X /> {t("Remove")}
                     </Button>
                   </div>
                 ) : (
                   <div className="flex gap-2">
                     <Input
-                      aria-label="Promo code"
+                      aria-label={t("Promo code")}
                       placeholder="e.g. TURFSTART20"
                       className="font-mono uppercase"
                       value={promoInput}
                       onChange={(e) => setPromoInput(e.target.value.toUpperCase().replace(/\s/g, ""))}
                     />
                     <Button type="button" variant="outline" disabled={!promoInput || quote.isFetching} onClick={() => setApplied(promoInput)}>
-                      {quote.isFetching && applied ? <Loader2 className="animate-spin" /> : null} Apply promo code
+                      {quote.isFetching && applied ? <Loader2 className="animate-spin" /> : null} {t("Apply promo code")}
                     </Button>
                   </div>
                 )}
@@ -411,22 +413,22 @@ export function RegisterTurfPage() {
                 <PayCard receiving={q.receiving} amount={q.payable} />
                 <Card>
                   <CardHeader>
-                    <CardTitle>After sending the money</CardTitle>
+                    <CardTitle>{t("After sending the money")}</CardTitle>
                     <CardDescription lang="bn">টাকা পাঠানোর পর নিচের তথ্যগুলো দিন</CardDescription>
                   </CardHeader>
                   <CardContent className="grid gap-4 sm:grid-cols-2">
-                    <FormField label="bKash number you sent from" error={errors?.sender_number}>
+                    <FormField label={t("bKash number you sent from")} error={errors?.sender_number}>
                       {(id) => <Input id={id} type="tel" required placeholder="01XXXXXXXXX" value={pay.sender_number} onChange={(e) => setPay({ ...pay, sender_number: e.target.value })} />}
                     </FormField>
                     <FormField label="Amount sent (৳)" hint={`Must be exactly ${formatBDT(q.payable)}`} error={errors?.amount_sent}>
                       {(id) => <Input id={id} type="number" step="0.01" required value={pay.amount_sent} onChange={(e) => setPay({ ...pay, amount_sent: e.target.value })} />}
                     </FormField>
-                    <FormField label="bKash Transaction ID (TrxID)" error={errors?.trx_id}>
+                    <FormField label={t("bKash Transaction ID (TrxID)")} error={errors?.trx_id}>
                       {(id) => (
                         <Input id={id} required className="font-mono uppercase" placeholder="e.g. 9C7A6B5D4E" value={pay.trx_id} onChange={(e) => setPay({ ...pay, trx_id: e.target.value.toUpperCase().replace(/\s/g, "") })} />
                       )}
                     </FormField>
-                    <FormField label="Note (optional)">{(id) => <Input id={id} maxLength={255} value={pay.payment_note} onChange={(e) => setPay({ ...pay, payment_note: e.target.value })} />}</FormField>
+                    <FormField label={t("Note (optional)")}>{(id) => <Input id={id} maxLength={255} value={pay.payment_note} onChange={(e) => setPay({ ...pay, payment_note: e.target.value })} />}</FormField>
                   </CardContent>
                 </Card>
               </>
@@ -443,7 +445,7 @@ export function RegisterTurfPage() {
         {withPayment && (
           <div className="flex items-center justify-between gap-3">
             <Button type="button" variant="outline" disabled={step === 0 || submit.isPending} onClick={() => setStep((s) => s - 1)}>
-              <ArrowLeft /> Back
+              <ArrowLeft /> {t("Back")}
             </Button>
             {step < 3 ? (
               <Button
@@ -451,11 +453,11 @@ export function RegisterTurfPage() {
                 disabled={(step === 0 && !step1Ok) || (step === 1 && !chosenPlan) || (step === 2 && (!q || quote.isFetching))}
                 onClick={() => setStep((s) => s + 1)}
               >
-                {step === 2 ? "Continue to payment" : "Continue"} <ArrowRight />
+                {step === 2 ? t("Continue to payment") : t("Continue")} <ArrowRight />
               </Button>
             ) : (
               <Button type="submit" size="lg" disabled={submit.isPending || !payOk || legal.isPending || (docs.length > 0 && !agree)}>
-                {submit.isPending ? <Loader2 className="animate-spin" /> : <ShieldCheck />} Submit registration
+                {submit.isPending ? <Loader2 className="animate-spin" /> : <ShieldCheck />} {t("Submit registration")}
               </Button>
             )}
           </div>
