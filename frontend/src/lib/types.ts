@@ -27,6 +27,7 @@ export interface ManagerPermissions {
   manage_slots: boolean;
   view_sms: boolean;
   advance_bookings: boolean;
+  export_customers: boolean;
 }
 
 export interface Me {

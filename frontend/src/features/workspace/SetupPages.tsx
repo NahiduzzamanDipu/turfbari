@@ -724,6 +724,7 @@ const PERMISSION_LABELS: Record<keyof ManagerPermissions, string> = {
   manage_slots: "Edit fields, slots, hours & pricing",
   view_sms: "See SMS messages",
   advance_bookings: "Create & manage advance / recurring bookings",
+  export_customers: "Export customer data",
 };
 
 export function ManagersPage() {

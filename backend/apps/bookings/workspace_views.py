@@ -3,18 +3,22 @@
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from io import BytesIO
+from tempfile import SpooledTemporaryFile
 
-from django.db.models import Count, DecimalField, Max, Q, Sum, Value
+from django.db.models import Count, DecimalField, Max, Min, Q, Sum, Value
 from django.db.models.functions import Coalesce
-from django.http import HttpResponse
+from django.http import FileResponse, HttpResponse
 from django.utils import timezone
+from django.utils.text import slugify
 from drf_spectacular.utils import extend_schema
 from openpyxl import Workbook
-from openpyxl.styles import Font
+from openpyxl.cell import WriteOnlyCell
+from openpyxl.styles import Alignment, Font, PatternFill
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.audit.services import Category, booking_label, record
@@ -788,3 +792,212 @@ class BookingsExportView(APIView):
             f'attachment; filename="bookings-{request.tenant.slug}-{start_day}-to-{end_day}.xlsx"'
         )
         return response
+
+
+class CustomerExportView(APIView):
+    """Stream a complete or search-filtered, tenant-scoped customer workbook."""
+
+    permission_classes = [IsTenantMember]
+    required_permission = "export_customers"
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "customer_export"
+
+    HEADERS = {
+        "en": [
+            "Customer ID",
+            "Customer Name",
+            "Mobile Number",
+            "Email",
+            "Total Bookings",
+            "Confirmed Bookings",
+            "Pending Bookings",
+            "Cancelled Bookings",
+            "Rejected Bookings",
+            "Total Booking Amount (BDT)",
+            "First Booking Date",
+            "Last Booking Date",
+            "Customer Notes",
+        ],
+        "bn": [
+            "গ্রাহক আইডি",
+            "গ্রাহকের নাম",
+            "মোবাইল নম্বর",
+            "ইমেইল",
+            "মোট বুকিং",
+            "নিশ্চিত বুকিং",
+            "অপেক্ষমাণ বুকিং",
+            "বাতিল বুকিং",
+            "প্রত্যাখ্যাত বুকিং",
+            "মোট বুকিং মূল্য (BDT)",
+            "প্রথম বুকিংয়ের তারিখ",
+            "সর্বশেষ বুকিংয়ের তারিখ",
+            "গ্রাহক নোট",
+        ],
+    }
+
+    def get(self, request):
+        language = "bn" if request.query_params.get("lang") == "bn" else "en"
+        search = request.query_params.get("q", "").strip()[:120]
+        now = timezone.now()
+        active_pending = Q(bookings__status=Booking.Status.PENDING) & (
+            Q(bookings__hold_expires_at__isnull=True) | Q(bookings__hold_expires_at__gt=now)
+        )
+        zero_amount = Value(Decimal("0.00"), output_field=DecimalField(max_digits=12, decimal_places=2))
+        customers = Customer.objects.filter(turf=request.tenant)
+        if search:
+            customers = customers.filter(
+                Q(name__icontains=search) | Q(phone__icontains=search) | Q(email__icontains=search)
+            )
+        customers = customers.annotate(
+            total_bookings=Count("bookings", distinct=True),
+            confirmed_bookings=Count(
+                "bookings",
+                filter=Q(bookings__status__in=[Booking.Status.CONFIRMED, Booking.Status.COMPLETED]),
+                distinct=True,
+            ),
+            pending_bookings=Count("bookings", filter=active_pending, distinct=True),
+            cancelled_bookings=Count(
+                "bookings", filter=Q(bookings__status=Booking.Status.CANCELLED), distinct=True
+            ),
+            rejected_bookings=Count(
+                "bookings", filter=Q(bookings__status=Booking.Status.REJECTED), distinct=True
+            ),
+            total_booking_amount=Coalesce(Sum("bookings__total"), zero_amount),
+            first_booking=Min("bookings__start"),
+            last_booking=Max("bookings__start"),
+        ).order_by("name", "id")
+
+        count = customers.count()
+        if count == 0:
+            record(
+                "customer.export_empty",
+                "Customer export had no matching records",
+                category=Category.CUSTOMER,
+                request=request,
+                target=request.tenant,
+                data={"export_type": "filtered" if search else "all", "search_applied": bool(search)},
+            )
+            from rest_framework.exceptions import NotFound
+
+            raise NotFound("No customers matched this export.")
+
+        workbook = Workbook(write_only=True)
+        sheet = workbook.create_sheet("Customers")
+        sheet.freeze_panes = "A7"
+        sheet.sheet_view.showGridLines = False
+        sheet.column_dimensions["A"].width = 38
+        for column, width in enumerate([24, 18, 30, 18, 20, 20, 20, 20, 27, 21, 21, 42], start=2):
+            from openpyxl.utils import get_column_letter
+
+            sheet.column_dimensions[get_column_letter(column)].width = width
+
+        font_name = "Nirmala UI" if language == "bn" else "Aptos"
+        title_font = Font(name=font_name, size=16, bold=True, color="FFFFFF")
+        meta_font = Font(name=font_name, size=10, color="34433B")
+        header_font = Font(name=font_name, size=10, bold=True, color="FFFFFF")
+        body_font = Font(name=font_name, size=10, color="1B2D23")
+        title_fill = PatternFill("solid", fgColor="075E45")
+        header_fill = PatternFill("solid", fgColor="087F5B")
+        alternate_fill = PatternFill("solid", fgColor="F0F7F3")
+        title = "TURFBARI — Customer List" if language == "en" else "TURFBARI — গ্রাহক তালিকা"
+        timestamp = timezone.localtime(timezone.now()).strftime("%d %b %Y %H:%M")
+        sheet.append([self._text(sheet, title, title_font, title_fill)])
+        sheet.append([self._text(sheet, request.tenant.name, meta_font)])
+        sheet.append([self._text(sheet, f"Exported (Asia/Dhaka): {timestamp}", meta_font)])
+        count_label = "Total customers" if language == "en" else "মোট গ্রাহক"
+        sheet.append([self._text(sheet, f"{count_label}: {count}", meta_font)])
+        sheet.append([])
+        sheet.append([self._text(sheet, label, header_font, header_fill) for label in self.HEADERS[language]])
+
+        for row_index, customer in enumerate(customers.iterator(chunk_size=1000), start=7):
+            row_fill = alternate_fill if row_index % 2 == 0 else None
+            first = timezone.localtime(customer.first_booking).date() if customer.first_booking else None
+            last = timezone.localtime(customer.last_booking).date() if customer.last_booking else None
+            values = [
+                str(customer.pk),
+                customer.name,
+                customer.phone,
+                customer.email,
+                customer.total_bookings,
+                customer.confirmed_bookings,
+                customer.pending_bookings,
+                customer.cancelled_bookings,
+                customer.rejected_bookings,
+                customer.total_booking_amount,
+                first,
+                last,
+                customer.notes,
+            ]
+            cells = []
+            for index, value in enumerate(values):
+                if isinstance(value, str):
+                    cell = self._text(sheet, value, body_font, row_fill)
+                    if index == 2:  # Keep leading zero and +880 prefixes as literal text.
+                        cell.number_format = "@"
+                else:
+                    cell = WriteOnlyCell(sheet, value=value)
+                    cell.font = body_font
+                    if row_fill:
+                        cell.fill = row_fill
+                if index in (4, 5, 6, 7, 8):
+                    cell.number_format = "0"
+                elif index == 9:
+                    cell.number_format = '"৳"#,##0.00'
+                elif index in (10, 11) and value:
+                    cell.number_format = "dd mmm yyyy"
+                if index in (0, 1, 2, 3, 12):
+                    cell.alignment = Alignment(vertical="top", wrap_text=index in (1, 12))
+                cells.append(cell)
+            sheet.append(cells)
+        sheet.auto_filter.ref = f"A6:M{count + 6}"
+
+        output = SpooledTemporaryFile(max_size=8 * 1024 * 1024, mode="w+b")
+        try:
+            workbook.save(output)
+            output.seek(0)
+        except Exception:
+            output.close()
+            record(
+                "customer.export_failed",
+                "Customer workbook generation failed",
+                category=Category.CUSTOMER,
+                request=request,
+                target=request.tenant,
+                data={"export_type": "filtered" if search else "all", "search_applied": bool(search)},
+            )
+            raise
+
+        record(
+            "customer.exported",
+            f"Exported {count} customer records",
+            category=Category.CUSTOMER,
+            request=request,
+            target=request.tenant,
+            data={
+                "export_type": "filtered" if search else "all",
+                "record_count": count,
+                "search_applied": bool(search),
+            },
+        )
+        name = slugify(request.tenant.name)[:60] or "business"
+        filename = f"TURFBARI_Customer_List_{name}_{timezone.localdate():%Y-%m-%d}.xlsx"
+        response = FileResponse(
+            output,
+            as_attachment=True,
+            filename=filename,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["X-Exported-Count"] = str(count)
+        response["Cache-Control"] = "private, no-store"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
+
+    @staticmethod
+    def _text(sheet, value, font, fill=None):
+        cell = WriteOnlyCell(sheet, value=str(value))
+        cell.data_type = "s"  # Store untrusted text literally; never emit an XLSX formula cell.
+        cell.font = font
+        cell.alignment = Alignment(vertical="center", wrap_text=True)
+        if fill:
+            cell.fill = fill
+        return cell

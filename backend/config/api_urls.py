@@ -237,6 +237,7 @@ workspace_urls = [
     path("subscription/invoices/<uuid:pk>/promo/", subs.InvoicePromoView.as_view()),
     path("reports/summary/", ws.ReportSummaryView.as_view()),
     path("reports/bookings.xlsx", ws.BookingsExportView.as_view()),
+    path("customers/export.xlsx", ws.CustomerExportView.as_view()),
     path("", include(workspace_router.urls)),
 ]
 

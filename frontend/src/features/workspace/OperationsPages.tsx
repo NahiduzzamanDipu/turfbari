@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Plus, Search, Trash2, Users, Wrench } from "lucide-react";
+import { Download, LoaderCircle, Plus, Search, Trash2, Users, Wrench } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -10,16 +10,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, EmptyState, ErrorState, FormField, Input, Select, Table, Textarea } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n";
 import { PAYMENT_METHODS, addDays, dhakaISO, fmtDate, fmtDay, fmtRange, todayISO } from "@/lib/format";
 import type { Customer, Expense, Maintenance, Paginated } from "@/lib/types";
 import { cn, formatBDT } from "@/lib/utils";
+import { useCan } from "@/features/auth/auth";
 import { errorText, useFields } from "./hooks";
 
 // ------------------------------------------------------------------ customers
 export function CustomersPage() {
   const qc = useQueryClient();
+  const { language, t } = useLanguage();
+  const canExport = useCan("export_customers");
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
+  const [exporting, setExporting] = useState<"all" | "filtered" | null>(null);
   const [editing, setEditing] = useState<Partial<Customer> | null>(null);
   const list = useQuery({
     queryKey: ["ws", "customers", q, page],
@@ -39,6 +44,42 @@ export function CustomersPage() {
   });
   const pages = list.data ? Math.max(1, Math.ceil(list.data.count / 20)) : 1;
 
+  const exportCustomers = async (mode: "all" | "filtered") => {
+    if (exporting) return;
+    if (mode === "filtered" && !q.trim()) return;
+    if (mode === "filtered" && list.data?.count === 0) {
+      toast.info(t("No customers match this search."));
+      return;
+    }
+    setExporting(mode);
+    try {
+      const params = new URLSearchParams({ lang: language });
+      if (mode === "filtered") params.set("q", q.trim());
+      const response = await fetch(`/api/workspace/customers/export.xlsx?${params}`, { credentials: "same-origin" });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null) as { error?: { message?: string }; detail?: string } | null;
+        if (response.status === 404) {
+          toast.info(t("No customers match this search."));
+          return;
+        }
+        throw new Error(payload?.error?.message ?? payload?.detail ?? t("Could not download the customer list. Please retry."));
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = response.headers.get("Content-Disposition")?.match(/filename="?([^";]+)"?/i)?.[1] ?? "TURFBARI_Customer_List.xlsx";
+      anchor.click();
+      URL.revokeObjectURL(url);
+      const count = Number(response.headers.get("X-Exported-Count") ?? 0);
+      toast.success(t("Customer list exported ({count} customers).", { count }));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("Could not download the customer list. Please retry."));
+    } finally {
+      setExporting(null);
+    }
+  };
+
   return (
     <>
       <PageHeader
@@ -46,15 +87,34 @@ export function CustomersPage() {
         description="Everyone who has booked, identified by mobile number."
         actions={<Button onClick={() => setEditing({ name: "", phone: "", email: "", notes: "" })}><Plus /> Add customer</Button>}
       />
-      <div className="relative mb-4 max-w-md">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input aria-label="Search customers" placeholder="Search name, phone or email" className="pl-9" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} />
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full max-w-md">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input aria-label="Search customers" placeholder="Search name, phone or email" className="pl-9" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} />
+        </div>
+        {canExport && (
+          <div className="flex flex-col gap-1 sm:items-end">
+            <p className="text-xs text-muted-foreground">{t("Download all or matching customers")}</p>
+            <div className="flex flex-wrap gap-2 sm:justify-end">
+            <Button variant="outline" disabled={exporting !== null} onClick={() => void exportCustomers("all")}>
+              {exporting === "all" ? <LoaderCircle className="animate-spin" /> : <Download />}
+              {t("Download Excel")}
+            </Button>
+            {q.trim() && (
+              <Button variant="outline" disabled={exporting !== null || list.isPending || list.data?.count === 0} onClick={() => void exportCustomers("filtered")}>
+                {exporting === "filtered" ? <LoaderCircle className="animate-spin" /> : <Download />}
+                {t("Download filtered ({count})", { count: list.data?.count ?? 0 })}
+              </Button>
+            )}
+            </div>
+          </div>
+        )}
       </div>
       <Card>
         <CardContent className="p-2 sm:p-4">
           {list.isPending && <Skeleton className="h-40" />}
           {list.isError && <ErrorState error={list.error} onRetry={() => list.refetch()} />}
-          {list.data?.count === 0 && <EmptyState icon={<Users />} title="No customers yet" />}
+          {list.data?.count === 0 && <EmptyState icon={<Users />} title={q ? t("No customers match this search.") : "No customers yet"} />}
           {list.data && list.data.count > 0 && (
             <Table className={cn(list.isFetching && "opacity-70")}>
               <thead>

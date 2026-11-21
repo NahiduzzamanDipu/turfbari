@@ -160,12 +160,14 @@ MANAGER_PERMISSIONS = {
     "manage_slots": "Change fields, slots, opening hours and pricing",
     "view_sms": "See SMS messages sent for this turf",
     "advance_bookings": "Create and manage advance & recurring bookings",
+    "export_customers": "Export customer data",
 }
 DEFAULT_MANAGER_PERMISSIONS = {
     "approve_payments": True,
     "manage_slots": False,
     "view_sms": False,
     "advance_bookings": False,
+    "export_customers": False,
 }
 
 

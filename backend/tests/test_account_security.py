@@ -272,6 +272,7 @@ def test_manager_permissions_are_enforced_on_the_server():
         "manage_slots": False,
         "view_sms": False,
         "advance_bookings": False,
+        "export_customers": False,
     }
     manager = get_user_model().objects.get(email="mgr@example.com")
     mgr = client_for(manager)
