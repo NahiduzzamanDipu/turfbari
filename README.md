@@ -117,16 +117,21 @@ This seed command is development-only and refuses to run when `DJANGO_DEBUG` is 
 
 #### Interactive product demos
 
-The homepage links to `/demo-booking` (player flow) and `/demo-account` (owner workspace). Both pages use one
-permanent, public demo workspace: bookings, customers, slots and changes persist and are shared across visitors.
-Demo records use only the `apps.demo` tables; they are not Django users or real tenants, and the APIs never call
-production payment, subscription, SMS, wallet, or booking services. SMS, QR, payments and subscription controls are
-previews only. Visitors are warned to use sample details; mobile numbers are validated and stored only in masked form.
+The homepage has one unified **Try Live Demo** entry point. It opens the production public turf profile and booking
+components backed by isolated `apps.demo` tables. After submitting a simulated advance payment, visitors can open
+the connected Demo Owner Dashboard to review, approve, reject, or cancel requests, edit sample slots and prices, and
+view masked customer records, simulated SMS previews and demo-only reports. `/demo-account` remains as a redirect for
+older links.
 
-Platform admins can manage the single workspace at **Admin > Demo management**: view counts and last activity,
-disable or enable public access, inspect activity, or manually reset bookings, customers and slots to the sample
-state. There is no expiry or automatic cleanup. A manual reset is audited and removes shared demo history. Real tenant
-data is never affected.
+Demo access uses a short-lived signed owner session. The public configuration endpoint does not expose customer or
+booking records. Demo data is separate from real tenants and bookings; no real payment provider, SMS provider, wallet,
+subscription or customer record is touched. Payment references must begin with `SIM-`, phone numbers are retained
+only in masked form plus a one-way fingerprint for the demo booking limit, and SMS messages are preview-only.
+
+The shared workspace is restored to its sample baseline every 10 minutes by the existing system tick (Celery beat or
+the configured external tick). The reset is transactional, logged, safe to retry, and invalidates existing demo-owner
+sessions. Platform admins can inspect activity, disable access, or reset the workspace immediately at
+**Admin > Demo management**. Real tenant and financial data is never affected.
 
 ### 4. Frontend
 

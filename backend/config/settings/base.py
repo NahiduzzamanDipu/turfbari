@@ -233,6 +233,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "demo_booking": "10/hour",
         "demo_write": "60/minute",
+        "demo_read": "300/minute",
         "anon": "120/min",
         "user": "600/min",
         "login": "10/min",

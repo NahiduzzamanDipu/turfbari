@@ -3,7 +3,6 @@ import {
   BarChart3,
   CalendarCheck2,
   CalendarClock,
-  CalendarDays,
   Mail,
   MessageSquareText,
   MapPin,
@@ -20,7 +19,6 @@ import {
   Star,
   Headphones,
   Play,
-  PanelTop,
 } from "lucide-react";
 import { Link } from "react-router";
 import { useState } from "react";
@@ -128,19 +126,9 @@ export function HomePage() {
             </div>
             <Button asChild variant="accent" size="lg"><Link to="/demo-booking">Try Live Demo <ArrowRightIcon /></Link></Button>
           </div>
-          <div className="grid gap-0 md:grid-cols-2">
-            <article className="p-4 sm:p-7">
-              <span className="inline-flex rounded-xl bg-accent p-3 text-accent-foreground"><CalendarDays className="size-5" /></span>
-              <h3 className="mt-4 text-lg font-bold">{t("Customer booking demo")}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Choose a date and available slot, enter your details, and submit a simulated booking request.</p>
-              <Button asChild variant="outline" className="mt-4"><Link to="/demo-booking">{t("Try customer booking")} <ArrowRightIcon /></Link></Button>
-            </article>
-            <article className="border-t p-4 md:border-l md:border-t-0 sm:p-7">
-              <span className="inline-flex rounded-xl bg-accent p-3 text-accent-foreground"><PanelTop className="size-5" /></span>
-              <h3 className="mt-4 text-lg font-bold">{t("Turf owner dashboard demo")}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Review demo bookings, update sample slot prices, explore customer records and reports.</p>
-              <Button asChild variant="outline" className="mt-4"><Link to="/demo-account">{t("Explore owner dashboard")} <ArrowRightIcon /></Link></Button>
-            </article>
+          <div className="flex flex-col gap-3 border-t p-4 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-5">
+            <p className="max-w-3xl text-sm text-muted-foreground">Start as a customer, submit a simulated booking, then open the connected Demo Owner Dashboard to review it. The two views share one isolated demo workspace.</p>
+            <Button asChild variant="outline"><Link to="/demo-booking">Explore connected demo <ArrowRightIcon /></Link></Button>
           </div>
         </div>
       </section>
@@ -214,9 +202,9 @@ export function HomePage() {
           <p className="inline-flex items-center gap-2 text-sm font-semibold"><MessageSquareText className="size-4" /> Prepaid messaging</p>
           <h2 id="sms-price-title" className="mt-3 font-display text-2xl font-extrabold uppercase sm:text-3xl">Affordable SMS Communication</h2>
           {smsPrice.data?.configured && smsPrice.data.price_per_segment ? <>
-            <p className="mt-5 text-4xl font-extrabold tabular">৳{new Intl.NumberFormat("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(Number(smsPrice.data.price_per_segment))} <span className="text-base font-medium">per SMS part</span></p>
+            <p className="mt-5 text-4xl font-extrabold tabular">{formatBDT(smsPrice.data.price_per_segment)} <span className="text-base font-medium">per SMS part</span></p>
             <p className="mt-2 text-sm text-primary-foreground/80">Booking confirmations, customer updates, reminders and promotional messages use your prepaid SMS wallet. Recharge before sending.</p>
-            <div className="mt-5 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">{smsPrice.data.examples.map((row) => <div key={row.segments} className="rounded-lg bg-white/10 px-3 py-2">{row.segments} part{row.segments > 1 ? "s" : ""}<span className="float-right font-semibold">৳{new Intl.NumberFormat("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(Number(row.cost))}</span></div>)}</div>
+            <div className="mt-5 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">{smsPrice.data.examples.map((row) => <div key={row.segments} className="rounded-lg bg-white/10 px-3 py-2">{row.segments} part{row.segments > 1 ? "s" : ""}<span className="float-right font-semibold">{formatBDT(row.cost)}</span></div>)}</div>
             <p className="mt-3 text-xs text-primary-foreground/75">Bengali and longer messages may use multiple parts depending on encoding and length. The final segment count and charge are shown before sending. Messages are not sent when wallet balance is insufficient; bookings continue normally.</p>
           </> : <p className="mt-4 text-sm text-primary-foreground/85">SMS service pricing is being configured. Contact TURFBARI for current rates. Messages use a prepaid wallet, and the applicable cost is shown before sending.</p>}
         </div>
@@ -315,7 +303,7 @@ function FAQSection({ faqs, language, t }: { faqs: HomepageFAQ[]; language: stri
 
 function FAQItem({ faq, language }: { faq: HomepageFAQ; language: string }) {
   return <details className="group rounded-xl border bg-card px-5 py-4">
-    <summary className="cursor-pointer list-none pr-7 font-semibold marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{language === "bn" && faq.question_bn ? faq.question_bn : faq.question_en}<span aria-hidden="true" className="float-right text-primary group-open:rotate-45">＋</span></summary>
+    <summary className="cursor-pointer list-none pr-7 font-semibold marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring after:ml-2 after:text-primary after:content-['+']">{language === "bn" && faq.question_bn ? faq.question_bn : faq.question_en}</summary>
     <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{language === "bn" && faq.answer_bn ? faq.answer_bn : faq.answer_en}</p>
   </details>;
 }

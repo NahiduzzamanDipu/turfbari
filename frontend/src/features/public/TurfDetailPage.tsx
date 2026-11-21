@@ -29,11 +29,12 @@ import { GoogleMapsPin, TurfArt } from "./shared";
 
 const CATEGORY_BN: Record<string, string> = { morning: "সকাল", evening: "বিকাল", night: "রাত", midnight: "মধ্যরাত" };
 
-export function TurfDetailPage() {
+export function TurfDetailPage({ demo = false }: { demo?: boolean }) {
   const { slug = "" } = useParams();
+  const turfSlug = demo ? "turfbari-demo-arena" : slug;
   const turf = useQuery({
-    queryKey: ["public", "turf", slug],
-    queryFn: () => api<TurfDetail>(`/public/turfs/${slug}/`),
+    queryKey: ["public", "turf", turfSlug],
+    queryFn: () => api<TurfDetail>(demo ? "/public/demo/turf/" : `/public/turfs/${turfSlug}/`),
   });
   const [showQR, setShowQR] = useState(false);
 
@@ -69,6 +70,7 @@ export function TurfDetailPage() {
   return (
     <div {...themeProps(t.theme)} className="min-h-full">
       <div className="mx-auto max-w-6xl px-[var(--page-gutter)] py-4 sm:px-4 sm:py-6">
+      {demo && <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-950"><span><strong>DEMO MODE</strong> · Use sample details only. No real booking, payment, or SMS is created.</span><Link to="/demo-booking?mode=owner" className="font-semibold underline underline-offset-2">Open connected owner dashboard</Link></div>}
       <div className="relative overflow-hidden rounded-2xl">
         {t.photos[0] ? (
           <img src={t.photos[0].url} alt="" className="h-56 w-full object-cover sm:h-80" />
@@ -205,16 +207,16 @@ export function TurfDetailPage() {
           )}
         </div>
 
-        {t.public_booking_enabled ? <BookingPanel turf={t} /> : (
+        {t.public_booking_enabled ? <BookingPanel turf={t} demo={demo} /> : (
           <Card><CardContent className="py-3"><p className="text-sm font-semibold">Online requests are off for this turf.</p><p className="text-xs text-muted-foreground">Call {t.public_phone || "the turf"} to book.</p></CardContent></Card>
         )}
       </div>
 
       <Dialog open={showQR} onClose={() => setShowQR(false)} title={`${t.name} QR code`} description="Scan to open this booking page.">
         <div className="flex flex-col items-center gap-4">
-          <img src={`/api/public/turfs/${t.slug}/qr.svg`} alt={`QR code for ${t.name}`} className="size-64 rounded-lg bg-white p-2" />
+          <img src={demo ? "/api/public/demo/qr.svg" : `/api/public/turfs/${t.slug}/qr.svg`} alt={`QR code for ${t.name}`} className="size-64 rounded-lg bg-white p-2" />
           <Button asChild variant="outline">
-            <a href={`/api/public/turfs/${t.slug}/qr.svg`} download={`${t.slug}-qr.svg`}>
+            <a href={demo ? "/api/public/demo/qr.svg" : `/api/public/turfs/${t.slug}/qr.svg`} download={`${t.slug}-qr.svg`}>
               Download SVG
             </a>
           </Button>

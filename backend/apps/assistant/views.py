@@ -87,7 +87,6 @@ def _safe_routes(question: str, language: str) -> list[dict]:
     if any(word in q for word in ("demo", "ডেমো")):
         return [
             {"label": "Try the demo" if language == "en" else "ডেমো দেখুন", "url": "/demo-booking"},
-            {"label": "Owner demo" if language == "en" else "মালিক ডেমো", "url": "/demo-account"},
         ]
     if any(word in q for word in ("plan", "subscription", "price", "pricing", "প্ল্যান", "সাবস্ক্রিপশন", "দাম")):
         return [{"label": "Subscription plans" if language == "en" else "সাবস্ক্রিপশন প্ল্যান", "url": "/#plans"}]

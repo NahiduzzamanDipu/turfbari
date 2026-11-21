@@ -54,7 +54,7 @@ const clock = (iso: string, language: "en" | "bn") =>
  * Public booking: selecting slots keeps them for this visitor for 10 minutes and shows them to
  * everyone else as "Someone is booking". Statuses refresh every few seconds.
  */
-export function BookingPanel({ turf }: { turf: TurfDetail }) {
+export function BookingPanel({ turf, demo = false }: { turf: TurfDetail; demo?: boolean }) {
   const { t, language, formatDate, formatMoney } = useLanguage();
   const youtube = usePublicYoutubeVideo("booking");
   const youtubeVideoId = youtube.data?.enabled ? youtube.data.video_id : null;
@@ -76,6 +76,15 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
   const [done, setDone] = useState<PublicBooking | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(todayISO(), i)), []);
+  const basePath = demo ? "/public/demo" : `/public/turfs/${turf.slug}`;
+
+  useEffect(() => {
+    if (!demo || !done?.reference) return;
+    const id = window.setInterval(() => {
+      void api<PublicBooking>(`/public/demo/bookings/status/${done.reference}/`).then(setDone).catch(() => undefined);
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [demo, done?.reference]);
 
   const saveToken = (t: string | null) => {
     setToken(t);
@@ -93,7 +102,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
   const slots = useQuery({
     queryKey: slotsKey,
     queryFn: () =>
-      api<PublicAvailability>(`/public/turfs/${turf.slug}/availability/?field=${fieldId}&date=${day}`, {
+      api<PublicAvailability>(`${basePath}/availability/?field=${fieldId}&date=${day}`, {
         headers: tokenRef.current ? { "X-Hold-Token": tokenRef.current, ...visitorHeaders } : visitorHeaders,
       }),
     placeholderData: keepPreviousData,
@@ -161,7 +170,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
 
   const hold = useMutation({
     mutationFn: (r: { from: number; to: number }) =>
-      api<SlotHold>(`/public/turfs/${turf.slug}/hold/`, {
+      api<SlotHold>(`${basePath}/hold/`, {
         method: "POST",
         headers: visitorHeaders,
         json: { field: fieldId, start: list[r.from]!.start, end: list[r.to]!.end, token: token ?? "" },
@@ -195,7 +204,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
 
   const release = useMutation({
     mutationFn: () =>
-      api<void>(`/public/turfs/${turf.slug}/hold/`, { method: "DELETE", headers: token ? { "X-Hold-Token": token, ...visitorHeaders } : visitorHeaders }),
+      api<void>(`${basePath}/hold/`, { method: "DELETE", headers: token ? { "X-Hold-Token": token, ...visitorHeaders } : visitorHeaders }),
     onMutate: () => setPending({ from: -1, to: -2 }), // shows nothing selected right away
     onSettled: () => {
       saveToken(null);
@@ -206,7 +215,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
 
   const submit = useMutation({
     mutationFn: () =>
-      api<PublicBooking>(`/public/turfs/${turf.slug}/book/`, {
+      api<PublicBooking>(`${basePath}/book/`, {
         method: "POST",
         headers: { ...visitorHeaders, "Idempotency-Key": loadDraft(turf.slug)?.idempotencyKey ?? newIdempotencyKey() },
         json: {
@@ -323,12 +332,10 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
               Booking ID: <span className="font-mono text-base font-bold">{done.reference}</span>
             </p>
             <p className="max-w-sm text-sm text-muted-foreground">
-              Not confirmed yet — the turf checks the payment first. Track it on the{" "}
-              <Link to={`/booking-status?reference=${done.reference}`} className="font-semibold text-primary hover:underline">
-                booking status page
-              </Link>
-              .
+              {demo ? "Your simulated payment is waiting for the Demo Owner to review it. Its status will refresh automatically." : <>Not confirmed yet — the turf checks the payment first. Track it on the{" "}
+              <Link to={`/booking-status?reference=${done.reference}`} className="font-semibold text-primary hover:underline">booking status page</Link>.</>}
             </p>
+            {demo && <Button asChild variant="outline"><Link to="/demo-booking?mode=owner">Open Demo Owner Dashboard</Link></Button>}
             <Button variant="outline" onClick={() => setDone(null)}>
               Book another slot
             </Button>
@@ -536,9 +543,9 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
             <FormField label={t("Notes (optional)")}>
               {(id) => <Textarea id={id} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />}
             </FormField>
-            <BkashBox number={payment.bkash_number ?? ""} total={total} advance={advance} holdMinutes={payment.hold_minutes} />
+            <BkashBox number={payment.bkash_number ?? ""} total={total} advance={advance} holdMinutes={payment.hold_minutes} demoMode={demo} />
             <div className="grid gap-3 sm:grid-cols-3">
-              <FormField label="Amount sent (৳)" error={fieldErrors?.payment_amount} hint={`At least ${formatBDT(advance)}`}>
+              <FormField label={demo ? "Simulated payment amount (BDT)" : "Amount sent (৳)"} error={fieldErrors?.payment_amount} hint={`At least ${formatBDT(advance)}`}>
                 {(id) => (
                   <Input
                     id={id}
@@ -554,7 +561,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
                   />
                 )}
               </FormField>
-              <FormField label="bKash number you sent from" error={fieldErrors?.bkash_sender}>
+              <FormField label={demo ? "Sample sender mobile number" : "bKash number you sent from"} error={fieldErrors?.bkash_sender}>
                 {(id) => (
                   <Input
                     id={id}
@@ -566,7 +573,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
                   />
                 )}
               </FormField>
-              <FormField label="Transaction ID (TrxID)" error={fieldErrors?.trx_id} hint="From the bKash SMS">
+              <FormField label={demo ? "Simulated transaction reference" : "Transaction ID (TrxID)"} error={fieldErrors?.trx_id} hint={demo ? "Use a sample like SIM-9C7A6B5D; never enter a real transaction ID." : "From the bKash SMS"}>
                 {(id) => (
                   <Input
                     id={id}
@@ -574,7 +581,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
                     autoCapitalize="characters"
                     autoComplete="off"
                     spellCheck={false}
-                    placeholder="e.g. 9C7A6B5D4E"
+                    placeholder={demo ? "SIM-9C7A6B5D" : "e.g. 9C7A6B5D4E"}
                     className="font-mono uppercase"
                     value={pay.trx_id}
                     onChange={(e) => setPay({ ...pay, trx_id: e.target.value.toUpperCase().replace(/\s/g, "") })}
@@ -635,15 +642,16 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
 }
 
 /** How to pay: bKash "Send Money" to the turf's number, then type the TrxID from the bKash SMS. */
-function BkashBox({ number, total, advance, holdMinutes }: { number: string; total: number; advance: number; holdMinutes: number }) {
+function BkashBox({ number, total, advance, holdMinutes, demoMode = false }: { number: string; total: number; advance: number; holdMinutes: number; demoMode?: boolean }) {
   const [copied, setCopied] = useState(false);
   const hours = holdMinutes >= 60 ? `${Math.round(holdMinutes / 6) / 10} hour${holdMinutes === 60 ? "" : "s"}` : `${holdMinutes} minutes`;
   return (
     <section aria-labelledby="bkash-title" className="rounded-lg border border-[#e2136e]/30 bg-[#e2136e]/5 p-2.5 sm:rounded-xl sm:border-2 sm:p-4">
       <h3 id="bkash-title" className="flex items-center gap-2 font-semibold">
         <span className="rounded bg-[#e2136e] px-1.5 py-0.5 text-xs font-bold text-white">bKash</span>
-        Pay the advance to book
+        {demoMode ? "Simulate advance payment" : "Pay the advance to book"}
       </h3>
+      {demoMode ? <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-950">Demo Mode — No Real Payment. Do not send money. Enter sample payment details below to experience the verification flow.</p> : <>
       <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:mt-3 sm:gap-2">
         <span className="text-sm text-muted-foreground">Send Money to</span>
         <span className="tabular font-mono text-base font-bold tracking-wide sm:text-xl">{number}</span>
@@ -682,6 +690,7 @@ function BkashBox({ number, total, advance, holdMinutes }: { number: string; tot
           </div>
         )}
       </dl>
+      </>}
       <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
         <li>Open the bKash app and choose <strong className="text-foreground">Send Money</strong> (not Payment or Cash Out).</li>
         <li>Send at least {formatBDT(advance)} to {number}.</li>

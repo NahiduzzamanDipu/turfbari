@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { Activity, ArrowRight, BadgeCheck, CalendarDays, ChartNoAxesCombined, Clock3, ExternalLink, Eye, MessageSquareText, QrCode, RefreshCw, Search, SlidersHorizontal, Users, Wallet } from "lucide-react";
 import { Badge, FormField, Input } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,11 @@ import { api } from "@/lib/api";
 import { formatBDT } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { demoApi } from "./demoApi";
+import { TurfDetailPage } from "@/features/public/TurfDetailPage";
 
 type DemoSlot = { id: string; label: string; start_time: string; end_time: string; category: string; price: string; enabled: boolean; booked: boolean };
-type DemoBooking = { id: string; reference: string; customer_name: string; customer_phone: string; date: string; slot_id: string; start_time: string; end_time: string; price: string; note: string; status: "pending" | "confirmed" | "rejected" | "cancelled"; created_at: string };
-type DemoData = { id: string; name: string; owner_name: string; location: string; slots: DemoSlot[]; bookings: DemoBooking[]; customers: { id: string; name: string; phone: string }[]; activity: { action: string; summary: string; created_at: string }[]; summary: { today: number; pending: number; confirmed: number; customers: number; enabled_slots: number } };
+type DemoBooking = { id: string; reference: string; customer_name: string; customer_phone: string; date: string; slot_id: string; start_time: string; end_time: string; price: string; payment_amount: string; sender_phone: string; transaction_reference: string; payment_status: string; rejection_reason: string; note: string; status: "pending" | "confirmed" | "rejected" | "cancelled"; created_at: string; reviewed_at: string | null };
+type DemoData = { id: string; name: string; owner_name: string; location: string; reset_count: number; last_reset_at: string | null; slots: DemoSlot[]; bookings: DemoBooking[]; customers: { id: string; name: string; phone: string }[]; activity: { action: string; summary: string; created_at: string }[]; sms_messages: { kind: string; recipient: string; body: string; status: string; created_at: string; reference: string }[]; summary: { today: number; pending: number; confirmed: number; customers: number; enabled_slots: number } };
 
 function useDemoData() {
   const [data, setData] = useState<DemoData | null>(null);
@@ -20,13 +21,19 @@ function useDemoData() {
     setLoading(true);
     setError("");
     try {
-      setData(await demoApi<DemoData>("/workspace/"));
+      await demoApi("/owner-access/", { method: "POST", json: {} });
+      setData(await demoApi<DemoData>("/owner/workspace/"));
     } catch (cause) {
       if (cause instanceof Error) setError(cause.message);
     } finally { setLoading(false); }
   };
   useEffect(() => { void refresh(); }, []);
   return { data, error, loading, refresh, setData };
+}
+
+export function DemoExperiencePage() {
+  const [params] = useSearchParams();
+  return params.get("mode") === "owner" ? <DemoAccountPage /> : <TurfDetailPage demo />;
 }
 
 export function DemoBookingPage() {
@@ -43,7 +50,7 @@ export function DemoBookingPage() {
     event.preventDefault();
     setMessage(""); setBusy(true);
     try {
-      const booking = await demoApi<DemoBooking>("/bookings/", { method: "POST", json: { date, slot_id: slotId, name, phone } });
+      const booking = await demoApi<DemoBooking>("/book/", { method: "POST", json: { date, slot_id: slotId, name, phone } });
       setResult(booking); await refresh();
     } catch (cause) { setMessage(cause instanceof Error ? cause.message : "Could not submit demo booking."); }
     finally { setBusy(false); }
@@ -97,7 +104,7 @@ export function DemoBookingPage() {
         </div>
       </form>
     </section>
-    <p className="mt-4 text-center text-xs text-muted-foreground">This is one permanent shared demo. Bookings and dashboard changes are visible to every visitor; please use sample details only. <Link to="/register-turf" className="font-semibold text-primary hover:underline">Ready to create your own account?</Link></p>
+    <p className="mt-4 text-center text-xs text-muted-foreground">This is a shared demo workspace. Changes are visible to visitors and automatically reset every 10 minutes; use sample details only. <Link to="/register-turf" className="font-semibold text-primary hover:underline">Ready to create your own account?</Link></p>
   </main>;
 }
 
@@ -111,10 +118,29 @@ export function DemoAccountPage() {
   const [busyId, setBusyId] = useState("");
   const [newSlot, setNewSlot] = useState({ label: "Custom demo slot", start_time: "19:00", end_time: "20:00", category: "night", price: "1600" });
   const navigate = useNavigate();
+  useEffect(() => {
+    let active = true;
+    const timer = window.setInterval(async () => {
+      try {
+        const latest = await demoApi<DemoData>("/owner/workspace/");
+        if (active) setData((current) => {
+          if (current && latest.reset_count !== current.reset_count) setMessage("The shared demo was refreshed. The sample dashboard has been restored.");
+          return latest;
+        });
+      } catch {
+        try {
+          await demoApi("/owner-access/", { method: "POST", json: {} });
+          const latest = await demoApi<DemoData>("/owner/workspace/");
+          if (active) { setData(latest); setMessage("The shared demo was refreshed. The sample dashboard has been restored."); }
+        } catch { /* Keep the last snapshot visible if the demo is temporarily unavailable. */ }
+      }
+    }, 5000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [setData]);
   const act = async (booking: DemoBooking, action: string) => {
     setBusyId(booking.id); setMessage("");
     try {
-      const updated = await demoApi<DemoBooking>(`/bookings/${booking.id}/`, { method: "PATCH", json: { action } });
+      const updated = await demoApi<DemoBooking>(`/owner/bookings/${booking.id}/`, { method: "PATCH", json: { action } });
       setData((current) => current ? { ...current, bookings: current.bookings.map((b) => b.id === updated.id ? updated : b) } : current);
       const pastTense: Record<string, string> = { approve: "approved", reject: "rejected", cancel: "cancelled" };
       setMessage(`${booking.reference} ${pastTense[action] ?? action} in demo. No real notification was sent.`);
@@ -122,12 +148,12 @@ export function DemoAccountPage() {
     finally { setBusyId(""); }
   };
   const updateSlot = async (slot: DemoSlot, changes: { enabled?: boolean; price?: string; start_time?: string; end_time?: string }) => {
-    try { await demoApi(`/slots/${slot.id}/`, { method: "PATCH", json: changes }); await refresh(); }
+    try { await demoApi(`/owner/slots/${slot.id}/`, { method: "PATCH", json: changes }); await refresh(); }
     catch (cause) { setMessage(cause instanceof Error ? cause.message : "Could not update the demo slot."); }
   };
   const createSlot = async (event: FormEvent) => {
     event.preventDefault();
-    try { await demoApi("/slots/", { method: "POST", json: newSlot }); await refresh(); setMessage("Custom demo slot added. It does not affect real schedules."); }
+    try { await demoApi("/owner/slots/", { method: "POST", json: newSlot }); await refresh(); setMessage("Custom demo slot added. It does not affect real schedules."); }
     catch (cause) { setMessage(cause instanceof Error ? cause.message : "Could not add demo slot."); }
   };
   const tabs = ["Overview", "Bookings", "Slots & pricing", "Customers", "Reports", "SMS preview", "QR preview", "Staff preview", "Turf profile", "Subscription"];
@@ -145,7 +171,7 @@ export function DemoAccountPage() {
         {tab === "Slots & pricing" && <div className="rounded-xl border bg-card p-4 sm:p-5"><h2 className="text-xl font-bold">Slots & pricing</h2><p className="text-sm text-muted-foreground">Changes are confined to this demo workspace.</p><form onSubmit={createSlot} className="mt-4 grid gap-3 rounded-xl bg-muted/30 p-3 sm:grid-cols-2 lg:grid-cols-6"><FormField label="Slot label">{(id) => <Input id={id} value={newSlot.label} onChange={(e) => setNewSlot({ ...newSlot, label: e.target.value })} required />}</FormField><FormField label="Start">{(id) => <Input id={id} type="time" value={newSlot.start_time} onChange={(e) => setNewSlot({ ...newSlot, start_time: e.target.value })} required />}</FormField><FormField label="End">{(id) => <Input id={id} type="time" value={newSlot.end_time} onChange={(e) => setNewSlot({ ...newSlot, end_time: e.target.value })} required />}</FormField><FormField label="Category">{(id) => <select id={id} className="h-10 w-full rounded-md border bg-card px-3 text-sm" value={newSlot.category} onChange={(e) => setNewSlot({ ...newSlot, category: e.target.value })}><option value="morning">Morning</option><option value="evening">Evening</option><option value="night">Night</option><option value="midnight">Midnight</option></select>}</FormField><FormField label="Price (৳)">{(id) => <Input id={id} type="number" step="0.01" min="0" value={newSlot.price} onChange={(e) => setNewSlot({ ...newSlot, price: e.target.value })} required />}</FormField><div className="flex items-end"><Button className="w-full">Add slot</Button></div></form><div className="mt-4 space-y-3">{data!.slots.map((slot) => <div key={slot.id} className="grid items-center gap-3 rounded-xl border p-3 sm:grid-cols-[1fr_auto_auto] sm:p-4"><div className="grid grid-cols-2 gap-2"><FormField label="Start">{(id) => <Input id={id} type="time" defaultValue={slot.start_time} onBlur={(e) => { if (e.target.value !== slot.start_time) void updateSlot(slot, { start_time: e.target.value }); }} />}</FormField><FormField label="End">{(id) => <Input id={id} type="time" defaultValue={slot.end_time} onBlur={(e) => { if (e.target.value !== slot.end_time) void updateSlot(slot, { end_time: e.target.value }); }} />}</FormField><p className="col-span-2 text-xs capitalize text-muted-foreground">{slot.category} · {slot.label}</p></div><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={slot.enabled} onChange={(e) => void updateSlot(slot, { enabled: e.target.checked })} /> Enabled</label><FormField label="Price (৳)" className="w-36">{(id) => <Input id={id} type="number" step="0.01" min="0" defaultValue={slot.price} onBlur={(e) => { if (e.target.value !== slot.price) void updateSlot(slot, { price: e.target.value }); }} />}</FormField></div>)}</div></div>}
         {tab === "Customers" && <div className="rounded-xl border bg-card p-4 sm:p-5"><h2 className="text-xl font-bold">Demo customers</h2><p className="text-sm text-muted-foreground">Only contacts entered in this isolated browser demo are shown.</p><div className="mt-4 grid gap-3 sm:grid-cols-2">{data!.customers.map((customer) => <div key={customer.id} className="rounded-xl border p-4"><p className="font-semibold">{customer.name}</p><p className="mt-1 text-sm text-muted-foreground">{customer.phone}</p><p className="mt-2 text-xs text-muted-foreground">{data!.bookings.filter((b) => b.customer_phone === customer.phone).length} demo booking(s)</p></div>)}{!data!.customers.length && <EmptyState text="Customer details entered in the booking demo will appear here." />}</div></div>}
         {tab === "Reports" && <div className="rounded-xl border bg-card p-5"><h2 className="text-xl font-bold">Demo reports</h2><p className="text-sm text-muted-foreground">Calculated only from this temporary workspace.</p><div className="mt-4 grid gap-3 sm:grid-cols-3"><Summary label="Demo booking requests" value={data!.bookings.length} /><Summary label="Confirmed demo value" value={formatBDT(data!.bookings.filter((b) => b.status === "confirmed").reduce((sum, b) => sum + Number(b.price), 0))} /><Summary label="Pending requests" value={data!.summary.pending} /></div></div>}
-        {tab === "SMS preview" && <PreviewCard icon={<MessageSquareText />} title="SMS management preview" text="In TURFBARI, booking updates can be sent to customers through SMS. In this demo, messages are preview-only: no provider is called and no wallet is charged." />}
+        {tab === "SMS preview" && <div className="rounded-xl border bg-card p-4 sm:p-5"><div className="flex items-start gap-3"><span className="inline-flex rounded-xl bg-accent p-3 text-accent-foreground"><MessageSquareText /></span><div><h2 className="text-xl font-bold">Simulated SMS history</h2><p className="mt-1 text-sm text-muted-foreground">Preview-only records from this demo. No provider is called and no wallet is charged.</p></div></div><div className="mt-4 space-y-3">{data!.sms_messages.map((sms) => <article key={sms.reference} className="rounded-xl border p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-medium">{sms.kind.replaceAll("_", " ")}</p><Badge tone="neutral">Preview only</Badge></div><p className="mt-1 text-xs text-muted-foreground">{sms.recipient} · {new Date(sms.created_at).toLocaleString()}</p><p className="mt-3 whitespace-pre-wrap text-sm">{sms.body}</p></article>)}{!data!.sms_messages.length && <EmptyState text="Simulated booking messages will appear here after demo actions." />}</div></div>}
         {tab === "QR preview" && <PreviewCard icon={<QrCode />} title="Public booking page & QR preview" text="Each real turf can share its own booking page and downloadable QR code. This demo QR opens only the simulated booking page." action={<div className="flex flex-wrap items-center gap-4"><img src="/api/public/demo/qr.svg" alt="QR code linking to the TurfBari demo booking page" className="size-36 rounded-lg border bg-white p-2" /><Button onClick={() => navigate("/demo-booking")}>Open demo booking page <ExternalLink /></Button></div>} />}
         {tab === "Subscription" && <PreviewCard icon={<Wallet />} title="Subscription preview" text="Plans and billing are shown in the real owner account. This demo does not create, renew, or modify any subscription." action={<Button asChild><Link to="/#plans">View plans <ArrowRight /></Link></Button>} />}
         {tab === "Staff preview" && <PreviewCard icon={<Users />} title="Staff and manager access" text="Real TURFBARI workspaces let owners grant staff only the operational permissions they need. This demo preview does not create any real staff accounts or change access outside this workspace." />}
@@ -167,10 +193,10 @@ export function AdminDemoManagementPage() {
   const action = async (row: AdminDemo, path: string, method: string, json?: unknown) => { try { await api(`/admin/demo/workspaces/${row.id}/${path}`, { method, json }); setNotice(path === "reset/" ? "Shared demo restored to its sample state." : "Shared demo settings updated."); await load(); } catch (e) { setError(e instanceof Error ? e.message : "Action failed."); } };
   const showActivity = async (row: AdminDemo) => { try { setActivity(await api<{ actor_type: string; action: string; summary: string; created_at: string }[]>(`/admin/demo/workspaces/${row.id}/activity/`)); } catch (e) { setError(e instanceof Error ? e.message : "Could not load activity."); } };
   const row = rows[0];
-  return <div className="space-y-5"><div><h1 className="font-display text-3xl font-extrabold">Demo Management</h1><p className="mt-1 text-sm text-muted-foreground">Manage the single permanent public demo workspace.</p></div>
-    <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"><span className="font-semibold">Public shared data:</span> Visitors can see demo bookings and dashboard activity. Demo data is isolated from real bookings, SMS, payments, wallets and subscriptions. Reset is manual and permanently removes shared demo activity.</div>
+  return <div className="space-y-5"><div><h1 className="font-display text-3xl font-extrabold">Demo Management</h1><p className="mt-1 text-sm text-muted-foreground">Manage the shared interactive demo workspace.</p></div>
+    <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"><span className="font-semibold">Public shared data:</span> Visitors can see demo bookings and dashboard activity. Demo data is isolated from real bookings, SMS, payments, wallets and subscriptions. The system automatically restores sample data every 10 minutes; manual reset is also available.</div>
     {notice && <div role="status" className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900">{notice}</div>}{error && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
-    {busy ? <PageLoading /> : row ? <><div className="rounded-xl border bg-card p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2"><h2 className="text-xl font-bold">{row.name}</h2><Badge tone={row.status === "active" ? "green" : "amber"}>{row.status === "active" ? "Enabled" : "Disabled"}</Badge></div><p className="mt-1 text-sm text-muted-foreground">{row.owner_name} · Last activity {row.last_access_at ? new Date(row.last_access_at).toLocaleString() : "No visits yet"}</p></div><div className="flex flex-wrap gap-2">{row.status === "active" ? <Button variant="destructive" onClick={() => window.confirm("Disable the public demo for everyone?") && void action(row, "", "PATCH", { status: "disabled" })}>Disable public demo</Button> : <Button onClick={() => void action(row, "", "PATCH", { status: "active" })}>Enable public demo</Button>}<Button variant="outline" onClick={() => window.confirm("Permanently delete all shared demo bookings and customers, then restore the sample state?") && void action(row, "reset/", "POST")}><RefreshCw /> Reset demo data</Button><Button variant="outline" onClick={() => void showActivity(row)}><Activity /> Activity</Button></div></div><div className="mt-5 grid gap-3 sm:grid-cols-3"><Summary label="Bookings" value={row.booking_count} /><Summary label="Customers" value={row.customer_count} /><Summary label="Demo slots" value={row.slot_count} /></div><p className="mt-4 text-xs text-muted-foreground">There is no expiry or automatic cleanup. Manual resets are recorded, and the visitor data can be seen publicly.</p></div>
+    {busy ? <PageLoading /> : row ? <><div className="rounded-xl border bg-card p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2"><h2 className="text-xl font-bold">{row.name}</h2><Badge tone={row.status === "active" ? "green" : "amber"}>{row.status === "active" ? "Enabled" : "Disabled"}</Badge></div><p className="mt-1 text-sm text-muted-foreground">{row.owner_name} · Last activity {row.last_access_at ? new Date(row.last_access_at).toLocaleString() : "No visits yet"}</p></div><div className="flex flex-wrap gap-2">{row.status === "active" ? <Button variant="destructive" onClick={() => window.confirm("Disable the public demo for everyone?") && void action(row, "", "PATCH", { status: "disabled" })}>Disable public demo</Button> : <Button onClick={() => void action(row, "", "PATCH", { status: "active" })}>Enable public demo</Button>}<Button variant="outline" onClick={() => window.confirm("Restore the demo sample state? Current demo bookings and customers will be cleared.") && void action(row, "reset/", "POST")}><RefreshCw /> Reset demo data</Button><Button variant="outline" onClick={() => void showActivity(row)}><Activity /> Activity</Button></div></div><div className="mt-5 grid gap-3 sm:grid-cols-3"><Summary label="Bookings" value={row.booking_count} /><Summary label="Customers" value={row.customer_count} /><Summary label="Demo slots" value={row.slot_count} /></div><p className="mt-4 text-xs text-muted-foreground">Visitor activity is isolated to demo records and reset every 10 minutes. Manual resets are recorded.</p></div>
     {activity && <div className="rounded-xl border bg-card p-4"><div className="flex items-center justify-between"><h3 className="font-semibold">Recent activity</h3><Button size="sm" variant="ghost" onClick={() => setActivity(null)}>Close</Button></div><div className="mt-3 divide-y">{activity.map((item, i) => <div key={i} className="py-2"><p className="text-sm">{item.summary}</p><p className="text-xs text-muted-foreground">{item.actor_type} · {item.action} · {new Date(item.created_at).toLocaleString()}</p></div>)}{!activity.length && <p className="py-3 text-sm text-muted-foreground">No recorded activity.</p>}</div></div>}</> : <EmptyState text="The shared public workspace will be created on first visit." />}
   </div>;
 }
@@ -178,9 +204,9 @@ export function AdminDemoManagementPage() {
 type AdminDemo = { id: string; name: string; owner_name: string; status: string; created_at: string; last_access_at: string | null; booking_count: number; customer_count: number; slot_count: number; reset_count: number };
 function BookingList({ bookings, act, busyId }: { bookings: DemoBooking[]; act: (booking: DemoBooking, action: string) => void; busyId: string }) {
   if (!bookings.length) return <EmptyState text="No demo bookings yet. Submit one on the customer booking demo page." />;
-  return <div className="mt-4 space-y-3">{bookings.map((booking) => <article key={booking.id} className="rounded-xl border p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{booking.customer_name}</p><Badge tone={booking.status === "confirmed" ? "green" : booking.status === "pending" ? "amber" : "neutral"}>{booking.status}</Badge></div><p className="mt-1 text-sm text-muted-foreground">{booking.date} · {booking.start_time}–{booking.end_time} · {formatBDT(booking.price)}</p><p className="mt-1 text-xs text-muted-foreground">{booking.reference} · {booking.customer_phone}</p>{booking.note && <p className="mt-2 text-sm">“{booking.note}”</p>}</div><div className="flex flex-wrap gap-2">{booking.status === "pending" && <><Button size="sm" disabled={busyId === booking.id} onClick={() => act(booking, "approve")}><BadgeCheck /> Approve</Button><Button size="sm" variant="outline" disabled={busyId === booking.id} onClick={() => act(booking, "reject")}>Reject</Button></>}{booking.status === "confirmed" && <Button size="sm" variant="outline" disabled={busyId === booking.id} onClick={() => act(booking, "cancel")}>Cancel demo booking</Button>}</div></div></article>)}</div>;
+  return <div className="mt-4 space-y-3">{bookings.map((booking) => <article key={booking.id} className="rounded-xl border p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{booking.customer_name}</p><Badge tone={booking.status === "confirmed" ? "green" : booking.status === "pending" ? "amber" : "neutral"}>{booking.status}</Badge><Badge tone="neutral">Payment: {booking.payment_status.replaceAll("_", " ")}</Badge></div><p className="mt-1 text-sm text-muted-foreground">{booking.date} · {booking.start_time}–{booking.end_time} · {formatBDT(booking.price)}</p><p className="mt-1 text-xs text-muted-foreground">{booking.reference} · {booking.customer_phone}</p>{booking.payment_amount && <p className="mt-2 text-xs text-muted-foreground">Simulated payment: {formatBDT(booking.payment_amount)} · Sender {booking.sender_phone || "—"} · Ref {booking.transaction_reference || "—"}</p>}{booking.rejection_reason && <p className="mt-2 text-sm text-destructive">Reason: {booking.rejection_reason}</p>}{booking.note && <p className="mt-2 text-sm">“{booking.note}”</p>}</div><div className="flex flex-wrap gap-2">{booking.status === "pending" && <><Button size="sm" disabled={busyId === booking.id} onClick={() => act(booking, "approve")}><BadgeCheck /> Approve</Button><Button size="sm" variant="outline" disabled={busyId === booking.id} onClick={() => act(booking, "reject")}>Reject</Button></>}{booking.status === "confirmed" && <Button size="sm" variant="outline" disabled={busyId === booking.id} onClick={() => act(booking, "cancel")}>Cancel demo booking</Button>}</div></div></article>)}</div>;
 }
-function DemoBanner({ ownerLink }: { ownerLink: boolean }) { return <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm text-amber-950"><span><strong>SHARED DEMO</strong> · Data persists and is visible to everyone. Use sample information only; no real booking, payment, subscription, or SMS is made.</span>{ownerLink && <Link to="/demo-account" className="inline-flex items-center gap-1 font-semibold underline underline-offset-2">Owner dashboard <ArrowRight className="size-4" /></Link>}</div>; }
+function DemoBanner({ ownerLink }: { ownerLink: boolean }) { return <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm text-amber-950"><span><strong>SHARED DEMO</strong> · Changes are visible to visitors and reset every 10 minutes. Use sample information only; no real booking payment, SMS, wallet, or subscription is processed.</span>{ownerLink && <Link to="/demo-booking?mode=owner" className="inline-flex items-center gap-1 font-semibold underline underline-offset-2">Owner dashboard <ArrowRight className="size-4" /></Link>}</div>; }
 function PageLoading() { return <div className="mx-auto flex min-h-64 max-w-5xl items-center justify-center px-4" role="status"><span className="size-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary" /><span className="sr-only">Loading demo</span></div>; }
 function DemoError({ message, retry }: { message: string; retry: () => void }) { useEffect(() => { console.error("TurfBari public demo failed to load:", message); }, [message]); return <main className="mx-auto max-w-2xl px-4 py-16"><div className="rounded-2xl border bg-card p-6 text-center"><h1 className="text-xl font-bold">Demo temporarily unavailable</h1><p role="alert" className="mt-2 text-sm text-muted-foreground">{message}</p><Button className="mt-5" variant="outline" onClick={retry}><RefreshCw /> Retry demo</Button></div></main>; }
 function EmptyState({ text }: { text: string }) { return <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{text}</div>; }
