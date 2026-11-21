@@ -21,6 +21,7 @@ const en = {
   Subscriptions: "Subscriptions", "Promo codes": "Promo codes", Accounts: "Accounts",
   "SMS wallets": "SMS wallets", "SMS usage": "SMS usage", Finance: "Finance", API: "API",
   "Contact information": "Contact information", "Homepage FAQs": "Homepage FAQs",
+  "See More": "See More", "See Less": "See Less",
   "Onboarding & training": "Onboarding & training", "Demo management": "Demo management",
   Health: "Health", "Audit log": "Audit log", "Current Plan": "Current Plan",
   "Renew or Change Plan": "Renew or Change Plan", "No automatic renewal": "No automatic renewal",

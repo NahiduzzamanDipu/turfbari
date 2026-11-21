@@ -281,13 +281,7 @@ export function HomePage() {
           </div>
         </section>
       )}
-      {faqs.data?.length ? <section className="mx-auto max-w-4xl px-4 py-14" aria-labelledby="faq-title">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-bold uppercase tracking-wider text-primary">{t("Helpful answers")}</p><h2 id="faq-title" className="mt-2 font-display text-3xl font-extrabold uppercase">{t("Frequently Asked Questions")}</h2></div></div>
-        <div className="space-y-3">{faqs.data.map((faq) => <details key={faq.id} className="group rounded-xl border bg-card px-5 py-4">
-          <summary className="cursor-pointer list-none pr-7 font-semibold marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{faqLanguage === "bn" && faq.question_bn ? faq.question_bn : faq.question_en}<span aria-hidden="true" className="float-right text-primary group-open:rotate-45">＋</span></summary>
-          <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{faqLanguage === "bn" && faq.answer_bn ? faq.answer_bn : faq.answer_en}</p>
-        </details>)}</div>
-      </section> : null}
+      {faqs.data?.length ? <FAQSection faqs={faqs.data} language={faqLanguage} t={t} /> : null}
       {aboutOpen && youtube.data?.enabled && youtube.data.video_id && (
         <YouTubeDialog videoId={youtube.data.video_id} title={youtube.data.title || "About Us"} onClose={() => setAboutOpen(false)} />
       )}
@@ -295,6 +289,29 @@ export function HomePage() {
   );
 }
 
+function FAQSection({ faqs, language, t }: { faqs: HomepageFAQ[]; language: string; t: (key: string) => string }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasMore = faqs.length > 4;
+  const visibleFaqs = expanded ? faqs : faqs.slice(0, 4);
+
+  return <section className="mx-auto max-w-4xl px-4 py-14" aria-labelledby="faq-title">
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-bold uppercase tracking-wider text-primary">{t("Helpful answers")}</p><h2 id="faq-title" className="mt-2 font-display text-3xl font-extrabold uppercase">{t("Frequently Asked Questions")}</h2></div></div>
+    <div className="space-y-3">
+      {visibleFaqs.slice(0, 4).map((faq) => <FAQItem key={faq.id} faq={faq} language={language} />)}
+      {hasMore && <div id="faq-extra" className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`} aria-hidden={!expanded} inert={!expanded}>
+        <div className="min-h-0 overflow-hidden space-y-3">{visibleFaqs.slice(4).map((faq) => <FAQItem key={faq.id} faq={faq} language={language} />)}</div>
+      </div>}
+    </div>
+    {hasMore && <div className="mt-5 flex justify-center"><Button type="button" variant="outline" aria-expanded={expanded} aria-controls="faq-extra" onClick={() => setExpanded((value) => !value)}>{t(expanded ? "See Less" : "See More")}</Button></div>}
+  </section>;
+}
+
+function FAQItem({ faq, language }: { faq: HomepageFAQ; language: string }) {
+  return <details className="group rounded-xl border bg-card px-5 py-4">
+    <summary className="cursor-pointer list-none pr-7 font-semibold marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{language === "bn" && faq.question_bn ? faq.question_bn : faq.question_en}<span aria-hidden="true" className="float-right text-primary group-open:rotate-45">＋</span></summary>
+    <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{language === "bn" && faq.answer_bn ? faq.answer_bn : faq.answer_en}</p>
+  </details>;
+}
 interface PublicPlan { id: string; period: string; name: string; months: number; price: string; description: string; featured: boolean; features: string[]; limits: Record<string, string | number | boolean | null>; sms_enabled: boolean }
 interface SmsPrice { configured: boolean; price_per_segment: string | null; examples: { segments: number; cost: string }[] }
 interface HomepageFAQ { id: string; question_en: string; answer_en: string; question_bn: string; answer_bn: string }
