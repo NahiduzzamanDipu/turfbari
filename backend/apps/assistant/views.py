@@ -243,6 +243,7 @@ class PublicConversationView(APIView):
                 source__key="homepage:overview:en",
                 source__is_enabled=True,
                 source__status=KnowledgeSource.Status.INDEXED,
+                source__public_url="/",
             ).exists():
                 sync_knowledge()
             previous_questions = list(

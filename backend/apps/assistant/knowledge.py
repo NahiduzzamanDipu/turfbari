@@ -100,6 +100,7 @@ def sync_knowledge() -> dict:
             "en",
             "homepage-v1",
             overview,
+            public_url="/",
         )
     )
     overview_bn = (
@@ -115,6 +116,7 @@ def sync_knowledge() -> dict:
             "bn",
             "homepage-v1",
             overview_bn,
+            public_url="/",
         )
     )
     for faq in HomepageFAQ.objects.filter(is_published=True):

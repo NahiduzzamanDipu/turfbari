@@ -29,7 +29,7 @@ def add_source(key, title, text, language="en", url="/help"):
         key="homepage:overview:en",
         title="TURFBARI overview",
         language="en",
-        public_url="/#",
+        public_url="/",
         status=KnowledgeSource.Status.INDEXED,
     )
     KnowledgeChunk.objects.create(
@@ -106,6 +106,7 @@ def test_first_public_question_builds_empty_local_index_automatically():
     assert response.status_code == 200
     assert "TURFBARI" in response.json()["message"]["content"]
     assert KnowledgeSource.objects.filter(key="homepage:overview:en").exists()
+    assert response.json()["sources"][0]["url"] == "/"
 
 
 def test_first_question_repairs_indexed_overview_missing_its_chunks():
