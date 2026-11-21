@@ -121,7 +121,7 @@ def test_tick_endpoint_needs_the_token():
     assert APIClient().post("/api/system/tick/").status_code == 403
     assert APIClient().post("/api/system/tick/", HTTP_X_TICK_TOKEN="wrong").status_code == 403
     ok = APIClient().post("/api/system/tick/?force=1", HTTP_X_TICK_TOKEN="test-tick-token")
-    assert ok.status_code == 200 and "sms" in ok.json()
+    assert ok.status_code == 200 and "sms" in ok.json() and "demo_cleanup" in ok.json()
     with override_settings(TICK_TOKEN=""):
         assert APIClient().post("/api/system/tick/", HTTP_X_TICK_TOKEN="").status_code == 404
 

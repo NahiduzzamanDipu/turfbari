@@ -1,7 +1,9 @@
 import {
+  ArrowRight as ArrowRightIcon,
   BarChart3,
   CalendarCheck2,
   CalendarClock,
+  CalendarDays,
   Mail,
   MessageSquareText,
   MapPin,
@@ -17,6 +19,8 @@ import {
   CheckCircle2,
   Star,
   Headphones,
+  Play,
+  PanelTop,
 } from "lucide-react";
 import { Link } from "react-router";
 import { useState } from "react";
@@ -108,6 +112,33 @@ export function HomePage() {
               Check your booking status
             </Link>
           </p>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-12" aria-labelledby="demo-title">
+        <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+          <div className="grid gap-5 bg-primary px-5 py-7 text-primary-foreground sm:px-8 sm:py-9 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[.16em] text-primary-foreground/75"><Play className="size-4" /> Try it before you decide</p>
+              <h2 id="demo-title" className="mt-2 font-display text-3xl font-extrabold uppercase sm:text-4xl">Try the live demo</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-primary-foreground/85">Experience TURFBARI from both sides. See how customers book a turf and how owners manage their business. Demo data is isolated and temporary.</p>
+            </div>
+            <Button asChild variant="accent" size="lg"><Link to="/demo-booking">Try Live Demo <ArrowRightIcon /></Link></Button>
+          </div>
+          <div className="grid gap-0 md:grid-cols-2">
+            <article className="p-5 sm:p-7">
+              <span className="inline-flex rounded-xl bg-accent p-3 text-accent-foreground"><CalendarDays className="size-5" /></span>
+              <h3 className="mt-4 text-lg font-bold">Customer booking demo</h3>
+              <p className="mt-1 text-sm text-muted-foreground">Choose a date and available slot, enter your details, and submit a simulated booking request.</p>
+              <Button asChild variant="outline" className="mt-4"><Link to="/demo-booking">Try customer booking <ArrowRightIcon /></Link></Button>
+            </article>
+            <article className="border-t p-5 md:border-l md:border-t-0 sm:p-7">
+              <span className="inline-flex rounded-xl bg-accent p-3 text-accent-foreground"><PanelTop className="size-5" /></span>
+              <h3 className="mt-4 text-lg font-bold">Turf owner dashboard demo</h3>
+              <p className="mt-1 text-sm text-muted-foreground">Review demo bookings, update sample slot prices, explore customer records and reports.</p>
+              <Button asChild variant="outline" className="mt-4"><Link to="/demo-account">Explore owner dashboard <ArrowRightIcon /></Link></Button>
+            </article>
+          </div>
         </div>
       </section>
 

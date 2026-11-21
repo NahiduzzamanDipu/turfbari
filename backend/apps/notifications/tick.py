@@ -85,6 +85,7 @@ def run_tick() -> dict:
         return {"skipped": "another tick is running"}
     results: dict = {}
     try:
+        from apps.demo.services import cleanup_expired_demo
         from apps.subscriptions.reminders import send_expiry_reminders
 
         from .services import retry_due
@@ -93,6 +94,7 @@ def run_tick() -> dict:
             ("sms", retry_due),
             ("subscription_sms", subscription_sms),
             ("subscription_email", send_expiry_reminders),
+            ("demo_cleanup", cleanup_expired_demo),
             *EXTRA_STEPS,
         ]
         for name, step in steps:

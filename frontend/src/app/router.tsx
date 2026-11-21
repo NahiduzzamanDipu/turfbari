@@ -18,6 +18,7 @@ import {
   Landmark,
   LayoutDashboard,
   Palette,
+  Presentation,
   PlugZap,
   MessageSquareText,
   Receipt,
@@ -98,6 +99,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/admin/settings/contact", label: "Contact information", icon: <Settings /> },
   { to: "/admin/homepage-faqs", label: "Homepage FAQs", icon: <HelpCircle /> },
   { to: "/admin/onboarding", label: "Onboarding & training", icon: <ClipboardCheck /> },
+  { to: "/admin/demo", label: "Demo management", icon: <Presentation /> },
   { to: "/admin/legal", label: "Legal & Compliance", icon: <Scale /> },
   { to: "/admin/health", label: "Health", icon: <HeartPulse /> },
   { to: "/admin/audit", label: "Audit log", icon: <History /> },
@@ -131,6 +133,8 @@ export const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { path: "/", element: page(() => import("@/features/public/HomePage"), "HomePage") },
+      { path: "/demo-booking", element: page(() => import("@/features/demo/DemoPages"), "DemoBookingPage") },
+      { path: "/demo-account", element: page(() => import("@/features/demo/DemoPages"), "DemoAccountPage") },
       // The public turf directory was retired: old links land on the home page.
       { path: "/explore", element: <Navigate to="/" replace /> },
       { path: "/turf/:slug", element: <TurfAlias /> },
@@ -172,6 +176,7 @@ export const router = createBrowserRouter([
       { path: "settings/contact", element: page(configPages, "AdminContactSettingsPage") },
       { path: "homepage-faqs", element: page(() => import("@/features/admin/HomepagePages"), "AdminHomepageFaqPage") },
       { path: "onboarding", element: page(() => import("@/features/admin/HomepagePages"), "AdminOnboardingPage") },
+      { path: "demo", element: page(() => import("@/features/demo/DemoPages"), "AdminDemoManagementPage") },
       { path: "terms", element: <Navigate to="/admin/legal" replace /> },
       { path: "legal", element: page(legalAdmin, "AdminLegalPage") },
       { path: "legal/documents/:id", element: page(legalAdmin, "AdminLegalDocumentPage") },

@@ -78,6 +78,7 @@ LOCAL_APPS = [
     "apps.notifications",
     "apps.legal",
     "apps.homepage",
+    "apps.demo",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -229,6 +230,7 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
+        "demo_session": "10/hour",
         "anon": "120/min",
         "user": "600/min",
         "login": "10/min",

@@ -14,10 +14,11 @@ from apps.bookings import verification_views as verify
 from apps.bookings import workspace_views as ws
 from apps.common import platform_views as platform
 from apps.common.live import LiveView
+from apps.demo import views as demo
 from apps.expenses.views import ExpenseViewSet
+from apps.homepage import api as homepage
 from apps.legal import admin_views as legal_admin
 from apps.legal import views as legal
-from apps.homepage import api as homepage
 from apps.notifications import campaigns as sms_campaigns
 from apps.notifications import usage as sms_usage
 from apps.notifications import views as sms
@@ -47,6 +48,13 @@ workspace_router.register("expenses", ExpenseViewSet, basename="ws-expenses")
 workspace_router.register("photos", setup.PhotoViewSet, basename="ws-photos")
 
 public_urls = [
+    path("demo/session/", demo.DemoSessionView.as_view()),
+    path("demo/qr.svg", demo.DemoQRCodeView.as_view()),
+    path("demo/workspace/", demo.DemoWorkspaceView.as_view()),
+    path("demo/bookings/", demo.DemoBookingCreateView.as_view()),
+    path("demo/bookings/<uuid:pk>/", demo.DemoBookingActionView.as_view()),
+    path("demo/slots/", demo.DemoSlotsView.as_view()),
+    path("demo/slots/<uuid:pk>/", demo.DemoSlotDetailView.as_view()),
     path("plans/", homepage.PublicPlansView.as_view()),
     path("sms-pricing/", homepage.PublicSmsPricingView.as_view()),
     path("youtube/homepage/", homepage.PublicHomepageYoutubeView.as_view()),
@@ -97,6 +105,11 @@ auth_urls = [
 ]
 
 admin_urls = [
+    path("demo/workspaces/", demo.AdminDemoWorkspacesView.as_view()),
+    path("demo/workspaces/<uuid:pk>/", demo.AdminDemoWorkspaceDetailView.as_view()),
+    path("demo/workspaces/<uuid:pk>/reset/", demo.AdminDemoWorkspaceResetView.as_view()),
+    path("demo/workspaces/<uuid:pk>/access/", demo.AdminDemoWorkspaceAccessView.as_view()),
+    path("demo/workspaces/<uuid:pk>/activity/", demo.AdminDemoWorkspaceActivityView.as_view()),
     path("homepage/faqs/", homepage.AdminFAQsView.as_view()),
     path("homepage/faqs/<uuid:pk>/", homepage.AdminFAQsView.as_view()),
     path("onboarding/", homepage.AdminOnboardingView.as_view()),

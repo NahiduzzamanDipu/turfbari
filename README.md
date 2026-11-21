@@ -99,7 +99,22 @@ The API runs on **port 8010** (8000 is often taken by other local projects).
 | Manager (Green Arena Gulshan) | manager@turfbari.local | TurfBariManager#2026 |
 
 The other demo owners (uttara.owner@, ctg.owner@) use the owner password too. `seed_demo --reset` rebuilds the demo data.
-The command refuses to run when `DJANGO_DEBUG` is false.
+This seed command is development-only and refuses to run when `DJANGO_DEBUG` is false.
+
+#### Interactive product demos
+
+The homepage links to `/demo-booking` (player flow) and `/demo-account` (owner workspace). Each new browser session
+receives a private 24-hour demo workspace; the booking flow and owner dashboard share that workspace in the same
+browser tab. Demo workspaces, slots, customers, bookings, activity, and price snapshots use only the `apps.demo`
+tables. They are not Django users or real tenants, and their APIs never call production payment, subscription, SMS,
+wallet, or booking services. SMS, QR, payments, and subscription controls in the demo are previews only.
+
+Platform admins can manage workspaces at **Admin > Demo management**. Create a workspace to get a short-lived access
+link (shown once), rotate its link, disable it, change its owner/workspace labels or expiry, inspect activity, or reset
+only its demo records to the seeded state. Expired access is rejected immediately. Run
+`python manage.py run_tick` (or the protected `/api/system/tick/` endpoint) handles expiry and removes
+their booking/customer/slot records after 30 days; the demo activity history is retained. No real tenant rows are
+modified by cleanup. `python manage.py cleanup_demo_workspaces` runs this cleanup directly when needed.
 
 ### 4. Frontend
 
