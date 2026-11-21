@@ -70,7 +70,7 @@ export function TurfDetailPage({ demo = false }: { demo?: boolean }) {
   return (
     <div {...themeProps(t.theme)} className="min-h-full">
       <div className="mx-auto max-w-6xl px-[var(--page-gutter)] py-4 sm:px-4 sm:py-6">
-      {demo && <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-950"><span><strong>DEMO MODE</strong> · Use sample details only. No real booking, payment, or SMS is created.</span><Link to="/demo-booking?mode=owner" className="font-semibold underline underline-offset-2">Open connected owner dashboard</Link></div>}
+      {demo && <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-950"><span><strong>DEMO MODE</strong> · Use sample details only. No real booking, payment, or SMS is created.</span><Link to="/demo-owner" className="font-semibold underline underline-offset-2">Open connected owner dashboard</Link></div>}
       <div className="relative overflow-hidden rounded-2xl">
         {t.photos[0] ? (
           <img src={t.photos[0].url} alt="" className="h-56 w-full object-cover sm:h-80" />

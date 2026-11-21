@@ -120,8 +120,8 @@ This seed command is development-only and refuses to run when `DJANGO_DEBUG` is 
 The homepage has one unified **Try Live Demo** entry point. It opens the production public turf profile and booking
 components backed by isolated `apps.demo` tables. After submitting a simulated advance payment, visitors can open
 the connected Demo Owner Dashboard to review, approve, reject, or cancel requests, edit sample slots and prices, and
-view masked customer records, simulated SMS previews and demo-only reports. `/demo-account` remains as a redirect for
-older links.
+view masked customer records, simulated SMS previews and demo-only reports. The owner view uses a full-screen
+workspace shell modeled on the real owner portal at `/demo-owner`; `/demo-account` remains a redirect for older links.
 
 Demo access uses a short-lived signed owner session. The public configuration endpoint does not expose customer or
 booking records. Demo data is separate from real tenants and bookings; no real payment provider, SMS provider, wallet,

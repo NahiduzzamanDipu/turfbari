@@ -141,7 +141,6 @@ export const router = createBrowserRouter([
     children: [
       { path: "/", element: page(() => import("@/features/public/HomePage"), "HomePage") },
       { path: "/demo-booking", element: page(() => import("@/features/demo/DemoPages"), "DemoExperiencePage") },
-      { path: "/demo-account", element: <Navigate to="/demo-booking?mode=owner" replace /> },
       // The public turf directory was retired: old links land on the home page.
       { path: "/explore", element: <Navigate to="/" replace /> },
       { path: "/turf/:slug", element: <TurfAlias /> },
@@ -156,6 +155,8 @@ export const router = createBrowserRouter([
       { path: "/legal/:slug", element: page(legalPublic, "LegalDocumentPage") },
     ],
   },
+  { path: "/demo-owner", element: page(() => import("@/features/demo/DemoPages"), "DemoAccountPage") },
+  { path: "/demo-account", element: <Navigate to="/demo-owner" replace /> },
   { path: "/login", element: page(() => import("@/features/auth/LoginPage"), "LoginPage") },
   { path: "/forgot-password", element: page(passwordPages, "ForgotPasswordPage") },
   { path: "/set-password", element: page(passwordPages, "SetPasswordPage") },

@@ -335,7 +335,7 @@ export function BookingPanel({ turf, demo = false }: { turf: TurfDetail; demo?: 
               {demo ? "Your simulated payment is waiting for the Demo Owner to review it. Its status will refresh automatically." : <>Not confirmed yet — the turf checks the payment first. Track it on the{" "}
               <Link to={`/booking-status?reference=${done.reference}`} className="font-semibold text-primary hover:underline">booking status page</Link>.</>}
             </p>
-            {demo && <Button asChild variant="outline"><Link to="/demo-booking?mode=owner">Open Demo Owner Dashboard</Link></Button>}
+            {demo && <Button asChild variant="outline"><Link to="/demo-owner">Open Demo Owner Dashboard</Link></Button>}
             <Button variant="outline" onClick={() => setDone(null)}>
               Book another slot
             </Button>
