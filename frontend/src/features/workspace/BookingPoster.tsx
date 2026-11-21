@@ -10,11 +10,27 @@ import { useLanguage } from "@/lib/i18n";
 const WIDTH = 2480;
 const HEIGHT = 3508;
 const GREEN = "#064e3b";
-const DARK = "#073c31";
 const LIME = "#bef264";
 const MINT = "#d1fae5";
 
 type PosterInfo = { booking_url: string; website_url: string };
+let posterFontsPromise: Promise<void> | null = null;
+
+function ensurePosterFonts() {
+  if (!posterFontsPromise) {
+    const fonts: [string, string][] = [
+      ["500", "/fonts/HindSiliguri-Medium.ttf"],
+      ["600", "/fonts/HindSiliguri-SemiBold.ttf"],
+      ["700", "/fonts/HindSiliguri-Bold.ttf"],
+    ];
+    posterFontsPromise = Promise.all(fonts.map(async ([weight, url]) => {
+      const face = new FontFace("Hind Siliguri", `url(${url})`, { weight });
+      await face.load();
+      document.fonts.add(face);
+    })).then(() => undefined);
+  }
+  return posterFontsPromise;
+}
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -42,9 +58,91 @@ function wrappedLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: num
   return lines;
 }
 
-function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, radius: number) {
+function drawLight(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  const glow = ctx.createRadialGradient(x, y, 4, x, y, 520);
+  glow.addColorStop(0, "rgba(225,255,226,.25)");
+  glow.addColorStop(.18, "rgba(140,255,169,.10)");
+  glow.addColorStop(1, "rgba(140,255,169,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(x - 520, y - 120, 1040, 1040);
+  ctx.save();
+  ctx.strokeStyle = "rgba(229,255,226,.25)";
+  ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.roundRect(x, y, w, h, radius);
+  ctx.moveTo(x - 145, y - 36);
+  ctx.lineTo(x - 300, y + 220);
+  ctx.moveTo(x + 145, y - 36);
+  ctx.lineTo(x + 300, y + 220);
+  ctx.stroke();
+  ctx.fillStyle = "#eaffee";
+  for (let lamp = -2; lamp <= 2; lamp++) {
+    ctx.beginPath();
+    ctx.arc(x + lamp * 34, y, 9, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawPitch(ctx: CanvasRenderingContext2D) {
+  // Fine diagonal grass strokes give the page texture without distracting from the content.
+  ctx.save();
+  ctx.globalAlpha = .15;
+  for (let i = 0; i < 740; i++) {
+    const x = (i * 137) % WIDTH;
+    const y = (i * 283) % HEIGHT;
+    const length = 18 + (i % 5) * 7;
+    ctx.strokeStyle = i % 2 ? "#8fcf63" : "#b0df74";
+    ctx.lineWidth = i % 4 === 0 ? 3 : 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + length * .55, y - length);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Oversized, low-contrast pitch markings frame the poster as a ground, not a blank sheet.
+  ctx.save();
+  ctx.strokeStyle = "rgba(224,255,226,.12)";
+  ctx.lineWidth = 7;
+  ctx.strokeRect(78, 90, WIDTH - 156, HEIGHT - 180);
+  ctx.beginPath();
+  ctx.moveTo(80, HEIGHT * .52);
+  ctx.lineTo(WIDTH - 80, HEIGHT * .52);
+  ctx.arc(WIDTH / 2, HEIGHT * .52, 365, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeRect(80, HEIGHT * .34, 455, 700);
+  ctx.strokeRect(WIDTH - 535, HEIGHT * .34, 455, 700);
+  ctx.strokeRect(80, HEIGHT * .68, 455, 700);
+  ctx.strokeRect(WIDTH - 535, HEIGHT * .68, 455, 700);
+  ctx.restore();
+}
+
+function drawInfoIcon(ctx: CanvasRenderingContext2D, kind: "pin" | "phone", x: number, y: number) {
+  ctx.save();
+  ctx.strokeStyle = LIME;
+  ctx.lineWidth = 9;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  if (kind === "pin") {
+    ctx.arc(x, y - 9, 26, Math.PI * .15, Math.PI * .85);
+    ctx.quadraticCurveTo(x, y + 58, x, y + 58);
+    ctx.quadraticCurveTo(x, y + 58, x - 26, y + 1);
+    ctx.moveTo(x - 11, y - 9);
+    ctx.arc(x, y - 9, 11, Math.PI, Math.PI * 3);
+  } else {
+    ctx.moveTo(x - 26, y - 35);
+    ctx.quadraticCurveTo(x - 42, y - 43, x - 44, y - 22);
+    ctx.quadraticCurveTo(x - 29, y + 30, x + 19, y + 46);
+    ctx.quadraticCurveTo(x + 42, y + 48, x + 42, y + 24);
+    ctx.lineTo(x + 19, y + 7);
+    ctx.lineTo(x + 2, y + 23);
+    ctx.quadraticCurveTo(x - 13, y + 13, x - 18, y - 2);
+    ctx.lineTo(x - 4, y - 18);
+    ctx.closePath();
+  }
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawPoster(
@@ -61,126 +159,201 @@ function drawPoster(
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
 
-  ctx.fillStyle = "#f5f8f3";
+  // Full-bleed stadium night scene. The QR is painted later on an opaque white panel.
+  const ground = ctx.createLinearGradient(0, 0, WIDTH * .8, HEIGHT);
+  ground.addColorStop(0, "#061e18");
+  ground.addColorStop(.43, "#0a4a32");
+  ground.addColorStop(.76, "#12653e");
+  ground.addColorStop(1, "#06251b");
+  ctx.fillStyle = ground;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  const header = ctx.createLinearGradient(0, 0, WIDTH, 1050);
-  header.addColorStop(0, DARK);
-  header.addColorStop(1, GREEN);
-  ctx.fillStyle = header;
-  ctx.fillRect(0, 0, WIDTH, 1010);
-  ctx.fillStyle = LIME;
-  ctx.fillRect(0, 1000, WIDTH, 14);
+  drawPitch(ctx);
+  drawLight(ctx, 150, 105);
+  drawLight(ctx, WIDTH - 150, 105);
+  const vignette = ctx.createRadialGradient(WIDTH / 2, HEIGHT * .42, 360, WIDTH / 2, HEIGHT * .42, HEIGHT * .78);
+  vignette.addColorStop(0, "rgba(3,23,17,0)");
+  vignette.addColorStop(1, "rgba(1,14,11,.52)");
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
+  // Turf identity badge: contain the real logo so it is never stretched or cropped.
   const center = WIDTH / 2;
-  const logoSize = 278;
-  const logoX = center - logoSize / 2;
+  const logoSize = 246;
   const logoY = 122;
   ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,.22)";
-  ctx.shadowBlur = 32;
-  ctx.shadowOffsetY = 12;
+  ctx.shadowColor = "rgba(0,0,0,.38)";
+  ctx.shadowBlur = 28;
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
-  ctx.arc(center, logoY + logoSize / 2, logoSize / 2 + 14, 0, Math.PI * 2);
+  ctx.arc(center, logoY + logoSize / 2, logoSize / 2 + 13, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
   ctx.save();
   ctx.beginPath();
   ctx.arc(center, logoY + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
   ctx.clip();
+  ctx.fillStyle = "#f4fff4";
+  ctx.fillRect(center - logoSize / 2, logoY, logoSize, logoSize);
   if (turfLogo) {
-    const scale = Math.max(logoSize / turfLogo.width, logoSize / turfLogo.height);
+    const scale = Math.min((logoSize - 30) / turfLogo.width, (logoSize - 30) / turfLogo.height);
     const w = turfLogo.width * scale;
     const h = turfLogo.height * scale;
-    ctx.drawImage(turfLogo, center - w / 2, logoY + logoSize / 2 - h / 2, w, h);
+    ctx.drawImage(turfLogo, center - w / 2, logoY + (logoSize - h) / 2, w, h);
   } else {
-    ctx.fillStyle = "#e9f5ea";
-    ctx.fillRect(logoX, logoY, logoSize, logoSize);
     const initials = turf.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0] ?? "").join("");
     ctx.fillStyle = GREEN;
-    ctx.font = "700 112px 'Hind Siliguri', 'Noto Sans Bengali', sans-serif";
+    ctx.font = "800 104px Inter, 'Hind Siliguri', sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(initials, center, logoY + logoSize / 2 + 8, logoSize - 36);
+    ctx.fillText(initials, center, logoY + logoSize / 2, logoSize - 30);
   }
   ctx.restore();
 
+  // Oversized, adaptable turf name; keep the full name visible, including long names.
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
-  const nameMaxWidth = 2110;
-  let nameSize = 104;
+  const nameMaxWidth = 2200;
+  let nameSize = 132;
   let nameLines: string[] = [];
   do {
-    ctx.font = `700 ${nameSize}px 'Hind Siliguri', 'Noto Sans Bengali', sans-serif`;
+    ctx.font = `800 ${nameSize}px 'Hind Siliguri', Inter, 'Noto Sans Bengali', sans-serif`;
     nameLines = wrappedLines(ctx, turf.name, nameMaxWidth);
-    if (nameLines.length <= 2) break;
-    nameSize -= 4;
-  } while (nameSize > 64);
+    if (nameLines.length <= 2 || nameSize <= 54) break;
+    nameSize -= 6;
+  } while (nameSize > 54);
   ctx.fillStyle = "#ffffff";
+  ctx.shadowColor = "rgba(0,0,0,.45)";
+  ctx.shadowBlur = 18;
   let y = 500;
-  for (const line of nameLines.slice(0, 2)) {
+  for (const line of nameLines) {
     ctx.fillText(line, center, y, nameMaxWidth);
     y += nameSize * 1.08;
   }
-  y += 12;
+  ctx.shadowBlur = 0;
+
+  // Two bold information bands, compact when either optional value is absent.
+  const infoTop = Math.max(850, y + 38);
+  const hasAddress = Boolean(turf.address.trim());
+  const hasPhone = Boolean(turf.public_phone.trim());
+  let addressSize = 55;
+  let addressLines: string[] = [];
+  if (hasAddress) {
+    do {
+      ctx.font = `600 ${addressSize}px 'Hind Siliguri', Inter, 'Noto Sans Bengali', sans-serif`;
+      addressLines = wrappedLines(ctx, turf.address, 1950);
+      if (addressLines.length <= 2 || addressSize <= 39) break;
+      addressSize -= 2;
+    } while (addressSize > 39);
+  }
+  const infoHeight = hasAddress && hasPhone
+    ? Math.max(300, 190 + addressLines.length * 66)
+    : hasAddress
+      ? Math.max(190, 190 + addressLines.length * 66)
+      : hasPhone ? 190 : 0;
+  if (infoHeight) {
+    ctx.save();
+    ctx.fillStyle = "rgba(2,31,23,.74)";
+    ctx.fillRect(112, infoTop, WIDTH - 224, infoHeight);
+    ctx.fillStyle = LIME;
+    ctx.fillRect(112, infoTop, 12, infoHeight);
+    ctx.restore();
+  }
+  let infoY = infoTop + (hasAddress && hasPhone ? 100 : 118);
   if (turf.address.trim()) {
-    ctx.font = "500 48px 'Hind Siliguri', 'Noto Sans Bengali', sans-serif";
+    drawInfoIcon(ctx, "pin", 205, infoY - 20);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
     ctx.fillStyle = MINT;
-    const addressLines = wrappedLines(ctx, turf.address, 2000).slice(0, 3);
+    ctx.font = `600 ${addressSize}px 'Hind Siliguri', Inter, 'Noto Sans Bengali', sans-serif`;
     for (const line of addressLines) {
-      ctx.fillText(line, center, y, 2000);
-      y += 62;
+      ctx.fillText(line, 275, infoY, 1950);
+      infoY += 66;
     }
   }
   if (turf.public_phone.trim()) {
-    y += 10;
+    const phoneY = turf.address.trim() ? infoTop + infoHeight - 76 : infoY;
+    drawInfoIcon(ctx, "phone", 205, phoneY);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
     ctx.fillStyle = LIME;
-    ctx.font = "700 54px Inter, Arial, sans-serif";
-    ctx.fillText(turf.public_phone, center, y, 2000);
+    ctx.font = "800 66px Inter, 'Hind Siliguri', sans-serif";
+    ctx.fillText(turf.public_phone, 275, phoneY, 1950);
   }
 
-  const instruction = language === "bn" ? "স্লট বুক করতে QR কোড স্ক্যান করুন" : "SCAN TO BOOK YOUR SLOT";
-  ctx.fillStyle = GREEN;
-  ctx.font = language === "bn"
-    ? "700 66px 'Hind Siliguri', 'Noto Sans Bengali', sans-serif"
-    : "700 58px Inter, Arial, sans-serif";
-  ctx.fillText(instruction, center, 1110, 2100);
-
-  const box = 1570;
-  const boxX = center - box / 2;
-  const boxY = 1190;
+  // Sport-event callout and high-contrast booking code.
+  const headlineY = infoTop + infoHeight + 166;
   ctx.save();
-  ctx.shadowColor = "rgba(6,78,59,.12)";
-  ctx.shadowBlur = 34;
-  ctx.shadowOffsetY = 14;
-  roundedRect(ctx, boxX, boxY, box, box, 34);
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
+  ctx.translate(center, headlineY - 56);
+  ctx.rotate(-.018);
+  ctx.fillStyle = LIME;
+  ctx.fillRect(-1120, -95, 2240, 190);
+  ctx.fillStyle = "#073c31";
+  ctx.font = language === "bn"
+    ? "800 105px 'Hind Siliguri', sans-serif"
+    : "900 118px Inter, Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const headline = language === "bn"
+    ? "\u0986\u09aa\u09a8\u09be\u09b0 \u0996\u09c7\u09b2\u09be \u09ac\u09c1\u0995 \u0995\u09b0\u09c1\u09a8!"
+    : "BOOK YOUR GAME!";
+  ctx.fillText(headline, 0, 0, 2100);
   ctx.restore();
-  ctx.strokeStyle = "#d4e3d7";
-  ctx.lineWidth = 4;
-  roundedRect(ctx, boxX, boxY, box, box, 34);
-  ctx.stroke();
-  const qrSize = 1400;
+
+  const instructionY = headlineY + 132;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = language === "bn"
+    ? "800 63px 'Hind Siliguri', sans-serif"
+    : "800 62px Inter, Arial, sans-serif";
+  const instruction = language === "bn"
+    ? "\u09ac\u09c1\u0995 \u0995\u09b0\u09a4\u09c7 QR \u0995\u09cb\u09a1 \u09b8\u09cd\u0995\u09cd\u09af\u09be\u09a8 \u0995\u09b0\u09c1\u09a8"
+    : "SCAN TO BOOK NOW";
+  ctx.fillText(instruction, center, instructionY, 2100);
+
+  const boxY = instructionY + 86;
+  const footerHeight = 420;
+  const footerGap = 112;
+  const box = Math.min(1450, HEIGHT - footerHeight - footerGap - boxY);
+  if (box < 950) throw new Error("The poster content is too long to fit on one page; shorten the turf details.");
+  const boxX = center - box / 2;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(boxX - 30, boxY - 30, box + 60, box + 60);
+  ctx.strokeStyle = LIME;
+  ctx.lineWidth = 12;
+  ctx.strokeRect(boxX - 30, boxY - 30, box + 60, box + 60);
+  const qrSize = box - 70;
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(qr, center - qrSize / 2, boxY + (box - qrSize) / 2, qrSize, qrSize);
   ctx.imageSmoothingEnabled = true;
 
+  // Branded footer fills the page base while keeping the turf as the hero.
+  const footerY = boxY + box + footerGap;
+  const footer = ctx.createLinearGradient(0, footerY, WIDTH, footerY + 420);
+  footer.addColorStop(0, "#041d17");
+  footer.addColorStop(.5, "#063728");
+  footer.addColorStop(1, "#041d17");
+  ctx.fillStyle = footer;
+  ctx.fillRect(0, footerY, WIDTH, HEIGHT - footerY);
   ctx.fillStyle = LIME;
-  roundedRect(ctx, center - 116, 2865, 232, 12, 6);
-  ctx.fill();
-  const markSize = 124;
-  ctx.drawImage(brandMark, center - 382, 2935, markSize, markSize);
+  ctx.fillRect(0, footerY, WIDTH, 12);
+  const markSize = 132;
+  const brandY = footerY + 72;
+  ctx.drawImage(brandMark, center - 410, brandY, markSize, markSize);
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillStyle = GREEN;
-  ctx.font = "800 84px Inter, Arial, sans-serif";
-  ctx.fillText("TURFBARI", center - 226, 2997);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 84px Inter, Arial, sans-serif";
+  ctx.fillText("TURFBARI", center - 250, brandY + 66);
+  ctx.fillStyle = LIME;
+  ctx.textAlign = "center";
+  ctx.font = "700 30px Inter, Arial, sans-serif";
+  ctx.fillText("POWERED BY", center, brandY + 164);
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = "#43564b";
-  ctx.font = "500 48px Inter, Arial, sans-serif";
-  ctx.fillText(info.website_url, center, 3240, 2140);
+  ctx.fillStyle = MINT;
+  ctx.font = "600 46px Inter, Arial, sans-serif";
+  ctx.fillText(info.website_url, center, footerY + 320, 2200);
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -192,7 +365,7 @@ function downloadBlob(blob: Blob, filename: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-async function markPngAs300Dpi(blob: Blob): Promise<Blob> {
+export async function markPngAs300Dpi(blob: Blob): Promise<Blob> {
   const png = new Uint8Array(await blob.arrayBuffer());
   const chunkData = new Uint8Array(9);
   const dataView = new DataView(chunkData.buffer);
@@ -282,6 +455,7 @@ export function BookingPoster({ turf, published }: { turf: TurfSettings; publish
         if (booking.origin !== site.origin || booking.pathname !== `/turfs/${turf.slug}`) {
           throw new Error(t("The public booking URL is unavailable or does not match this turf."));
         }
+        await ensurePosterFonts();
         await document.fonts.ready;
         const qr = await loadImage(`/api/workspace/booking-page/qr.svg?scale=32`);
         const brandMark = await loadImage("/favicon.svg");
