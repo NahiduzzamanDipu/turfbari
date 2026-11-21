@@ -79,6 +79,7 @@ LOCAL_APPS = [
     "apps.legal",
     "apps.homepage",
     "apps.demo",
+    "apps.assistant",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -245,6 +246,8 @@ REST_FRAMEWORK = {
         "public_application": "3/hour",
         "registration_quote": "30/min",
         "registration_status": "20/min",
+        "ai_chat": "12/hour",
+        "ai_chat_session": "20/hour",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
 }

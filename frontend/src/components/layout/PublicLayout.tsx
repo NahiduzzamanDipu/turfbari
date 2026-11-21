@@ -1,12 +1,13 @@
 import { LayoutDashboard, Menu, X } from "lucide-react";
 import { useState } from "react";
-import { Link, NavLink, Outlet } from "react-router";
+import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { useMe } from "@/features/auth/auth";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n";
+import { AssistantWidget } from "@/features/public/AssistantWidget";
 
 const NAV = [
   { to: "/#contact", label: "Contact" },
@@ -17,6 +18,7 @@ const NAV = [
 export function PublicLayout() {
   const me = useMe();
   const [open, setOpen] = useState(false);
+  const location = useLocation();
   const signedIn = me.data?.authenticated;
   const { t } = useLanguage();
 
@@ -86,6 +88,7 @@ export function PublicLayout() {
       <div className="flex-1">
         <Outlet />
       </div>
+      {location.pathname === "/" && <AssistantWidget />}
       <footer className="border-t">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <Logo className="[&_span]:text-lg" />

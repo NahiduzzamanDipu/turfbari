@@ -8,6 +8,7 @@ from apps.accounts import two_factor
 from apps.accounts import views as auth
 from apps.applications import registration_views as reg
 from apps.applications.admin_views import AdminDashboardView, ApplicationAdminViewSet, TurfAdminViewSet
+from apps.assistant import views as assistant
 from apps.audit import views as audit
 from apps.bookings import series_views as series
 from apps.bookings import verification_views as verify
@@ -48,6 +49,11 @@ workspace_router.register("expenses", ExpenseViewSet, basename="ws-expenses")
 workspace_router.register("photos", setup.PhotoViewSet, basename="ws-photos")
 
 public_urls = [
+    path("assistant/status/", assistant.PublicAssistantStatusView.as_view()),
+    path("assistant/conversations/", assistant.PublicConversationStartView.as_view()),
+    path("assistant/messages/", assistant.PublicConversationView.as_view()),
+    path("assistant/conversations/clear/", assistant.PublicConversationClearView.as_view()),
+    path("assistant/feedback/", assistant.PublicFeedbackView.as_view()),
     path("language-settings/", platform.PublicLanguageSettingsView.as_view()),
     path("demo/qr.svg", demo.DemoQRCodeView.as_view()),
     path("demo/workspace/", demo.DemoWorkspaceView.as_view()),
@@ -106,6 +112,17 @@ auth_urls = [
 ]
 
 admin_urls = [
+    path("assistant/settings/", assistant.AdminAssistantSettingsView.as_view()),
+    path("assistant/articles/", assistant.AdminKnowledgeArticlesView.as_view()),
+    path("assistant/articles/<uuid:pk>/", assistant.AdminKnowledgeArticlesView.as_view()),
+    path("assistant/import/", assistant.AdminKnowledgeImportView.as_view()),
+    path("assistant/sources/", assistant.AdminKnowledgeSourcesView.as_view()),
+    path("assistant/sources/<uuid:pk>/", assistant.AdminKnowledgeSourcesView.as_view()),
+    path("assistant/reindex/", assistant.AdminKnowledgeReindexView.as_view()),
+    path("assistant/analytics/", assistant.AdminAssistantAnalyticsView.as_view()),
+    path("assistant/test/", assistant.AdminAssistantTestView.as_view()),
+    path("assistant/questions/", assistant.AdminSuggestedQuestionsView.as_view()),
+    path("assistant/questions/<uuid:pk>/", assistant.AdminSuggestedQuestionsView.as_view()),
     path("language-settings/", platform.AdminLanguageSettingsView.as_view()),
     path("demo/workspaces/", demo.AdminDemoWorkspacesView.as_view()),
     path("demo/workspaces/<uuid:pk>/", demo.AdminDemoWorkspaceDetailView.as_view()),

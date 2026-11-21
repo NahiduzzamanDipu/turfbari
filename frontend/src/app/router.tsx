@@ -1,6 +1,7 @@
 import {
   BadgeCheck,
   BarChart3,
+  Bot,
   Building2,
   CalendarClock,
   CalendarDays,
@@ -82,6 +83,7 @@ const advancePages = () => import("@/features/workspace/AdvanceBookingPages");
 const legalPublic = () => import("@/features/legal/PublicLegalPages");
 const legalAdmin = () => import("@/features/legal/AdminLegalPages");
 const legalWorkspace = () => import("@/features/legal/WorkspaceLegalPages");
+const assistantAdmin = () => import("@/features/admin/AssistantAdminPage");
 
 const ADMIN_NAV: NavItem[] = [
   { to: "/admin", label: "Overview", icon: <LayoutDashboard />, end: true },
@@ -97,6 +99,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/admin/sms-usage", label: "SMS usage", icon: <BarChart3 /> },
   { to: "/admin/finance", label: "Finance", icon: <Landmark /> },
   { to: "/admin/api", label: "API", icon: <PlugZap /> },
+  { to: "/admin/assistant", label: "AI Assistant", icon: <Bot /> },
   { to: "/admin/settings/contact", label: "Contact information", icon: <Settings /> },
   { to: "/admin/settings/language", label: "Language settings", icon: <Languages /> },
   { to: "/admin/homepage-faqs", label: "Homepage FAQs", icon: <HelpCircle /> },
@@ -175,6 +178,7 @@ export const router = createBrowserRouter([
       { path: "sms-wallet", element: page(walletAdmin, "AdminSmsWalletPage") },
       { path: "finance", element: page(walletAdmin, "AdminFinancePage") },
       { path: "api", element: page(configPages, "AdminApiPage") },
+      { path: "assistant", element: page(assistantAdmin, "AdminAssistantPage") },
       { path: "settings/contact", element: page(configPages, "AdminContactSettingsPage") },
       { path: "homepage-faqs", element: page(() => import("@/features/admin/HomepagePages"), "AdminHomepageFaqPage") },
       { path: "onboarding", element: page(() => import("@/features/admin/HomepagePages"), "AdminOnboardingPage") },
