@@ -59,10 +59,17 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
   const data: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const envelope = (data as { error?: ApiErrorBody } | null)?.error;
+    const payload = data as { error?: ApiErrorBody; detail?: unknown; message?: unknown } | null;
+    const envelope = payload?.error;
+    const detail = typeof payload?.detail === "string" ? payload.detail : null;
+    const message = typeof payload?.message === "string" ? payload.message : detail;
     throw new ApiError(
       response.status,
-      envelope ?? { code: "network_error", message: "Something went wrong. Please try again.", fields: null },
+      envelope ?? {
+        code: "api_error",
+        message: message ?? `The request failed (${response.status}). Please retry or contact support if it continues.`,
+        fields: null,
+      },
     );
   }
   return data as T;

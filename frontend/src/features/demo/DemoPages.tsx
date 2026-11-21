@@ -6,14 +6,11 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { formatBDT } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
+import { demoApi } from "./demoApi";
 
 type DemoSlot = { id: string; label: string; start_time: string; end_time: string; category: string; price: string; enabled: boolean; booked: boolean };
 type DemoBooking = { id: string; reference: string; customer_name: string; customer_phone: string; date: string; slot_id: string; start_time: string; end_time: string; price: string; note: string; status: "pending" | "confirmed" | "rejected" | "cancelled"; created_at: string };
-type DemoData = { id: string; name: string; owner_name: string; location: string; expires_at: null; slots: DemoSlot[]; bookings: DemoBooking[]; customers: { id: string; name: string; phone: string }[]; activity: { action: string; summary: string; created_at: string }[]; summary: { today: number; pending: number; confirmed: number; customers: number; enabled_slots: number } };
-
-async function demoApi<T>(path: string, _unused: string, init: RequestInit & { json?: unknown } = {}) {
-  return api<T>(path, init);
-}
+type DemoData = { id: string; name: string; owner_name: string; location: string; slots: DemoSlot[]; bookings: DemoBooking[]; customers: { id: string; name: string; phone: string }[]; activity: { action: string; summary: string; created_at: string }[]; summary: { today: number; pending: number; confirmed: number; customers: number; enabled_slots: number } };
 
 function useDemoData() {
   const [data, setData] = useState<DemoData | null>(null);
@@ -23,17 +20,17 @@ function useDemoData() {
     setLoading(true);
     setError("");
     try {
-      setData(await api<DemoData>("/demo/workspace/"));
+      setData(await demoApi<DemoData>("/workspace/"));
     } catch (cause) {
       if (cause instanceof Error) setError(cause.message);
     } finally { setLoading(false); }
   };
   useEffect(() => { void refresh(); }, []);
-  return { token: "", data, error, loading, refresh, setData };
+  return { data, error, loading, refresh, setData };
 }
 
 export function DemoBookingPage() {
-  const { token, data, error, loading, refresh } = useDemoData();
+  const { data, error, loading, refresh } = useDemoData();
   const [date, setDate] = useState(() => localDatePlus(1));
   const [slotId, setSlotId] = useState("");
   const [name, setName] = useState("");
@@ -46,7 +43,7 @@ export function DemoBookingPage() {
     event.preventDefault();
     setMessage(""); setBusy(true);
     try {
-      const booking = await demoApi<DemoBooking>("/demo/bookings/", token, { method: "POST", json: { date, slot_id: slotId, name, phone } });
+      const booking = await demoApi<DemoBooking>("/bookings/", { method: "POST", json: { date, slot_id: slotId, name, phone } });
       setResult(booking); await refresh();
     } catch (cause) { setMessage(cause instanceof Error ? cause.message : "Could not submit demo booking."); }
     finally { setBusy(false); }
@@ -105,7 +102,7 @@ export function DemoBookingPage() {
 }
 
 export function DemoAccountPage() {
-  const { token, data, error, loading, refresh, setData } = useDemoData();
+  const { data, error, loading, refresh, setData } = useDemoData();
   const [tab, setTab] = useState("Overview");
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -117,7 +114,7 @@ export function DemoAccountPage() {
   const act = async (booking: DemoBooking, action: string) => {
     setBusyId(booking.id); setMessage("");
     try {
-      const updated = await demoApi<DemoBooking>(`/demo/bookings/${booking.id}/`, token, { method: "PATCH", json: { action } });
+      const updated = await demoApi<DemoBooking>(`/bookings/${booking.id}/`, { method: "PATCH", json: { action } });
       setData((current) => current ? { ...current, bookings: current.bookings.map((b) => b.id === updated.id ? updated : b) } : current);
       const pastTense: Record<string, string> = { approve: "approved", reject: "rejected", cancel: "cancelled" };
       setMessage(`${booking.reference} ${pastTense[action] ?? action} in demo. No real notification was sent.`);
@@ -125,12 +122,12 @@ export function DemoAccountPage() {
     finally { setBusyId(""); }
   };
   const updateSlot = async (slot: DemoSlot, changes: { enabled?: boolean; price?: string; start_time?: string; end_time?: string }) => {
-    try { await demoApi(`/demo/slots/${slot.id}/`, token, { method: "PATCH", json: changes }); await refresh(); }
+    try { await demoApi(`/slots/${slot.id}/`, { method: "PATCH", json: changes }); await refresh(); }
     catch (cause) { setMessage(cause instanceof Error ? cause.message : "Could not update the demo slot."); }
   };
   const createSlot = async (event: FormEvent) => {
     event.preventDefault();
-    try { await demoApi("/demo/slots/", token, { method: "POST", json: newSlot }); await refresh(); setMessage("Custom demo slot added. It does not affect real schedules."); }
+    try { await demoApi("/slots/", { method: "POST", json: newSlot }); await refresh(); setMessage("Custom demo slot added. It does not affect real schedules."); }
     catch (cause) { setMessage(cause instanceof Error ? cause.message : "Could not add demo slot."); }
   };
   const tabs = ["Overview", "Bookings", "Slots & pricing", "Customers", "Reports", "SMS preview", "QR preview", "Staff preview", "Turf profile", "Subscription"];
@@ -185,7 +182,7 @@ function BookingList({ bookings, act, busyId }: { bookings: DemoBooking[]; act: 
 }
 function DemoBanner({ ownerLink }: { ownerLink: boolean }) { return <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm text-amber-950"><span><strong>SHARED DEMO</strong> · Data persists and is visible to everyone. Use sample information only; no real booking, payment, subscription, or SMS is made.</span>{ownerLink && <Link to="/demo-account" className="inline-flex items-center gap-1 font-semibold underline underline-offset-2">Owner dashboard <ArrowRight className="size-4" /></Link>}</div>; }
 function PageLoading() { return <div className="mx-auto flex min-h-64 max-w-5xl items-center justify-center px-4" role="status"><span className="size-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary" /><span className="sr-only">Loading demo</span></div>; }
-function DemoError({ message, retry }: { message: string; retry: () => void }) { return <main className="mx-auto max-w-2xl px-4 py-16"><div className="rounded-2xl border bg-card p-6 text-center"><p role="alert" className="text-sm text-destructive">{message}</p><div className="mt-4 flex justify-center gap-2"><Button variant="outline" onClick={retry}><RefreshCw /> Retry</Button><Button asChild><Link to="/register-turf">Create an account instead</Link></Button></div></div></main>; }
+function DemoError({ message, retry }: { message: string; retry: () => void }) { useEffect(() => { console.error("TurfBari public demo failed to load:", message); }, [message]); return <main className="mx-auto max-w-2xl px-4 py-16"><div className="rounded-2xl border bg-card p-6 text-center"><h1 className="text-xl font-bold">Demo temporarily unavailable</h1><p role="alert" className="mt-2 text-sm text-muted-foreground">{message}</p><Button className="mt-5" variant="outline" onClick={retry}><RefreshCw /> Retry demo</Button></div></main>; }
 function EmptyState({ text }: { text: string }) { return <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{text}</div>; }
 function Summary({ label, value }: { label: string; value: string | number }) { return <div><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-semibold">{value}</dd></div>; }
 function PreviewCard({ icon, title, text, action }: { icon: ReactNode; title: string; text: string; action?: ReactNode }) { return <div className="mx-auto max-w-2xl rounded-xl border bg-card p-6 sm:p-8"><span className="inline-flex rounded-xl bg-accent p-3 text-accent-foreground">{icon}</span><h2 className="mt-4 text-xl font-bold">{title}</h2><p className="mt-2 leading-relaxed text-muted-foreground">{text}</p>{action && <div className="mt-5">{action}</div>}</div>; }

@@ -99,7 +99,6 @@ class DemoWorkspaceView(APIView):
                 "name": workspace.name,
                 "owner_name": workspace.owner_name,
                 "location": "Demo Location, Bangladesh",
-                "expires_at": None,
                 "slots": [serialize_slot(slot) for slot in slots],
                 "bookings": [serialize_booking(booking) for booking in bookings],
                 "customers": [{"id": str(c.pk), "name": c.name, "phone": c.phone} for c in customers],

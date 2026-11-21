@@ -42,6 +42,12 @@ describe("api()", () => {
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject({ status: 400, code: "validation_error", fields: { phone: ["Bad"] } });
   });
+
+  it("shows a readable message for non-envelope API errors", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse(404, { detail: "Demo workspace not found." }));
+    const error = await api("/public/demo/workspace/").catch((e: unknown) => e);
+    expect(error).toMatchObject({ status: 404, message: "Demo workspace not found." });
+  });
 });
 
 describe("formatBDT", () => {
