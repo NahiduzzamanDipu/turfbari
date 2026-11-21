@@ -48,6 +48,7 @@ workspace_router.register("expenses", ExpenseViewSet, basename="ws-expenses")
 workspace_router.register("photos", setup.PhotoViewSet, basename="ws-photos")
 
 public_urls = [
+    path("language-settings/", platform.PublicLanguageSettingsView.as_view()),
     path("demo/qr.svg", demo.DemoQRCodeView.as_view()),
     path("demo/workspace/", demo.DemoWorkspaceView.as_view()),
     path("demo/bookings/", demo.DemoBookingCreateView.as_view()),
@@ -87,6 +88,7 @@ legal_urls = [
 ]
 
 auth_urls = [
+    path("language/", auth.LanguagePreferenceView.as_view()),
     path("login/", auth.LoginView.as_view()),
     path("logout/", auth.LogoutView.as_view()),
     path("me/", auth.MeView.as_view()),
@@ -104,6 +106,7 @@ auth_urls = [
 ]
 
 admin_urls = [
+    path("language-settings/", platform.AdminLanguageSettingsView.as_view()),
     path("demo/workspaces/", demo.AdminDemoWorkspacesView.as_view()),
     path("demo/workspaces/<uuid:pk>/", demo.AdminDemoWorkspaceDetailView.as_view()),
     path("demo/workspaces/<uuid:pk>/reset/", demo.AdminDemoWorkspaceResetView.as_view()),

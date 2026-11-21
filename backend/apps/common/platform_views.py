@@ -90,6 +90,78 @@ class AdminApiConfigView(APIView):
         )
 
 
+class PublicLanguageSettingsView(APIView):
+    permission_classes = []
+
+    def get(self, request):
+        s = PlatformSettings.load()
+        return Response(
+            {
+                "default_language": s.default_language,
+                "new_account_language": s.new_account_language,
+                "available_languages": ["en", "bn"],
+                "visitors_can_switch": s.visitors_can_switch_language,
+            }
+        )
+
+
+class AdminLanguageSettingsSerializer(serializers.Serializer):
+    default_language = serializers.ChoiceField(choices=("en", "bn"))
+    new_account_language = serializers.ChoiceField(choices=("en", "bn"))
+    visitors_can_switch = serializers.BooleanField()
+    available_languages = serializers.ListField(
+        child=serializers.ChoiceField(choices=("en", "bn")), min_length=1
+    )
+
+    def validate_available_languages(self, value):
+        if set(value) != {"en", "bn"}:
+            raise serializers.ValidationError("Bengali and English must both remain enabled.")
+        return value
+
+
+class AdminLanguageSettingsView(APIView):
+    permission_classes = [IsPlatformAdmin]
+
+    def get(self, request):
+        s = PlatformSettings.load()
+        return Response(
+            {
+                "default_language": s.default_language,
+                "new_account_language": s.new_account_language,
+                "available_languages": ["en", "bn"],
+                "visitors_can_switch": s.visitors_can_switch_language,
+            }
+        )
+
+    def put(self, request):
+        data = AdminLanguageSettingsSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        v = data.validated_data
+        s = PlatformSettings.objects.get_or_create(pk=1)[0]
+        before = {
+            "default_language": s.default_language,
+            "new_account_language": s.new_account_language,
+            "visitors_can_switch": s.visitors_can_switch_language,
+        }
+        s.default_language = v["default_language"]
+        s.new_account_language = v["new_account_language"]
+        s.visitors_can_switch_language = v["visitors_can_switch"]
+        s.save()
+        after = {
+            "default_language": s.default_language,
+            "new_account_language": s.new_account_language,
+            "visitors_can_switch": s.visitors_can_switch_language,
+        }
+        record(
+            "platform.language_settings",
+            "Updated platform language settings",
+            category=Category.PLATFORM,
+            request=request,
+            data={"before": before, "after": after},
+        )
+        return Response({**after, "available_languages": ["en", "bn"]})
+
+
 def contact_payload(s: PlatformSettings) -> dict:
     """Only expose public contact fields that are both enabled and configured."""
     if not s.contact_enabled:

@@ -42,6 +42,11 @@
   --chart-5: oklch(0.55 0.15 300);
 }
 
+html[data-language="bn"] body {
+  font-family: "Hind Siliguri", "Noto Sans Bengali", "Inter", sans-serif;
+  line-height: 1.62;
+}
+
 .dark {
   --background: oklch(0.17 0.02 165);
   --foreground: oklch(0.96 0.01 155);

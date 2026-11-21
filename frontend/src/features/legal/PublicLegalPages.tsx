@@ -1,38 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, FileText, History, Layers, Scale } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, NavLink, useParams, useSearchParams } from "react-router";
-import { type Lang, LangToggle, LegalBody, legalDate, legalTitle } from "@/components/legal/Legal";
+import { type Lang, LegalBody, legalDate, legalTitle } from "@/components/legal/Legal";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, ErrorState } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, api } from "@/lib/api";
 import type { LegalEntry, LegalHistoryItem, LegalVersionBody } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 interface LegalIndex {
   documents: LegalEntry[];
   sectors: { id: string; slug: string; name_en: string; name_bn: string; documents: LegalEntry[] }[];
 }
 
-const LANG_KEY = "turfbari:legal-lang";
-function useLang(): [Lang, (l: Lang) => void] {
-  const [lang, setLang] = useState<Lang>(() => {
-    try {
-      return localStorage.getItem(LANG_KEY) === "en" ? "en" : "bn";
-    } catch {
-      return "bn";
-    }
-  });
-  const set = (l: Lang) => {
-    setLang(l);
-    try {
-      localStorage.setItem(LANG_KEY, l);
-    } catch {
-      /* private mode: just don't remember */
-    }
-  };
-  return [lang, set];
+function useLang(): Lang {
+  return useLanguage().language;
 }
 
 function useLegalIndex() {
@@ -72,7 +57,7 @@ function LegalNav({ lang }: { lang: Lang }) {
   );
 }
 
-function LegalShell({ children, lang, setLang }: { children: React.ReactNode; lang: Lang; setLang: (l: Lang) => void }) {
+function LegalShell({ children, lang }: { children: React.ReactNode; lang: Lang }) {
   return (
     <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 lg:grid-cols-[16rem_1fr]">
       <aside className="order-2 lg:order-1">
@@ -85,7 +70,6 @@ function LegalShell({ children, lang, setLang }: { children: React.ReactNode; la
       </aside>
       <div className="order-1 min-w-0 lg:order-2">
         <div className="mb-4 flex justify-end">
-          <LangToggle lang={lang} onChange={setLang} />
         </div>
         {children}
       </div>
@@ -140,13 +124,13 @@ function VersionHistory({ history, current, base, lang }: { history: LegalHistor
 
 /** /legal — overview of every published platform and sector document. */
 export function LegalIndexPage() {
-  const [lang, setLang] = useLang();
+  const lang = useLang();
   const index = useLegalIndex();
   useEffect(() => {
     document.title = "Legal centre · TurfBari";
   }, []);
   return (
-    <LegalShell lang={lang} setLang={setLang}>
+    <LegalShell lang={lang}>
       <h1 className="font-display text-4xl font-extrabold uppercase">{lang === "bn" ? "শর্তাবলী ও নীতিমালা" : "Terms & policies"}</h1>
       <p className="mt-2 text-muted-foreground">
         {lang === "bn"
@@ -203,7 +187,7 @@ export function LegalDocumentPage() {
   const { slug = "" } = useParams();
   const [params] = useSearchParams();
   const version = params.get("version");
-  const [lang, setLang] = useLang();
+  const lang = useLang();
   const doc = useQuery({
     queryKey: ["public", "legal", slug, version],
     queryFn: () =>
@@ -217,7 +201,7 @@ export function LegalDocumentPage() {
   }, [doc.data]);
   const missing = doc.error instanceof ApiError && doc.error.status === 404;
   return (
-    <LegalShell lang={lang} setLang={setLang}>
+    <LegalShell lang={lang}>
       {doc.isPending && <Skeleton className="h-96" />}
       {missing && (
         <EmptyState icon={<FileText />} title={lang === "bn" ? "এই ডকুমেন্টটি এখনো প্রকাশিত হয়নি" : "This document hasn't been published yet"} />
@@ -248,7 +232,7 @@ export function LegalDocumentPage() {
 /** /legal/sector/:slug — a sector's own terms/rules plus the platform documents they build on. */
 export function SectorLegalPage() {
   const { slug = "" } = useParams();
-  const [lang, setLang] = useLang();
+  const lang = useLang();
   const data = useQuery({
     queryKey: ["public", "legal", "sector", slug],
     queryFn: () =>
@@ -262,7 +246,7 @@ export function SectorLegalPage() {
   const missing = data.error instanceof ApiError && data.error.status === 404;
   const name = data.data ? (lang === "bn" ? data.data.sector.name_bn || data.data.sector.name_en : data.data.sector.name_en) : "";
   return (
-    <LegalShell lang={lang} setLang={setLang}>
+    <LegalShell lang={lang}>
       {data.isPending && <Skeleton className="h-96" />}
       {missing && <EmptyState icon={<FileText />} title={lang === "bn" ? "সেক্টর পাওয়া যায়নি" : "Sector not found"} />}
       {data.isError && !missing && <ErrorState error={data.error} onRetry={() => data.refetch()} />}

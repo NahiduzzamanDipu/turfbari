@@ -3,6 +3,7 @@ import { CheckCircle2, KeyRound, Loader2, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Link, Navigate } from "react-router";
 import { Logo } from "@/components/brand/Logo";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormField, Input } from "@/components/ui/form";
@@ -17,6 +18,7 @@ function AuthShell({ children }: { children: React.ReactNode }) {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(50rem_30rem_at_0%_0%,color-mix(in_oklch,var(--accent)_30%,transparent),transparent),radial-gradient(40rem_30rem_at_100%_100%,color-mix(in_oklch,var(--primary)_25%,transparent),transparent)]"
       />
       <div className="relative w-full max-w-sm">
+        <div className="mb-4 flex justify-end"><LanguageSwitcher compact /></div>
         <Link to="/" className="mb-8 flex justify-center">
           <Logo />
         </Link>

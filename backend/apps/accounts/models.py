@@ -19,6 +19,10 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError("Email is required.")
         email = self.normalize_email(email).lower()
+        if "preferred_language" not in extra:
+            from apps.common.models import PlatformSettings
+
+            extra["preferred_language"] = PlatformSettings.load().new_account_language
         user = self.model(email=email, **extra)
         user.set_password(password)
         user.save(using=self._db)
@@ -41,6 +45,9 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=40, unique=True, null=True, blank=True)
     full_name = models.CharField(max_length=150, blank=True)
     phone = models.CharField(max_length=20, blank=True)
+    preferred_language = models.CharField(
+        max_length=2, choices=(("en", "English"), ("bn", "Bengali")), blank=True, default=""
+    )
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False, help_text="Can open the emergency Django admin.")

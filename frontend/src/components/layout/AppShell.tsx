@@ -9,6 +9,8 @@ import { type LiveState, useLiveSync } from "@/lib/live";
 import type { ManagerPermissions } from "@/lib/types";
 import { SubscriptionBanner } from "@/features/workspace/SubscriptionBanner";
 import { cn } from "@/lib/utils";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useLanguage } from "@/lib/i18n";
 
 export interface NavItem {
   to: string;
@@ -39,6 +41,7 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
   const [open, setOpen] = useState(false);
   const live = useLiveSync(area);
   const data = me.data;
+  const { t } = useLanguage();
   const active = data?.memberships.find((m) => m.turf_id === data.active_turf_id);
   const isOwner = active?.role === "owner";
   const items = nav.filter(
@@ -95,7 +98,7 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
             }
           >
             {item.icon}
-            {item.label}
+            {t(item.label)}
             {item.badge && (live?.[item.badge] ?? 0) > 0 && (
               <span
                 className="ml-auto rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white"
@@ -118,6 +121,7 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
         </a>
       )}
       <div className="border-t pt-3">
+        <div className="mb-2 px-2"><LanguageSwitcher /></div>
         <p className="truncate px-3 text-sm font-medium">{data?.user?.full_name || data?.user?.email}</p>
         <p className="truncate px-3 text-xs text-muted-foreground">{data?.user?.email}</p>
         <NavLink
@@ -130,7 +134,7 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
             )
           }
         >
-          <KeyRound /> My account & password
+          <KeyRound /> {t("My account & password")}
         </NavLink>
         <Button
           variant="ghost"
@@ -139,7 +143,7 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
           onClick={() => logout.mutate()}
           disabled={logout.isPending}
         >
-          <LogOut /> Sign out
+          <LogOut /> {t("Sign out")}
         </Button>
       </div>
     </div>
@@ -150,6 +154,7 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
       <aside className="sticky top-0 hidden h-dvh border-r bg-card/50 lg:block">{sidebar}</aside>
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background/85 px-4 backdrop-blur lg:hidden">
         <Logo className="[&_span]:text-xl" />
+        <LanguageSwitcher compact />
         <Button variant="ghost" size="icon" aria-label="Open menu" onClick={() => setOpen(true)}>
           <Menu />
         </Button>

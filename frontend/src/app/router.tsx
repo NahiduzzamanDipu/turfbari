@@ -17,6 +17,7 @@ import {
   Inbox,
   Landmark,
   LayoutDashboard,
+  Languages,
   Palette,
   Presentation,
   PlugZap,
@@ -97,6 +98,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/admin/finance", label: "Finance", icon: <Landmark /> },
   { to: "/admin/api", label: "API", icon: <PlugZap /> },
   { to: "/admin/settings/contact", label: "Contact information", icon: <Settings /> },
+  { to: "/admin/settings/language", label: "Language settings", icon: <Languages /> },
   { to: "/admin/homepage-faqs", label: "Homepage FAQs", icon: <HelpCircle /> },
   { to: "/admin/onboarding", label: "Onboarding & training", icon: <ClipboardCheck /> },
   { to: "/admin/demo", label: "Demo management", icon: <Presentation /> },
@@ -186,6 +188,7 @@ export const router = createBrowserRouter([
       { path: "health", element: page(platformPages, "AdminHealthPage") },
       { path: "audit", element: page(activityPages, "AdminAuditPage") },
       { path: "account", element: page(accountPage, "AccountPage") },
+      { path: "settings/language", element: page(() => import("@/features/admin/LanguageSettingsPage"), "AdminLanguageSettingsPage") },
     ],
   },
   {

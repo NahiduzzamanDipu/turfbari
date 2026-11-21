@@ -89,6 +89,20 @@ The API runs on **port 8010** (8000 is often taken by other local projects).
 
 `createsuperuser` creates the TurfBari **Super Admin**.
 
+## Language preferences
+
+The application supports English and Bengali. The language selector is shared by the public header,
+sign-in page, legal pages, and owner/manager/admin shells. Visitor choices are kept in browser local
+storage; authenticated preferences are saved on the user record and restored after sign-in. New accounts
+inherit the Admin-configured new-account language. Admins can configure the visitor default and switch
+availability at **Admin → Language settings**. Both languages remain enabled. Dates and currency helpers
+use `en-BD` / `bn-BD` formatting and retain the Asia/Dhaka timezone; calculations remain numeric.
+
+The shared resource contains reviewed translations for common navigation and workflow labels. The global
+preference is currently wired to navigation, homepage FAQs, and legal content; many feature screens and
+SMS/email templates still contain English-only copy and need module-by-module translation and review.
+This is a localization foundation, not a claim that every screen is translated yet.
+
 #### Demo logins (`seed_demo`, development only)
 
 | Role | Email | Password |

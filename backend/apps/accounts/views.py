@@ -52,6 +52,7 @@ def me_payload(request) -> dict:
             "email": user.email,
             "full_name": user.full_name,
             "phone": user.phone,
+            "preferred_language": user.preferred_language,
             "is_platform_admin": user.is_platform_admin,
             "must_change_password": user.must_change_password,
             # Owners/managers must accept updated platform documents before using the workspace.
@@ -70,6 +71,21 @@ def me_payload(request) -> dict:
         "active_turf_id": str(active.turf_id) if active else None,
         "home": home,
     }
+
+
+class LanguagePreferenceSerializer(serializers.Serializer):
+    language = serializers.ChoiceField(choices=("en", "bn"))
+
+
+class LanguagePreferenceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        data = LanguagePreferenceSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        request.user.preferred_language = data.validated_data["language"]
+        request.user.save(update_fields=["preferred_language"])
+        return Response({"language": request.user.preferred_language})
 
 
 class LoginSerializer(serializers.Serializer):

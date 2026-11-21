@@ -5,6 +5,8 @@ import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { useMe } from "@/features/auth/auth";
 import { cn } from "@/lib/utils";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useLanguage } from "@/lib/i18n";
 
 const NAV = [
   { to: "/#contact", label: "Contact" },
@@ -16,6 +18,7 @@ export function PublicLayout() {
   const me = useMe();
   const [open, setOpen] = useState(false);
   const signedIn = me.data?.authenticated;
+  const { t } = useLanguage();
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -36,27 +39,28 @@ export function PublicLayout() {
                   )
                 }
               >
-                {item.label}
+                {t(item.label)}
               </NavLink>
             ))}
           </nav>
           <div className="flex items-center gap-2">
+            <LanguageSwitcher compact />
             {signedIn ? (
               <Button asChild size="sm">
                 <Link to={me.data?.home ?? "/"}>
-                  <LayoutDashboard /> Dashboard
+                  <LayoutDashboard /> {t("Dashboard")}
                 </Link>
               </Button>
             ) : (
               <Button asChild size="sm" variant="outline">
-                <Link to="/login">Sign in</Link>
+                <Link to="/login">{t("Sign in")}</Link>
               </Button>
             )}
             <Button
               variant="ghost"
               size="icon"
               className="md:hidden"
-              aria-label={open ? "Close menu" : "Open menu"}
+              aria-label={t(open ? "Close menu" : "Open menu")}
               aria-expanded={open}
               onClick={() => setOpen((v) => !v)}
             >
@@ -73,7 +77,7 @@ export function PublicLayout() {
                 onClick={() => setOpen(false)}
                 className="block rounded-md px-2 py-3 text-sm font-medium"
               >
-                {item.label}
+                {t(item.label)}
               </Link>
             ))}
           </nav>

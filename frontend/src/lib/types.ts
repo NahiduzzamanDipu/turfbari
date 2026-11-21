@@ -36,6 +36,7 @@ export interface Me {
     email: string;
     full_name: string;
     phone: string;
+    preferred_language?: "en" | "bn" | "";
     is_platform_admin: boolean;
     must_change_password: boolean;
     legal_pending?: boolean;

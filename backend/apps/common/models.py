@@ -57,6 +57,13 @@ class PlatformSettings(models.Model):
     contact_show_address = models.BooleanField(default=True)
     # Booking slots one mobile number may hold per Bangladesh calendar day (across all turfs).
     max_slots_per_customer = models.PositiveSmallIntegerField(default=2)
+    default_language = models.CharField(
+        max_length=2, choices=(("en", "English"), ("bn", "Bengali")), default="en"
+    )
+    new_account_language = models.CharField(
+        max_length=2, choices=(("en", "English"), ("bn", "Bengali")), default="en"
+    )
+    visitors_can_switch_language = models.BooleanField(default=True)
     # SMS wallet recharge by bKash "Send Money" to TurfBari (admin verifies, then credits).
     recharge_enabled = models.BooleanField(default=True)
     recharge_bkash_number = models.CharField(max_length=20, blank=True)

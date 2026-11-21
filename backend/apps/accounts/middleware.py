@@ -63,6 +63,7 @@ class LegalAcceptanceRequiredMiddleware:
 # What a user on a temporary password may still call.
 PASSWORD_CHANGE_ALLOWED = (
     "/api/auth/me/",
+    "/api/auth/language/",
     "/api/auth/csrf/",
     "/api/auth/logout/",
     "/api/auth/change-password/",

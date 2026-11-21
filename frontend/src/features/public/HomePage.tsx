@@ -26,6 +26,7 @@ import { Link } from "react-router";
 import { useState } from "react";
 import type React from "react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/lib/i18n";
 import { YouTubeDialog } from "@/components/content/YouTube";
 import { useMe } from "@/features/auth/auth";
 import { useQuery } from "@tanstack/react-query";
@@ -54,7 +55,7 @@ const STEPS = [
 
 export function HomePage() {
   const [aboutOpen, setAboutOpen] = useState(false);
-  const [faqLanguage, setFaqLanguage] = useState<"en" | "bn">("en");
+  const { language: faqLanguage, t } = useLanguage();
   const me = useMe();
   const contact = useQuery({
     queryKey: ["public", "contact"],
@@ -281,7 +282,7 @@ export function HomePage() {
         </section>
       )}
       {faqs.data?.length ? <section className="mx-auto max-w-4xl px-4 py-14" aria-labelledby="faq-title">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-bold uppercase tracking-wider text-primary">Helpful answers</p><h2 id="faq-title" className="mt-2 font-display text-3xl font-extrabold uppercase">Frequently Asked Questions</h2></div><div className="flex gap-2" role="group" aria-label="FAQ language"><Button size="sm" variant={faqLanguage === "en" ? "default" : "outline"} onClick={() => setFaqLanguage("en")}>English</Button><Button size="sm" variant={faqLanguage === "bn" ? "default" : "outline"} onClick={() => setFaqLanguage("bn")}>বাংলা</Button></div></div>
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-bold uppercase tracking-wider text-primary">{t("Helpful answers")}</p><h2 id="faq-title" className="mt-2 font-display text-3xl font-extrabold uppercase">{t("Frequently Asked Questions")}</h2></div></div>
         <div className="space-y-3">{faqs.data.map((faq) => <details key={faq.id} className="group rounded-xl border bg-card px-5 py-4">
           <summary className="cursor-pointer list-none pr-7 font-semibold marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{faqLanguage === "bn" && faq.question_bn ? faq.question_bn : faq.question_en}<span aria-hidden="true" className="float-right text-primary group-open:rotate-45">＋</span></summary>
           <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{faqLanguage === "bn" && faq.answer_bn ? faq.answer_bn : faq.answer_en}</p>

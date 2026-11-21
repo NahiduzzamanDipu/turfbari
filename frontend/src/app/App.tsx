@@ -4,6 +4,7 @@ import { RouterProvider } from "react-router";
 import { Toaster } from "sonner";
 import { ApiError } from "@/lib/api";
 import { router } from "./router";
+import { LanguageProvider } from "@/lib/i18n";
 
 // The server answers 403 legal_acceptance_required when updated terms must be accepted first:
 // refresh "me" so the route guard sends the user to the acceptance screen.
@@ -39,7 +40,9 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <LanguageProvider>
+        <RouterProvider router={router} />
+      </LanguageProvider>
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
   );
