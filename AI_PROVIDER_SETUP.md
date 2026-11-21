@@ -8,7 +8,7 @@ The assistant requires no AI provider, API key, model account, or paid external 
 2. Enable the assistant, set English/Bengali welcome text and daily limits, then save.
 3. Review published FAQs, active public plans, current SMS pricing, published legal documents and public contact settings. Those are indexed from the site's own data.
 4. Add bilingual help articles as needed. Imported pages/uploads are drafts; review and publish them before visitors can receive those excerpts.
-5. Use **Re-index public knowledge** after publishing changes. The existing system maintenance tick processes pending indexing if no Celery worker is available.
+5. Use **Re-index public knowledge** after publishing changes. The first public chat also builds the index automatically if it is empty. The existing system maintenance tick processes later updates if no Celery worker is available.
 6. Ask test questions in English, Bengali and Banglish on the homepage.
 
 ## How answers work

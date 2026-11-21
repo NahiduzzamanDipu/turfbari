@@ -339,6 +339,22 @@ def retrieve(question: str, limit: int = 4, language: str = "en") -> list[Knowle
         if score >= 0.2:
             ranked.append((score, chunk))
     ranked.sort(key=lambda item: (-item[0], item[1].source.title, item[1].ordinal))
+    if not ranked and terms & {
+        "turfbari",
+        "turf",
+        "platform",
+        "booking",
+        "bookings",
+        "subscription",
+        "sms",
+        "টার্ফবাড়ি",
+        "বুকিং",
+        "সাবস্ক্রিপশন",
+    }:
+        overview = [chunk for chunk in candidates if chunk.source.key == f"homepage:overview:{language}"]
+        if not overview:
+            overview = [chunk for chunk in candidates if chunk.source.key == "homepage:overview:en"]
+        return overview[:1]
     return [chunk for _, chunk in ranked[:limit]]
 
 

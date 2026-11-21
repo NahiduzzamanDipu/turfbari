@@ -26,6 +26,8 @@ The public homepage assistant is a local, bilingual knowledge search feature. It
 
 Published FAQs, public active plans, current SMS rate, current published legal versions, admin-published help articles and a short product overview are indexed into the app database. Updates enqueue local re-indexing; the existing system tick handles pending work if Celery is unavailable. Admins can re-index on demand. Admin website imports are restricted to the configured site hostname; redirects, private addresses, unsupported content types and files over 1 MB are rejected. Text/Markdown uploads and imported pages remain drafts until reviewed and published.
 
+If the local index is empty after a fresh deployment, the first public chat request builds it from approved database sources before searching.
+
 ## Endpoints
 
 Public:

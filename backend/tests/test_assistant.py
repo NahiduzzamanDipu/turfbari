@@ -25,6 +25,18 @@ def start_conversation(language="en"):
 
 
 def add_source(key, title, text, language="en", url="/help"):
+    overview = KnowledgeSource.objects.create(
+        key="homepage:overview:en",
+        title="TURFBARI overview",
+        language="en",
+        status=KnowledgeSource.Status.INDEXED,
+    )
+    KnowledgeChunk.objects.create(
+        source=overview,
+        ordinal=0,
+        text="TURFBARI platform overview information.",
+        content_hash="overview",
+    )
     source = KnowledgeSource.objects.create(
         key=key,
         title=title,

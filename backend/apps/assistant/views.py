@@ -27,7 +27,7 @@ from rest_framework.views import APIView
 from apps.audit.services import Category, record
 from apps.common.permissions import IsPlatformAdmin
 
-from .knowledge import live_facts, local_answer, retrieve
+from .knowledge import live_facts, local_answer, retrieve, sync_knowledge
 from .models import (
     AssistantFeedback,
     AssistantSettings,
@@ -238,6 +238,12 @@ class PublicConversationView(APIView):
                 )
         safe_message = user_message.content
         try:
+            if not KnowledgeSource.objects.filter(
+                key="homepage:overview:en",
+                is_enabled=True,
+                status=KnowledgeSource.Status.INDEXED,
+            ).exists():
+                sync_knowledge()
             previous_questions = list(
                 conversation.messages.filter(role=ConversationMessage.Role.USER)
                 .exclude(pk=user_message.pk)
