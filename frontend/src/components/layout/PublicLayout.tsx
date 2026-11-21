@@ -26,7 +26,7 @@ export function PublicLayout() {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-lg">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-[var(--page-gutter)] sm:h-16 sm:gap-4 sm:px-4">
           <Link to="/" aria-label="TurfBari home">
             <Logo />
           </Link>
@@ -46,7 +46,7 @@ export function PublicLayout() {
               </NavLink>
             ))}
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <LanguageSwitcher compact />
             <span className="hidden sm:inline-flex"><InstallAppButton /></span>
             {signedIn ? (
@@ -73,13 +73,13 @@ export function PublicLayout() {
           </div>
         </div>
         {open && (
-          <nav className="grid gap-1 border-t px-4 py-2 md:hidden" aria-label="Mobile">
+          <nav className="grid gap-0.5 border-t px-[var(--page-gutter)] py-1.5 md:hidden" aria-label="Mobile">
             {NAV.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
                 onClick={() => setOpen(false)}
-                className="flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-medium"
+                className="flex min-h-10 items-center rounded-md px-2.5 py-1.5 text-xs font-medium"
               >
                 {t(item.label)}
               </Link>
@@ -93,7 +93,7 @@ export function PublicLayout() {
       </div>
       {location.pathname === "/" && <AssistantWidget />}
       <footer className="border-t">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-[var(--page-gutter)] py-4 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-4 sm:py-8 sm:text-sm">
           <Logo className="[&_span]:text-lg" />
           <p>Turf management and booking pages for football turfs in Bangladesh.</p>
           <p>

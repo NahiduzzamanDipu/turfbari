@@ -263,16 +263,16 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
   };
 
   const header = (
-    <CardHeader>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <CardTitle>
+    <CardHeader className="gap-2 sm:gap-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-1.5">
+        <CardTitle className="text-lg sm:text-base">
           {t("Book a slot")} <span className="font-normal text-muted-foreground">· বুক করুন</span>
         </CardTitle>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
         {turf.legal.length > 0 && (
           <Link
             to={turf.legal.find((d) => d.scope === "sector")?.url ?? "/legal/terms"}
-            className="rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+            className="inline-flex min-h-10 items-center rounded-full border px-2.5 py-1 text-[10px] font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground sm:min-h-0 sm:px-3 sm:py-1.5 sm:text-xs"
           >
             {t("Terms & Conditions")}
           </Link>
@@ -281,7 +281,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
           <button
             type="button"
             onClick={() => setShowVideo(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition hover:bg-secondary"
+            className="inline-flex min-h-10 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition hover:bg-secondary sm:min-h-0 sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-sm"
           >
             <YouTubeIcon className="h-4 w-auto" />
             <span lang="bn">বুকিং করার নিয়ম</span>
@@ -343,7 +343,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
     <Card>
       {header}
       {video}
-      <CardContent className={cn("flex flex-col gap-4", chosen.length > 0 && payment.accepts_online && "pb-28 sm:pb-6")}>
+      <CardContent className={cn("flex flex-col gap-3 sm:gap-4", chosen.length > 0 && payment.accepts_online && "pb-24 sm:pb-6")}>
         {submitted && !done && (
           <p role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
             <span>
@@ -374,7 +374,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
                 aria-checked={f.id === fieldId}
                 onClick={() => setFieldId(f.id)}
                 className={cn(
-                  "rounded-full border px-3 py-1.5 text-sm font-medium",
+                  "min-h-10 rounded-full border px-2.5 py-1 text-xs font-medium sm:px-3 sm:py-1.5 sm:text-sm",
                   f.id === fieldId ? "border-primary bg-primary text-primary-foreground" : "hover:bg-secondary",
                 )}
               >
@@ -392,7 +392,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
               aria-checked={d === day}
               onClick={() => setDay(d)}
               className={cn(
-                "shrink-0 rounded-lg border px-3 py-2 text-center text-sm",
+                "min-h-[40px] shrink-0 rounded-md border px-2 py-1 text-center text-[10px] sm:rounded-lg sm:px-3 sm:py-2 sm:text-sm",
                 d === day ? "border-primary bg-primary text-primary-foreground" : "hover:bg-secondary",
               )}
             >
@@ -441,7 +441,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
               <span className="flex items-center gap-1"><i className="size-2.5 rounded-full bg-amber-400" /> {t("Someone is booking")}</span>
               <span className="flex items-center gap-1"><i className="size-2.5 rounded-full bg-sky-400" /> {t("Requested / booked")}</span>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-1 min-[381px]:grid-cols-3 sm:grid-cols-3 sm:gap-2 md:grid-cols-4">
               {list.map((s, i) => {
                 const state: PublicSlotState = s.state ?? (s.available ? "free" : "booked");
                 const selected = range !== null && i >= range.from && i <= range.to;
@@ -454,7 +454,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
                     aria-pressed={selected}
                     onClick={() => pick(i)}
                     className={cn(
-                      "rounded-lg border px-2 py-2 text-left text-sm transition",
+                      "min-h-[44px] rounded-md border px-1.5 py-1 text-left text-xs leading-tight transition sm:rounded-lg sm:px-2 sm:py-2 sm:text-sm",
                       state === "free" && "hover:border-primary",
                       state === "held" && "cursor-not-allowed border-amber-400 bg-amber-50 text-amber-900 dark:bg-amber-500/10 dark:text-amber-200",
                       (state === "requested" || state === "booked") &&
@@ -469,11 +469,11 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
                       {selected && hold.isPending && <Loader2 className="size-3 animate-spin" aria-label="Reserving" />}
                     </span>
                     {selected ? (
-                      <span className="text-xs opacity-90">Held for you</span>
+                      <span className="text-[10px] opacity-90 sm:text-xs">Held for you</span>
                     ) : STATE_LABEL[state] ? (
-                      <span className="text-xs">{t(STATE_LABEL[state]!)}</span>
+                      <span className="text-[10px] leading-tight sm:text-xs">{t(STATE_LABEL[state]!)}</span>
                     ) : (
-                      s.price && <span className="tabular text-xs opacity-80">{formatMoney(s.price)}</span>
+                      s.price && <span className="tabular text-[10px] opacity-80 sm:text-xs">{formatMoney(s.price)}</span>
                     )}
                   </button>
                 );
@@ -501,7 +501,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
         {chosen.length > 0 && payment.accepts_online && (
           <form
             id="public-booking-form"
-            className="mt-2 flex flex-col gap-3 border-t pt-4"
+            className="mt-1 flex flex-col gap-2.5 border-t pt-3 sm:mt-2 sm:gap-3 sm:pt-4"
             onSubmit={(e) => {
               e.preventDefault();
               submit.mutate();
@@ -639,14 +639,14 @@ function BkashBox({ number, total, advance, holdMinutes }: { number: string; tot
   const [copied, setCopied] = useState(false);
   const hours = holdMinutes >= 60 ? `${Math.round(holdMinutes / 6) / 10} hour${holdMinutes === 60 ? "" : "s"}` : `${holdMinutes} minutes`;
   return (
-    <section aria-labelledby="bkash-title" className="rounded-xl border-2 border-[#e2136e]/30 bg-[#e2136e]/5 p-4">
+    <section aria-labelledby="bkash-title" className="rounded-lg border border-[#e2136e]/30 bg-[#e2136e]/5 p-2.5 sm:rounded-xl sm:border-2 sm:p-4">
       <h3 id="bkash-title" className="flex items-center gap-2 font-semibold">
         <span className="rounded bg-[#e2136e] px-1.5 py-0.5 text-xs font-bold text-white">bKash</span>
         Pay the advance to book
       </h3>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:mt-3 sm:gap-2">
         <span className="text-sm text-muted-foreground">Send Money to</span>
-        <span className="tabular font-mono text-xl font-bold tracking-wide">{number}</span>
+        <span className="tabular font-mono text-base font-bold tracking-wide sm:text-xl">{number}</span>
         <Button
           type="button"
           size="sm"
@@ -664,7 +664,7 @@ function BkashBox({ number, total, advance, holdMinutes }: { number: string; tot
           <Copy /> {copied ? "Copied" : "Copy"}
         </Button>
       </div>
-      <dl className="mt-3 grid grid-cols-3 gap-2 text-sm">
+      <dl className="mt-2 grid grid-cols-3 gap-1.5 text-xs sm:mt-3 sm:gap-2 sm:text-sm">
         {total > 0 && (
           <div>
             <dt className="text-muted-foreground">Slot price</dt>

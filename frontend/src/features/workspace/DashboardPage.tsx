@@ -55,7 +55,7 @@ export function DashboardPage() {
         </Link>
       )}
       <DashboardSmsLine />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
         <StatCard label="Today's bookings" icon={<CalendarDays />} value={d.today.bookings} hint={`${d.today.hours_booked} hours booked`} />
         <StatCard label="Collected today" icon={<Coins />} value={formatBDT(d.today.revenue)} />
         <StatCard
@@ -67,7 +67,7 @@ export function DashboardPage() {
         <StatCard label="Dues outstanding" icon={<Users />} value={formatBDT(d.outstanding_due)} hint={`${d.customers} customers`} />
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_24rem]">
+      <div className="mt-4 grid gap-3 sm:mt-6 sm:gap-6 xl:grid-cols-[1fr_24rem]">
         <Card>
           <CardHeader>
             <CardTitle>Collections, last 14 days</CardTitle>

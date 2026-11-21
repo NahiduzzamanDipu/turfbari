@@ -198,7 +198,7 @@ export function AppShell({ nav, area }: { nav: NavItem[]; area: "admin" | "works
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
       <aside className="sticky top-0 hidden h-dvh border-r bg-card/50 lg:block">{sidebar}</aside>
-      <header className="sticky top-0 z-30 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-end justify-between border-b bg-background px-4 pt-[env(safe-area-inset-top)] lg:hidden">
+      <header className="sticky top-0 z-30 flex h-[calc(3rem+env(safe-area-inset-top))] items-end justify-between border-b bg-background px-[var(--page-gutter)] pt-[env(safe-area-inset-top)] lg:hidden">
         <Logo className="[&_span]:text-xl" />
         <div className="flex items-center gap-1">
         <LanguageSwitcher compact />
@@ -266,12 +266,12 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="mb-4 flex flex-col gap-2.5 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-3 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{title}</h1>
-        {description && <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">{description}</p>}
+        {description && <p className="mt-0.5 max-w-3xl text-xs leading-relaxed text-muted-foreground sm:mt-1 sm:text-sm">{description}</p>}
       </div>
-      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap gap-1.5 sm:gap-2">{actions}</div>}
     </div>
   );
 }
@@ -288,13 +288,13 @@ export function StatCard({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="h-full rounded-xl border bg-card p-[var(--card-padding)] shadow-sm">
-      <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground [&_svg]:size-4">
+    <div className="h-full min-w-0 rounded-lg border bg-card p-[var(--card-padding)] shadow-sm sm:rounded-xl">
+      <div className="flex items-center justify-between gap-1.5 text-xs text-muted-foreground [&_svg]:size-3.5 sm:gap-2 sm:text-sm sm:[&_svg]:size-4">
         <span>{label}</span>
         {icon && <span aria-hidden="true">{icon}</span>}
       </div>
-      <p className="tabular mt-1.5 text-2xl font-semibold leading-none">{value}</p>
-      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+      <p className="tabular mt-1 text-lg font-semibold leading-tight sm:mt-1.5 sm:text-2xl">{value}</p>
+      {hint && <p className="mt-0.5 text-[10px] text-muted-foreground sm:mt-1 sm:text-xs">{hint}</p>}
     </div>
   );
 }

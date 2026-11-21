@@ -68,7 +68,7 @@ export function TurfDetailPage() {
 
   return (
     <div {...themeProps(t.theme)} className="min-h-full">
-    <div className="mx-auto max-w-6xl px-4 py-6">
+      <div className="mx-auto max-w-6xl px-[var(--page-gutter)] py-4 sm:px-4 sm:py-6">
       <div className="relative overflow-hidden rounded-2xl">
         {t.photos[0] ? (
           <img src={t.photos[0].url} alt="" className="h-56 w-full object-cover sm:h-80" />
@@ -88,24 +88,24 @@ export function TurfDetailPage() {
           </a>
         )}
         </div>
-        <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-8">
-          <div className="mb-2 flex flex-wrap gap-1.5">
+        <div className="absolute inset-x-0 bottom-0 p-3 text-white sm:p-8">
+          <div className="mb-1.5 flex flex-wrap gap-1 sm:mb-2 sm:gap-1.5">
             {t.is_featured && <Badge tone="lime">Featured</Badge>}
             <Badge className="bg-white/20 text-white">{TURF_TYPE_LABEL[t.turf_type]}</Badge>
             <Badge className="bg-white/20 text-white">{SURFACE_LABEL[t.surface]}</Badge>
           </div>
-          <div className="flex items-end gap-4">
+          <div className="flex min-w-0 items-end gap-2 sm:gap-4">
             {t.profile_image_url && (
               <img
                 src={t.profile_image_url}
                 alt={`${t.name} logo`}
-                className="size-16 shrink-0 rounded-full border-4 border-white/90 object-cover shadow-lg sm:size-24"
+                className="size-12 shrink-0 rounded-full border-2 border-white/90 object-cover shadow-lg sm:size-24 sm:border-4"
               />
             )}
-            <h1 className="font-display text-4xl font-extrabold uppercase leading-none sm:text-5xl">{t.name}</h1>
+            <h1 className="min-w-0 font-display text-xl font-extrabold uppercase leading-tight sm:text-5xl">{t.name}</h1>
           </div>
-          <p className="mt-2 flex items-center gap-1 text-sm opacity-90">
-            <MapPin className="size-4" /> {t.address} · {location}
+          <p className="mt-1 flex min-w-0 items-start gap-1 text-xs opacity-90 sm:mt-2 sm:items-center sm:text-sm">
+            <MapPin className="mt-0.5 size-3.5 shrink-0 sm:mt-0 sm:size-4" /> <span>{t.address} · {location}</span>
           </p>
         </div>
       </div>
@@ -116,171 +116,98 @@ export function TurfDetailPage() {
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_22rem]">
-        <div className="flex flex-col gap-6">
-          {t.public_booking_enabled ? (
-            <BookingPanel turf={t} />
-          ) : (
+      <div className="mt-3 space-y-3 sm:mt-6 sm:space-y-6">
+        <Card>
+          <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:gap-4 sm:text-sm">
+            <span className="font-semibold">Contact</span>
+            {t.public_phone && <a href={`tel:${t.public_phone}`} className="flex items-center gap-1.5 hover:text-primary"><Phone className="size-3.5" /> {t.public_phone}</a>}
+            {t.public_email && <a href={`mailto:${t.public_email}`} className="flex items-center gap-1.5 break-all hover:text-primary"><Mail className="size-3.5 shrink-0" /> {t.public_email}</a>}
+            {t.map_link && <a href={t.map_link} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-primary"><MapPin className="size-3.5" /> Open in Maps</a>}
+            {t.payment_methods_text && <span className="text-muted-foreground">Pay by: {t.payment_methods_text}</span>}
+            <Button variant="outline" size="sm" className="ml-auto" onClick={() => setShowQR(true)}><QrCode /> Show QR</Button>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
+          {(t.description || t.short_description) && (
+            <Card className="sm:col-span-2 xl:col-span-3">
+              <CardHeader><CardTitle>About</CardTitle></CardHeader>
+              <CardContent className="pt-2 text-sm leading-relaxed text-muted-foreground"><p className="whitespace-pre-line">{t.description || t.short_description}</p></CardContent>
+            </Card>
+          )}
+
+          {t.amenities.length > 0 && (
             <Card>
-              <CardContent>
-                <p className="font-semibold">Online requests are off for this turf.</p>
-                <p className="text-sm text-muted-foreground">Call {t.public_phone || "the turf"} to book.</p>
+              <CardHeader><CardTitle>Amenities</CardTitle></CardHeader>
+              <CardContent className="flex flex-wrap gap-1.5 pt-2">
+                {t.amenities.map((a) => <span key={a} className="rounded-full border bg-card px-2 py-1 text-xs">{a}</span>)}
               </CardContent>
             </Card>
           )}
 
-          {(t.description || t.short_description) && (
-            <section>
-              <h2 className="mb-2 text-lg font-semibold">About</h2>
-              <p className="whitespace-pre-line text-muted-foreground">{t.description || t.short_description}</p>
-            </section>
-          )}
-
-          {t.amenities.length > 0 && (
-            <section>
-              <h2 className="mb-2 text-lg font-semibold">Amenities</h2>
-              <ul className="flex flex-wrap gap-2">
-                {t.amenities.map((a) => (
-                  <li key={a} className="rounded-full border bg-card px-3 py-1 text-sm">
-                    {a}
-                  </li>
+          {t.fields_list.length > 0 && (
+            <Card>
+              <CardHeader><CardTitle>Fields</CardTitle></CardHeader>
+              <CardContent className="grid gap-1.5 pt-2">
+                {t.fields_list.map((f) => (
+                  <div key={f.id} className="rounded-md border px-2 py-1.5">
+                    <p className="text-sm font-medium">{f.name}</p>
+                    <p className="text-xs text-muted-foreground">{[f.size, SURFACE_LABEL[f.surface], f.is_indoor ? "Indoor" : "Outdoor", f.has_lighting && "Floodlit"].filter(Boolean).join(" · ")}</p>
+                  </div>
                 ))}
-              </ul>
-            </section>
+              </CardContent>
+            </Card>
           )}
-
-          <section>
-            <h2 className="mb-2 text-lg font-semibold">Fields</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {t.fields_list.map((f) => (
-                <div key={f.id} className="glass rounded-lg p-3">
-                  <p className="font-medium">{f.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {[f.size, SURFACE_LABEL[f.surface], f.is_indoor ? "Indoor" : "Outdoor", f.has_lighting && "Floodlit"]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {(t.booking_instructions || t.cancellation_policy) && (
-            <section className="grid gap-4 sm:grid-cols-2">
-              {t.booking_instructions && (
-                <div>
-                  <h2 className="mb-1 font-semibold">How booking works</h2>
-                  <p className="whitespace-pre-line text-sm text-muted-foreground">{t.booking_instructions}</p>
-                </div>
-              )}
-              {t.cancellation_policy && (
-                <div>
-                  <h2 className="mb-1 font-semibold">Cancellation policy</h2>
-                  <p className="whitespace-pre-line text-sm text-muted-foreground">{t.cancellation_policy}</p>
-                </div>
-              )}
-            </section>
-          )}
-        </div>
-
-        <aside className="flex flex-col gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Contact</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2 text-sm">
-              {t.public_phone && (
-                <a href={`tel:${t.public_phone}`} className="flex items-center gap-2 hover:text-primary">
-                  <Phone className="size-4" /> {t.public_phone}
-                </a>
-              )}
-              {t.public_email && (
-                <a href={`mailto:${t.public_email}`} className="flex items-center gap-2 break-all hover:text-primary">
-                  <Mail className="size-4 shrink-0" /> {t.public_email}
-                </a>
-              )}
-              {t.map_link && (
-                <a href={t.map_link} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-primary">
-                  <MapPin className="size-4" /> Open in Maps
-                </a>
-              )}
-              {t.payment_methods_text && <p className="text-muted-foreground">Pay by: {t.payment_methods_text}</p>}
-              <Button variant="outline" size="sm" className="mt-2" onClick={() => setShowQR(true)}>
-                <QrCode /> Show QR code
-              </Button>
-            </CardContent>
-          </Card>
 
           {t.price_categories.length > 0 && (
             <Card>
-              <CardHeader>
-                <CardTitle>Prices per hour</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-2 text-sm">
+              <CardHeader><CardTitle>Prices per hour</CardTitle></CardHeader>
+              <CardContent className="grid grid-cols-2 gap-1.5 pt-2 text-sm">
                 {t.price_categories.map((c) => (
-                  <div key={c.key} className="rounded-lg border p-3">
-                    <p className="font-semibold">
-                      {c.label} <span className="font-normal text-muted-foreground">{CATEGORY_BN[c.key]}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {fmtClock(`${c.start}:00`)}–{fmtClock(`${c.end}:00`)}
-                    </p>
-                    <p className="tabular mt-1 text-lg font-bold">{formatBDT(c.hourly_rate)}</p>
+                  <div key={c.key} className="rounded-md border px-2 py-1.5">
+                    <p className="text-xs font-semibold">{c.label} <span className="font-normal text-muted-foreground">{CATEGORY_BN[c.key]}</span></p>
+                    <p className="text-[10px] text-muted-foreground">{fmtClock(`${c.start}:00`)}–{fmtClock(`${c.end}:00`)}</p>
+                    <p className="tabular text-sm font-bold">{formatBDT(c.hourly_rate)}</p>
                   </div>
                 ))}
-                {t.pricing.some((p) => p.date) && (
-                  <p className="col-span-2 text-xs text-muted-foreground">Special prices apply on some dates; the slot list shows the exact price.</p>
-                )}
+                {t.pricing.some((p) => p.date) && <p className="col-span-2 text-xs text-muted-foreground">Special prices apply on some dates; the slot list shows the exact price.</p>}
               </CardContent>
             </Card>
           )}
 
           {t.price_categories.length === 0 && (t.base_rates.length > 0 || t.pricing.length > 0) && (
             <Card>
-              <CardHeader>
-                <CardTitle>Prices per hour</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2 text-sm">
-                {t.base_rates.map((r) => (
-                  <div key={r.field} className="flex justify-between">
-                    <span>{r.field} (standard)</span>
-                    <span className="tabular font-semibold">{formatBDT(r.hourly_rate)}</span>
-                  </div>
-                ))}
-                {t.pricing.map((p) => (
-                  <div key={`${p.label}-${p.start_time}-${p.field_name}`} className="flex justify-between gap-2 border-t pt-2">
-                    <span>
-                      {p.label}
-                      {p.field_name && ` · ${p.field_name}`}
-                      <span className="block text-xs text-muted-foreground">
-                        {p.date ?? weekdayLabel(p.weekdays)}, {fmtClock(p.start_time)}–{fmtClock(p.end_time)}
-                      </span>
-                    </span>
-                    <span className="tabular font-semibold">{formatBDT(p.hourly_rate)}</span>
-                  </div>
-                ))}
+              <CardHeader><CardTitle>Prices per hour</CardTitle></CardHeader>
+              <CardContent className="flex flex-col gap-1.5 pt-2 text-xs">
+                {t.base_rates.map((r) => <div key={r.field} className="flex justify-between gap-2"><span>{r.field} (standard)</span><span className="tabular font-semibold">{formatBDT(r.hourly_rate)}</span></div>)}
+                {t.pricing.map((p) => <div key={`${p.label}-${p.start_time}-${p.field_name}`} className="flex justify-between gap-2 border-t pt-1.5"><span className="min-w-0">{p.label}{p.field_name && ` · ${p.field_name}`}<span className="block text-[10px] text-muted-foreground">{p.date ?? weekdayLabel(p.weekdays)}, {fmtClock(p.start_time)}–{fmtClock(p.end_time)}</span></span><span className="tabular shrink-0 font-semibold">{formatBDT(p.hourly_rate)}</span></div>)}
               </CardContent>
             </Card>
           )}
 
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="size-4" /> Opening hours
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-                {t.hours.map((h) => (
-                  <div key={h.weekday} className="contents">
-                    <dt className="text-muted-foreground">{WEEKDAYS[h.weekday]}</dt>
-                    <dd className="text-right">{h.is_closed ? "Closed" : `${fmtClock(h.opens_at)} – ${fmtClock(h.closes_at)}`}</dd>
-                  </div>
-                ))}
+            <CardHeader><CardTitle className="flex items-center gap-1.5"><Clock className="size-3.5" /> Opening hours</CardTitle></CardHeader>
+            <CardContent className="pt-2">
+              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+                {t.hours.map((h) => <div key={h.weekday} className="contents"><dt className="text-muted-foreground">{WEEKDAYS[h.weekday]}</dt><dd className="text-right">{h.is_closed ? "Closed" : `${fmtClock(h.opens_at)} – ${fmtClock(h.closes_at)}`}</dd></div>)}
               </dl>
             </CardContent>
           </Card>
-        </aside>
+
+          {(t.booking_instructions || t.cancellation_policy) && (
+            <Card className="sm:col-span-2 xl:col-span-3">
+              <CardHeader><CardTitle>Booking information</CardTitle></CardHeader>
+              <CardContent className="grid gap-2 pt-2 sm:grid-cols-2 sm:gap-3">
+                {t.booking_instructions && <div><h3 className="mb-1 text-sm font-semibold">How booking works</h3><p className="whitespace-pre-line text-xs leading-relaxed text-muted-foreground">{t.booking_instructions}</p></div>}
+                {t.cancellation_policy && <div><h3 className="mb-1 text-sm font-semibold">Cancellation policy</h3><p className="whitespace-pre-line text-xs leading-relaxed text-muted-foreground">{t.cancellation_policy}</p></div>}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {t.public_booking_enabled ? <BookingPanel turf={t} /> : (
+          <Card><CardContent className="py-3"><p className="text-sm font-semibold">Online requests are off for this turf.</p><p className="text-xs text-muted-foreground">Call {t.public_phone || "the turf"} to book.</p></CardContent></Card>
+        )}
       </div>
 
       <Dialog open={showQR} onClose={() => setShowQR(false)} title={`${t.name} QR code`} description="Scan to open this booking page.">
