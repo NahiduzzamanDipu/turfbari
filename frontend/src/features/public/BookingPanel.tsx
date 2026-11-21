@@ -23,6 +23,7 @@ import {
 } from "@/lib/visitor";
 import type { PublicBooking, SlotHold, PublicSlotState, TurfDetail, PublicAvailability } from "@/lib/types";
 import { cn, formatBDT } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 const STATE_LABEL: Partial<Record<PublicSlotState, string>> = {
   held: "Someone is booking",
@@ -44,8 +45,8 @@ function useCountdown(until: string | null | undefined) {
 }
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-const clock = (iso: string) =>
-  new Intl.DateTimeFormat("en-GB", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Asia/Dhaka" }).format(
+const clock = (iso: string, language: "en" | "bn") =>
+  new Intl.DateTimeFormat(language === "bn" ? "bn-BD" : "en-BD", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Asia/Dhaka" }).format(
     new Date(iso),
   );
 
@@ -54,6 +55,7 @@ const clock = (iso: string) =>
  * everyone else as "Someone is booking". Statuses refresh every few seconds.
  */
 export function BookingPanel({ turf }: { turf: TurfDetail }) {
+  const { t, language, formatDate, formatMoney } = useLanguage();
   const youtube = usePublicYoutubeVideo("booking");
   const youtubeVideoId = youtube.data?.enabled ? youtube.data.video_id : null;
   const qc = useQueryClient();
@@ -264,7 +266,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
     <CardHeader>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <CardTitle>
-          Book a slot <span className="font-normal text-muted-foreground">· বুক করুন</span>
+          {t("Book a slot")} <span className="font-normal text-muted-foreground">· বুক করুন</span>
         </CardTitle>
         <div className="flex flex-wrap items-center gap-2">
         {turf.legal.length > 0 && (
@@ -272,7 +274,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
             to={turf.legal.find((d) => d.scope === "sector")?.url ?? "/legal/terms"}
             className="rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
           >
-            Terms &amp; Conditions
+            {t("Terms & Conditions")}
           </Link>
         )}
         {youtubeVideoId && (
@@ -291,7 +293,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
   );
   const video =
     showVideo && youtubeVideoId ? (
-      <YouTubeDialog videoId={youtubeVideoId} title={youtube.data?.title || "How to book"} onClose={() => setShowVideo(false)} />
+      <YouTubeDialog videoId={youtubeVideoId} title={youtube.data?.title || t("How to book")} onClose={() => setShowVideo(false)} />
     ) : null;
 
   if (done) {
@@ -310,11 +312,11 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
             )}
             <p className="text-sm text-muted-foreground">
               {done.field}, {fmtDay(done.start)} · {fmtRange(done.start, done.end)}
-              {done.total && <> · {formatBDT(done.total)}</>}
+              {done.total && <> · {formatMoney(done.total)}</>}
             </p>
             {done.payment && (
               <p className="text-sm text-muted-foreground">
-                bKash {formatBDT(done.payment.amount)} · TrxID <span className="font-mono">{done.payment.trx_id}</span>
+                bKash {formatMoney(done.payment.amount)} · TrxID <span className="font-mono">{done.payment.trx_id}</span>
               </p>
             )}
             <p className="text-sm">
@@ -393,7 +395,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
                 d === day ? "border-primary bg-primary text-primary-foreground" : "hover:bg-secondary",
               )}
             >
-              {fmtDay(`${d}T12:00:00+06:00`)}
+              {formatDate(`${d}T12:00:00+06:00`, { weekday: "short", day: "numeric", month: "short" })}
             </button>
           ))}
         </div>
@@ -403,7 +405,7 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
             <TimerOff className="mt-0.5 size-4 shrink-0" />
             <span>
               {notice ?? "Your last selection timed out without a booking request."} You can select a slot again at{" "}
-              <span className="font-semibold">{clock(cooldown)}</span> ({mmss(cooldownLeft)}).
+              <span className="font-semibold">{clock(cooldown, language)}</span> ({mmss(cooldownLeft)}).
             </span>
           </p>
         ) : (
@@ -426,17 +428,17 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
 
         {slots.isPending && <Skeleton className="h-32" />}
         {slots.isError && <ErrorState error={slots.error} onRetry={() => slots.refetch()} />}
-        {slots.data && list.length === 0 && <p className="text-sm text-muted-foreground">Closed on this day.</p>}
+        {slots.data && list.length === 0 && <p className="text-sm text-muted-foreground">{t("Closed on this day.")}</p>}
         {list.length > 0 && (
           <>
             <p className="text-xs text-muted-foreground">
               Tap a free slot to hold it for 10 minutes; tap the next one to extend. Updates live.
             </p>
             <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground" aria-hidden>
-              <span className="flex items-center gap-1"><i className="size-2.5 rounded-full border bg-background" /> Free</span>
-              <span className="flex items-center gap-1"><i className="size-2.5 rounded-full bg-primary" /> Yours</span>
-              <span className="flex items-center gap-1"><i className="size-2.5 rounded-full bg-amber-400" /> Someone is booking</span>
-              <span className="flex items-center gap-1"><i className="size-2.5 rounded-full bg-sky-400" /> Requested / booked</span>
+              <span className="flex items-center gap-1"><i className="size-2.5 rounded-full border bg-background" /> {t("Free")}</span>
+              <span className="flex items-center gap-1"><i className="size-2.5 rounded-full bg-primary" /> {t("Yours")}</span>
+              <span className="flex items-center gap-1"><i className="size-2.5 rounded-full bg-amber-400" /> {t("Someone is booking")}</span>
+              <span className="flex items-center gap-1"><i className="size-2.5 rounded-full bg-sky-400" /> {t("Requested / booked")}</span>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
               {list.map((s, i) => {
@@ -468,9 +470,9 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
                     {selected ? (
                       <span className="text-xs opacity-90">Held for you</span>
                     ) : STATE_LABEL[state] ? (
-                      <span className="text-xs">{STATE_LABEL[state]}</span>
+                      <span className="text-xs">{t(STATE_LABEL[state]!)}</span>
                     ) : (
-                      s.price && <span className="tabular text-xs opacity-80">{formatBDT(s.price)}</span>
+                      s.price && <span className="tabular text-xs opacity-80">{formatMoney(s.price)}</span>
                     )}
                   </button>
                 );
@@ -506,30 +508,30 @@ export function BookingPanel({ turf }: { turf: TurfDetail }) {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm">
                 <span className="font-semibold">{fmtRange(chosen[0]!.start, chosen.at(-1)!.end)}</span>
-                {total > 0 && <> · <span className="tabular font-semibold">{formatBDT(total)}</span></>}
+                {total > 0 && <> · <span className="tabular font-semibold">{formatMoney(total)}</span></>}
               </p>
               <Button type="button" variant="ghost" size="sm" onClick={() => release.mutate()} disabled={busy}>
-                Clear selection
+                {t("Clear selection")}
               </Button>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <FormField label="Your name" error={fieldErrors?.name}>
+              <FormField label={t("Your name")} error={fieldErrors?.name}>
                 {(id) => <Input id={id} required autoComplete="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />}
               </FormField>
-              <FormField label="Mobile number" error={fieldErrors?.phone} hint="The confirmation SMS comes to this number.">
+              <FormField label={t("Mobile number")} error={fieldErrors?.phone} hint={t("The confirmation SMS comes to this number.")}>
                 {(id) => <Input id={id} required type="tel" inputMode="tel" autoComplete="tel" placeholder="01XXXXXXXXX" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />}
               </FormField>
-              <FormField label="Email (optional)" error={fieldErrors?.email}>
+              <FormField label={t("Email (optional)")} error={fieldErrors?.email}>
                 {(id) => <Input id={id} type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />}
               </FormField>
-              <FormField label="Team name (optional)">
+              <FormField label={t("Team name (optional)")}>
                 {(id) => <Input id={id} value={form.team_name} onChange={(e) => setForm({ ...form, team_name: e.target.value })} />}
               </FormField>
             </div>
             <p className="text-xs text-muted-foreground" lang="bn">
               একজন গ্রাহক প্রতিদিন সর্বোচ্চ {turf.max_slots_per_customer}টি স্লট বুক করতে পারবেন (সব টার্ফ মিলিয়ে)।
             </p>
-            <FormField label="Notes (optional)">
+            <FormField label={t("Notes (optional)")}>
               {(id) => <Textarea id={id} rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />}
             </FormField>
             <BkashBox number={payment.bkash_number ?? ""} total={total} advance={advance} holdMinutes={payment.hold_minutes} />

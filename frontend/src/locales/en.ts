@@ -46,5 +46,9 @@ const en = {
   "Get started": "Get started", "Try Live Demo": "Try Live Demo",
   "Built for day-to-day operations": "Built for day-to-day operations", "Everything your turf business needs, organized in one simple platform.": "Everything your turf business needs, organized in one simple platform.",
   "Booked a slot already?": "Booked a slot already?", "Check your booking status": "Check your booking status",
+  "Mobile number": "Mobile number", "Email (optional)": "Email (optional)", "Team name (optional)": "Team name (optional)",
+  "Notes (optional)": "Notes (optional)", "Clear selection": "Clear selection", "Someone is booking": "Someone is booking",
+  Requested: "Requested", Past: "Past", "How to book": "How to book", "The confirmation SMS comes to this number.": "The confirmation SMS comes to this number.",
+  Free: "Free", Yours: "Yours", "Requested / booked": "Requested / booked", "Closed on this day.": "Closed on this day.",
 } as const;
 export default en;

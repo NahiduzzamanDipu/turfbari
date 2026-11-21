@@ -80,7 +80,7 @@ export function HomePage() {
             টার্ফ ম্যানেজমেন্ট সফটওয়্যার · For turf owners in Bangladesh
           </p>
           <h1 className="max-w-3xl font-display text-5xl font-extrabold uppercase leading-[0.95] tracking-tight sm:text-7xl">
-            Run your turf. Not a notebook.
+            {t("Run your turf. Not a notebook.")}
           </h1>
           <p className="mt-4 max-w-xl text-lg text-muted-foreground">
             Bookings, bKash advances, slot pricing, managers, SMS and reports — in one workspace, with your own booking
@@ -89,15 +89,15 @@ export function HomePage() {
           <div className="mt-8 flex flex-wrap gap-3">
             {signedIn ? (
               <Button asChild size="lg">
-                <Link to={me.data?.home ?? "/"}>Open my dashboard</Link>
+                <Link to={me.data?.home ?? "/"}>{t("Open my dashboard")}</Link>
               </Button>
             ) : (
               <>
                 <Button asChild size="lg">
-                  <Link to="/register-turf">Register your turf</Link>
+              <Link to="/register-turf">{t("Register your turf")}</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  <Link to="/login">Sign in</Link>
+              <Link to="/login">{t("Sign in")}</Link>
                 </Button>
               </>
             )}
@@ -120,8 +120,8 @@ export function HomePage() {
         <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
           <div className="grid gap-5 bg-primary px-5 py-7 text-primary-foreground sm:px-8 sm:py-9 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
-              <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[.16em] text-primary-foreground/75"><Play className="size-4" /> Try it before you decide</p>
-              <h2 id="demo-title" className="mt-2 font-display text-3xl font-extrabold uppercase sm:text-4xl">Try the live demo</h2>
+              <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[.16em] text-primary-foreground/75"><Play className="size-4" /> {t("Try it before you decide")}</p>
+              <h2 id="demo-title" className="mt-2 font-display text-3xl font-extrabold uppercase sm:text-4xl">{t("Try the live demo")}</h2>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-primary-foreground/85">Experience TURFBARI from both sides. See how customers book a turf and how owners manage their business. Demo data is isolated and temporary.</p>
             </div>
             <Button asChild variant="accent" size="lg"><Link to="/demo-booking">Try Live Demo <ArrowRightIcon /></Link></Button>
@@ -129,22 +129,22 @@ export function HomePage() {
           <div className="grid gap-0 md:grid-cols-2">
             <article className="p-5 sm:p-7">
               <span className="inline-flex rounded-xl bg-accent p-3 text-accent-foreground"><CalendarDays className="size-5" /></span>
-              <h3 className="mt-4 text-lg font-bold">Customer booking demo</h3>
+              <h3 className="mt-4 text-lg font-bold">{t("Customer booking demo")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">Choose a date and available slot, enter your details, and submit a simulated booking request.</p>
-              <Button asChild variant="outline" className="mt-4"><Link to="/demo-booking">Try customer booking <ArrowRightIcon /></Link></Button>
+              <Button asChild variant="outline" className="mt-4"><Link to="/demo-booking">{t("Try customer booking")} <ArrowRightIcon /></Link></Button>
             </article>
             <article className="border-t p-5 md:border-l md:border-t-0 sm:p-7">
               <span className="inline-flex rounded-xl bg-accent p-3 text-accent-foreground"><PanelTop className="size-5" /></span>
-              <h3 className="mt-4 text-lg font-bold">Turf owner dashboard demo</h3>
+              <h3 className="mt-4 text-lg font-bold">{t("Turf owner dashboard demo")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">Review demo bookings, update sample slot prices, explore customer records and reports.</p>
-              <Button asChild variant="outline" className="mt-4"><Link to="/demo-account">Explore owner dashboard <ArrowRightIcon /></Link></Button>
+              <Button asChild variant="outline" className="mt-4"><Link to="/demo-account">{t("Explore owner dashboard")} <ArrowRightIcon /></Link></Button>
             </article>
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-12" aria-labelledby="features">
-        <p className="mb-2 text-sm font-bold uppercase tracking-wider text-primary">Built for day-to-day operations</p>
+        <p className="mb-2 text-sm font-bold uppercase tracking-wider text-primary">{t("Built for day-to-day operations")}</p>
         <h2 id="features" className="mb-3 font-display text-3xl font-extrabold uppercase">Why Choose TURFBARI?</h2>
         <p className="mb-6 text-muted-foreground">Everything your turf business needs, organized in one simple platform.</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
