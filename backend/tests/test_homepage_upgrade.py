@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.common.models import PlatformSettings
-from apps.homepage.models import HomepageFAQ, TurfOnboarding
+from apps.homepage.models import ClientShowcaseOverride, ClientShowcaseSettings, HomepageFAQ, TurfOnboarding
 from apps.notifications.models import SmsKind, SmsMessage, SmsPricing
 from apps.notifications.wallet import blocked_by_admin
 from apps.subscriptions.models import Plan, Subscription
@@ -79,6 +79,90 @@ def test_public_faqs_hide_drafts_and_admin_can_edit():
     public_questions = [row["question_en"] for row in APIClient().get("/api/public/faqs/").data]
     assert "Updated?" not in public_questions
     assert "Draft?" not in public_questions
+
+
+def test_client_showcase_uses_active_subscriptions_and_exposes_only_public_logo_fields():
+    turf, _ = make_turf("Logo Turf", "logo@example.com")
+    turf.profile_image.name = f"turfs/{turf.pk}/profile.webp"
+    turf.save(update_fields=["profile_image", "updated_at"])
+    pending_turf, _ = make_turf("Pending Logo Turf", "pending-logo@example.com")
+    pending_turf.profile_image.name = f"turfs/{pending_turf.pk}/profile.webp"
+    pending_turf.save(update_fields=["profile_image", "updated_at"])
+    pending_turf.subscriptions.update(status=Subscription.Status.PENDING_PAYMENT)
+    expired_turf, _ = make_turf("Expired Logo Turf", "expired-logo@example.com")
+    expired_turf.profile_image.name = f"turfs/{expired_turf.pk}/profile.webp"
+    expired_turf.save(update_fields=["profile_image", "updated_at"])
+    expired_turf.subscriptions.update(ends_on=timezone.localdate() - timedelta(days=1))
+    suspended_turf, _ = make_turf("Suspended Logo Turf", "suspended-logo@example.com")
+    suspended_turf.profile_image.name = f"turfs/{suspended_turf.pk}/profile.webp"
+    suspended_turf.status = suspended_turf.Status.SUSPENDED
+    suspended_turf.save(update_fields=["profile_image", "status", "updated_at"])
+
+    response = APIClient().get("/api/public/client-showcase/")
+
+    assert response.status_code == 200
+    assert [client["slug"] for client in response.data["clients"]] == [turf.slug]
+    assert response.data["clients"][0]["logo_url"].endswith("profile.webp")
+    assert set(response.data["clients"][0]) == {"slug", "name", "logo_url", "display_order"}
+    assert "owner_phone" not in response.data["clients"][0]
+    assert "email" not in response.data["clients"][0]
+
+
+def test_client_showcase_hides_missing_logos_and_admin_can_hide_and_restore_clients():
+    turf, _ = make_turf("Showcase Candidate", "candidate@example.com")
+    admin, _ = admin_client()
+
+    public_url = "/api/public/client-showcase/"
+    assert APIClient().get(public_url).data["clients"] == []
+
+    turf.profile_image.name = f"turfs/{turf.pk}/logo.webp"
+    turf.save(update_fields=["profile_image", "updated_at"])
+    visible = APIClient().get(public_url).data["clients"]
+    assert [item["slug"] for item in visible] == [turf.slug]
+
+    changed = admin.patch(
+        f"/api/admin/homepage/client-showcase/{turf.pk}/",
+        {"mode": ClientShowcaseOverride.Mode.HIDE, "display_order": 4},
+        format="json",
+    )
+    assert changed.status_code == 200
+    assert APIClient().get(public_url).data["clients"] == []
+
+    restored = admin.patch(
+        f"/api/admin/homepage/client-showcase/{turf.pk}/",
+        {"mode": ClientShowcaseOverride.Mode.AUTO, "display_order": 2},
+        format="json",
+    )
+    assert restored.status_code == 200
+    visible = APIClient().get(public_url).data["clients"]
+    assert visible[0]["slug"] == turf.slug
+    assert visible[0]["display_order"] == 2
+
+
+def test_client_showcase_admin_settings_control_enabled_auto_and_plan_eligibility():
+    turf, _ = make_turf("Plan Logo Turf", "plan-logo@example.com")
+    turf.profile_image.name = f"turfs/{turf.pk}/logo.webp"
+    turf.save(update_fields=["profile_image", "updated_at"])
+    settings, _ = ClientShowcaseSettings.objects.get_or_create(key="homepage")
+    admin, _ = admin_client()
+
+    plan = Plan.objects.get(pk=turf.subscriptions.first().plan_id)
+    response = admin.patch(
+        "/api/admin/homepage/client-showcase/",
+        {"enabled": False, "auto_include": False, "eligible_plan_ids": [str(plan.pk)]},
+        format="json",
+    )
+    assert response.status_code == 200
+    assert APIClient().get("/api/public/client-showcase/").data["clients"] == []
+
+    settings.refresh_from_db()
+    assert list(settings.eligible_plans.values_list("pk", flat=True)) == [plan.pk]
+
+    admin.patch(f"/api/admin/homepage/client-showcase/{turf.pk}/", {"mode": "include"}, format="json")
+    admin.patch("/api/admin/homepage/client-showcase/", {"enabled": True}, format="json")
+    assert [item["slug"] for item in APIClient().get("/api/public/client-showcase/").data["clients"]] == [
+        turf.slug
+    ]
 
 
 def test_plan_edits_do_not_rewrite_existing_subscription_snapshot():

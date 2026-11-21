@@ -126,7 +126,77 @@ html[data-language="bn"] body {
   box-shadow: var(--shadow-soft);
 }
 
+@keyframes client-logo-marquee {
+  to { transform: translateX(calc(-100% / var(--client-copies, 2))); }
+}
+
+.client-logo-viewport {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
+}
+
+.client-logo-track {
+  display: flex;
+  width: max-content;
+  animation: client-logo-marquee max(18s, calc(var(--client-count, 4) * 5s)) linear infinite;
+}
+
+.client-logo-viewport:hover .client-logo-track,
+.client-logo-viewport:focus-within .client-logo-track {
+  animation-play-state: paused;
+}
+
+.client-logo-group {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  padding-right: clamp(1.5rem, 4vw, 4rem);
+}
+
+.client-logo-item {
+  width: 8rem;
+  flex: none;
+  text-align: center;
+}
+
+.client-logo-frame {
+  display: flex;
+  height: 5.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--card);
+  padding: 0.75rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.client-logo-frame img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
+
+@media (hover: none) {
+  .client-logo-viewport {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .client-logo-track { animation: none; }
+  .client-logo-group-duplicate { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .client-logo-viewport { overflow-x: auto; }
+  .client-logo-track { width: 100%; animation: none; }
+  .client-logo-group { flex-wrap: wrap; justify-content: center; padding-right: 0; }
+  .client-logo-group-duplicate { display: none; }
+
   *,
   *::before,
   *::after {

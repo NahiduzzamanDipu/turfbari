@@ -1,7 +1,57 @@
 from django.conf import settings
+from django.core.cache import cache
 from django.db import models
 
 from apps.common.models import BaseModel
+
+CLIENT_SHOWCASE_CACHE_KEY = "homepage:client-showcase:v1"
+
+
+def clear_client_showcase_cache():
+    cache.delete(CLIENT_SHOWCASE_CACHE_KEY)
+
+
+class ClientShowcaseSettings(BaseModel):
+    key = models.CharField(max_length=32, unique=True, default="homepage")
+    enabled = models.BooleanField(default=True)
+    auto_include = models.BooleanField(default=True)
+    eligible_plans = models.ManyToManyField(
+        "subscriptions.Plan", blank=True, related_name="showcase_settings"
+    )
+    heading_en = models.CharField(max_length=120, default="Our Trusted Clients")
+    heading_bn = models.CharField(max_length=120, default="আমাদের সম্মানিত গ্রাহক")
+    subtitle_en = models.CharField(max_length=200, default="Turf businesses growing with TURFBARI.")
+    subtitle_bn = models.CharField(max_length=200, default="যেসব টার্ফ ব্যবসা TURFBARI-এর সঙ্গে এগিয়ে যাচ্ছে।")
+
+    class Meta:
+        verbose_name = "homepage client showcase settings"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        clear_client_showcase_cache()
+
+
+class ClientShowcaseOverride(BaseModel):
+    class Mode(models.TextChoices):
+        AUTO = "auto", "Automatic"
+        INCLUDE = "include", "Include"
+        HIDE = "hide", "Hide"
+
+    turf = models.OneToOneField("turfs.Turf", on_delete=models.CASCADE, related_name="showcase_override")
+    mode = models.CharField(max_length=8, choices=Mode.choices, default=Mode.AUTO)
+    display_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["display_order", "turf__name"]
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        clear_client_showcase_cache()
+
+    def delete(self, *args, **kwargs):
+        result = super().delete(*args, **kwargs)
+        clear_client_showcase_cache()
+        return result
 
 
 class HomepageFAQ(BaseModel):

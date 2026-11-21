@@ -33,6 +33,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { formatBDT } from "@/lib/utils";
 import { usePublicYoutubeVideo } from "./usePublicYoutubeVideo";
+import { ClientLogoShowcase } from "./ClientLogoShowcase";
 
 /**
  * TurfBari's own site is about the product for turf owners. There is no public directory of turfs:
@@ -67,6 +68,7 @@ export function HomePage() {
   const smsPrice = useQuery({ queryKey: ["public", "sms-pricing"], queryFn: () => api<SmsPrice>("/public/sms-pricing/"), staleTime: 5 * 60_000 });
   const youtube = usePublicYoutubeVideo("homepage");
   const faqs = useQuery({ queryKey: ["public", "faqs"], queryFn: () => api<HomepageFAQ[]>("/public/faqs/"), staleTime: 5 * 60_000 });
+  const showcase = useQuery({ queryKey: ["public", "client-showcase"], queryFn: () => api<ClientShowcaseData>("/public/client-showcase/"), staleTime: 30_000 });
 
   return (
     <>
@@ -281,6 +283,11 @@ export function HomePage() {
           </div>
         </section>
       )}
+      {showcase.data?.enabled && showcase.data.clients.length > 0 && <ClientLogoShowcase
+        clients={showcase.data.clients}
+        heading={faqLanguage === "bn" ? showcase.data.heading_bn : showcase.data.heading_en}
+        subtitle={faqLanguage === "bn" ? showcase.data.subtitle_bn : showcase.data.subtitle_en}
+      />}
       {faqs.data?.length ? <FAQSection faqs={faqs.data} language={faqLanguage} t={t} /> : null}
       {aboutOpen && youtube.data?.enabled && youtube.data.video_id && (
         <YouTubeDialog videoId={youtube.data.video_id} title={youtube.data.title || "About Us"} onClose={() => setAboutOpen(false)} />
@@ -315,6 +322,14 @@ function FAQItem({ faq, language }: { faq: HomepageFAQ; language: string }) {
 interface PublicPlan { id: string; period: string; name: string; months: number; price: string; description: string; featured: boolean; features: string[]; limits: Record<string, string | number | boolean | null>; sms_enabled: boolean }
 interface SmsPrice { configured: boolean; price_per_segment: string | null; examples: { segments: number; cost: string }[] }
 interface HomepageFAQ { id: string; question_en: string; answer_en: string; question_bn: string; answer_bn: string }
+interface ClientShowcaseData {
+  enabled: boolean;
+  heading_en: string;
+  heading_bn: string;
+  subtitle_en: string;
+  subtitle_bn: string;
+  clients: { slug: string; name: string; logo_url: string; display_order: number }[];
+}
 
 interface ContactDetails {
   enabled: boolean;

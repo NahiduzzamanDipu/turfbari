@@ -220,6 +220,9 @@ class AdminEndSubscriptionView(APIView):
             status=Subscription.Status.CANCELLED, updated_at=timezone.now()
         )
         ended = active.filter(ends_on__gt=cutoff).update(ends_on=cutoff, updated_at=timezone.now())
+        from apps.homepage.models import clear_client_showcase_cache
+
+        clear_client_showcase_cache()
         before = paid_until(turf)
         record(
             "subscription.ended",

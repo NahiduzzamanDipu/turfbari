@@ -5,3 +5,6 @@ class HomepageConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.homepage"
     verbose_name = "Homepage content and onboarding"
+
+    def ready(self):
+        from . import signals  # noqa: F401
