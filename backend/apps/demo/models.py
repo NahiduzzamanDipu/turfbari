@@ -10,20 +10,18 @@ class DemoWorkspace(BaseModel):
     class Status(models.TextChoices):
         ACTIVE = "active", "Active"
         DISABLED = "disabled", "Disabled"
-        EXPIRED = "expired", "Expired"
 
     name = models.CharField(max_length=100, default="TURFBARI Demo Arena")
     owner_name = models.CharField(max_length=100, default="Demo Turf Owner")
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.ACTIVE, db_index=True)
-    access_token_hash = models.CharField(max_length=64, unique=True, db_index=True)
-    expires_at = models.DateTimeField(db_index=True)
+    public_key = models.CharField(max_length=20, unique=True, null=True, blank=True)
     last_access_at = models.DateTimeField(null=True, blank=True)
     reset_count = models.PositiveIntegerField(default=0)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:
         ordering = ["-created_at"]
-        indexes = [models.Index(fields=["status", "expires_at"])]
+        indexes = [models.Index(fields=["status", "public_key"], name="demo_demowo_status_public_idx")]
 
 
 class DemoSlot(BaseModel):
@@ -53,9 +51,6 @@ class DemoCustomer(BaseModel):
     phone = models.CharField(max_length=20)
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["workspace", "phone"], name="demo_customer_phone_unique")
-        ]
         indexes = [models.Index(fields=["workspace", "name"])]
 
 

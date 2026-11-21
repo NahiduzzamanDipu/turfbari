@@ -230,7 +230,8 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "demo_session": "10/hour",
+        "demo_booking": "10/hour",
+        "demo_write": "60/minute",
         "anon": "120/min",
         "user": "600/min",
         "login": "10/min",

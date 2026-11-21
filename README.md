@@ -103,18 +103,16 @@ This seed command is development-only and refuses to run when `DJANGO_DEBUG` is 
 
 #### Interactive product demos
 
-The homepage links to `/demo-booking` (player flow) and `/demo-account` (owner workspace). Each new browser session
-receives a private 24-hour demo workspace; the booking flow and owner dashboard share that workspace in the same
-browser tab. Demo workspaces, slots, customers, bookings, activity, and price snapshots use only the `apps.demo`
-tables. They are not Django users or real tenants, and their APIs never call production payment, subscription, SMS,
-wallet, or booking services. SMS, QR, payments, and subscription controls in the demo are previews only.
+The homepage links to `/demo-booking` (player flow) and `/demo-account` (owner workspace). Both pages use one
+permanent, public demo workspace: bookings, customers, slots and changes persist and are shared across visitors.
+Demo records use only the `apps.demo` tables; they are not Django users or real tenants, and the APIs never call
+production payment, subscription, SMS, wallet, or booking services. SMS, QR, payments and subscription controls are
+previews only. Visitors are warned to use sample details; mobile numbers are validated and stored only in masked form.
 
-Platform admins can manage workspaces at **Admin > Demo management**. Create a workspace to get a short-lived access
-link (shown once), rotate its link, disable it, change its owner/workspace labels or expiry, inspect activity, or reset
-only its demo records to the seeded state. Expired access is rejected immediately. Run
-`python manage.py run_tick` (or the protected `/api/system/tick/` endpoint) handles expiry and removes
-their booking/customer/slot records after 30 days; the demo activity history is retained. No real tenant rows are
-modified by cleanup. `python manage.py cleanup_demo_workspaces` runs this cleanup directly when needed.
+Platform admins can manage the single workspace at **Admin > Demo management**: view counts and last activity,
+disable or enable public access, inspect activity, or manually reset bookings, customers and slots to the sample
+state. There is no expiry or automatic cleanup. A manual reset is audited and removes shared demo history. Real tenant
+data is never affected.
 
 ### 4. Frontend
 

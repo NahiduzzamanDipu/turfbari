@@ -1,14 +1,13 @@
-"""Demo APIs deliberately use demo-only tables and never call production booking services."""
+"""Public shared demo APIs. They only read and write the isolated demo tables."""
 
-import hashlib
 import secrets
 import uuid
 from datetime import date, time, timedelta
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import IntegrityError, models, transaction
-from django.http import HttpResponse
+from django.db import IntegrityError, transaction
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
@@ -17,95 +16,19 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from apps.bookings.phone import normalize_bd_phone
 from apps.common.permissions import IsPlatformAdmin
 
 from .models import DemoActivity, DemoBooking, DemoCustomer, DemoSlot, DemoWorkspace
-
-DEMO_HOURS = 24
-
-
-def token_hash(token):
-    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+from .services import get_public_workspace, mask_demo_phone, reset_public_workspace
 
 
-def new_token():
-    return secrets.token_urlsafe(32)
-
-
-def seed_workspace(workspace):
-    for index, (label, start, end, category, price) in enumerate(
-        [
-            ("Morning · 08:00–09:00", time(8), time(9), DemoSlot.Category.MORNING, "1200.00"),
-            ("Evening · 17:00–18:00", time(17), time(18), DemoSlot.Category.EVENING, "1800.00"),
-            ("Evening · 18:00–19:00", time(18), time(19), DemoSlot.Category.EVENING, "1800.00"),
-            ("Night · 20:00–21:00", time(20), time(21), DemoSlot.Category.NIGHT, "1500.00"),
-            ("Midnight · 00:00–01:00", time(0), time(1), DemoSlot.Category.MIDNIGHT, "900.00"),
-        ]
-    ):
-        DemoSlot.objects.create(
-            workspace=workspace,
-            label=label,
-            start_time=start,
-            end_time=end,
-            category=category,
-            price=Decimal(price),
-            display_order=index,
-        )
-    sample_slot = workspace.slots.filter(start_time=time(18)).first()
-    customer = DemoCustomer.objects.create(
-        workspace=workspace, name="Rahim Uddin · Demo", phone="+8801800000001"
-    )
-    DemoBooking.objects.create(
-        workspace=workspace,
-        customer=customer,
-        slot=sample_slot,
-        date=timezone.localdate() + timedelta(days=1),
-        start_time=sample_slot.start_time,
-        end_time=sample_slot.end_time,
-        price=sample_slot.price,
-        reference=f"DEMO-{secrets.token_hex(4).upper()}",
-        status=DemoBooking.Status.PENDING,
-    )
-
-
-@transaction.atomic
-def create_workspace(*, actor=None, ttl_hours=DEMO_HOURS):
-    token = new_token()
-    workspace = DemoWorkspace.objects.create(
-        access_token_hash=token_hash(token),
-        expires_at=timezone.now() + timedelta(hours=ttl_hours),
-        created_by=actor,
-    )
-    seed_workspace(workspace)
-    return workspace, token
-
-
-def get_workspace(request):
-    return getattr(request, "demo_workspace", None)
-
-
-class DemoBearerMixin:
-    """Resolve a short-lived bearer token to exactly one isolated workspace."""
-
-    def initial(self, request, *args, **kwargs):
-        super().initial(request, *args, **kwargs)
-        authorization = request.headers.get("Authorization", "")
-        scheme, _, raw = authorization.partition(" ")
-        workspace = None
-        if scheme.lower() == "bearer" and raw:
-            workspace = DemoWorkspace.objects.filter(
-                access_token_hash=token_hash(raw),
-                status=DemoWorkspace.Status.ACTIVE,
-                expires_at__gt=timezone.now(),
-            ).first()
-        if not workspace:
-            from rest_framework.exceptions import AuthenticationFailed
-
-            raise AuthenticationFailed("Demo session is missing, expired, or disabled.")
-        workspace.last_access_at = timezone.now()
-        workspace.save(update_fields=["last_access_at", "updated_at"])
-        request.demo_workspace = workspace
+def active_workspace():
+    workspace = get_public_workspace()
+    if workspace.status != DemoWorkspace.Status.ACTIVE:
+        raise Http404("The public demo is currently unavailable.")
+    workspace.last_access_at = timezone.now()
+    workspace.save(update_fields=["last_access_at", "updated_at"])
+    return workspace
 
 
 def serialize_slot(slot, *, booked=False):
@@ -132,39 +55,17 @@ def serialize_booking(booking):
         "start_time": booking.start_time.strftime("%H:%M"),
         "end_time": booking.end_time.strftime("%H:%M"),
         "price": str(booking.price),
-        "note": booking.note,
+        "note": "",
         "status": booking.status,
         "created_at": booking.created_at,
     }
 
 
-class DemoSessionView(APIView):
+class DemoThrottleMixin:
     authentication_classes = []
     permission_classes = [AllowAny]
     throttle_classes = [ScopedRateThrottle]
-    throttle_scope = "demo_session"
-
-    def post(self, request):
-        invite = str(request.data.get("access_key", ""))
-        if invite:
-            workspace = DemoWorkspace.objects.filter(
-                access_token_hash=token_hash(invite),
-                status=DemoWorkspace.Status.ACTIVE,
-                expires_at__gt=timezone.now(),
-            ).first()
-            if workspace:
-                return Response(
-                    {"token": invite, "workspace_id": str(workspace.pk), "expires_at": workspace.expires_at}
-                )
-            return Response({"detail": "This demo access link has expired or was disabled."}, status=400)
-        workspace, token = create_workspace()
-        DemoActivity.objects.create(
-            workspace=workspace, action="session_created", summary="A visitor started a demo."
-        )
-        return Response(
-            {"token": token, "workspace_id": str(workspace.pk), "expires_at": workspace.expires_at},
-            status=status.HTTP_201_CREATED,
-        )
+    throttle_scope = "demo_write"
 
 
 class DemoQRCodeView(APIView):
@@ -172,22 +73,22 @@ class DemoQRCodeView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
+        active_workspace()
         import segno
 
-        target = request.build_absolute_uri("/demo-booking")
-        qr = segno.make(target, error="M")
+        qr = segno.make(request.build_absolute_uri("/demo-booking"), error="M")
         response = HttpResponse(content_type="image/svg+xml")
         qr.save(response, kind="svg", scale=5, border=2, dark="#064e3b", light="#ffffff")
         response["Cache-Control"] = "public, max-age=3600"
         return response
 
 
-class DemoWorkspaceView(DemoBearerMixin, APIView):
+class DemoWorkspaceView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
 
     def get(self, request):
-        workspace = get_workspace(request)
+        workspace = active_workspace()
         slots = list(workspace.slots.all())
         bookings = list(workspace.bookings.select_related("customer", "slot"))
         customers = list(workspace.customers.all())
@@ -198,7 +99,7 @@ class DemoWorkspaceView(DemoBearerMixin, APIView):
                 "name": workspace.name,
                 "owner_name": workspace.owner_name,
                 "location": "Demo Location, Bangladesh",
-                "expires_at": workspace.expires_at,
+                "expires_at": None,
                 "slots": [serialize_slot(slot) for slot in slots],
                 "bookings": [serialize_booking(booking) for booking in bookings],
                 "customers": [{"id": str(c.pk), "name": c.name, "phone": c.phone} for c in customers],
@@ -217,26 +118,24 @@ class DemoWorkspaceView(DemoBearerMixin, APIView):
         )
 
     def patch(self, request):
-        workspace = get_workspace(request)
+        workspace = active_workspace()
         workspace.name = str(request.data.get("name", workspace.name)).strip()[:100] or workspace.name
         workspace.save(update_fields=["name", "updated_at"])
         return Response({"name": workspace.name})
 
 
-class DemoBookingCreateView(DemoBearerMixin, APIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
+class DemoBookingCreateView(DemoThrottleMixin, APIView):
+    throttle_scope = "demo_booking"
 
     @transaction.atomic
     def post(self, request):
-        workspace = DemoWorkspace.objects.select_for_update().get(pk=get_workspace(request).pk)
+        workspace = DemoWorkspace.objects.select_for_update().get(pk=active_workspace().pk)
         try:
             booking_date = date.fromisoformat(str(request.data.get("date", "")))
             slot_id = uuid.UUID(str(request.data.get("slot_id", "")))
             slot = DemoSlot.objects.select_for_update().get(pk=slot_id, workspace=workspace)
             name = str(request.data.get("name", "")).strip()[:100]
-            phone = normalize_bd_phone(str(request.data.get("phone", "")))
-            note = str(request.data.get("note", "")).strip()[:500]
+            phone = mask_demo_phone(str(request.data.get("phone", "")))
             if booking_date < timezone.localdate() or booking_date > timezone.localdate() + timedelta(
                 days=60
             ):
@@ -252,44 +151,37 @@ class DemoBookingCreateView(DemoBearerMixin, APIView):
                 return Response(
                     {"detail": "That demo slot was just booked. Choose another time."}, status=409
                 )
-            customer, _ = DemoCustomer.objects.get_or_create(
-                workspace=workspace, phone=phone, defaults={"name": name}
+            customer = DemoCustomer.objects.create(workspace=workspace, name=f"{name} (Demo)", phone=phone)
+            booking = DemoBooking.objects.create(
+                workspace=workspace,
+                customer=customer,
+                slot=slot,
+                date=booking_date,
+                start_time=slot.start_time,
+                end_time=slot.end_time,
+                price=slot.price,
+                reference=f"DEMO-{secrets.token_hex(4).upper()}",
+                note="",
             )
-            if customer.name != name:
-                customer.name = name
-                customer.save(update_fields=["name", "updated_at"])
-            reference = f"DEMO-{secrets.token_hex(4).upper()}"
-            with transaction.atomic():
-                booking = DemoBooking.objects.create(
-                    workspace=workspace,
-                    customer=customer,
-                    slot=slot,
-                    date=booking_date,
-                    start_time=slot.start_time,
-                    end_time=slot.end_time,
-                    price=slot.price,
-                    reference=reference,
-                    note=note,
-                )
             DemoActivity.objects.create(
                 workspace=workspace,
                 action="booking_created",
-                summary=f"Demo booking {reference} was submitted.",
+                summary=f"Demo booking {booking.reference} was submitted.",
             )
         except (ValueError, TypeError, DjangoValidationError, DemoSlot.DoesNotExist):
-            return Response({"detail": "The selected demo date or slot is invalid."}, status=400)
+            return Response(
+                {"detail": "The selected demo date, slot, or Bangladesh mobile number is invalid."},
+                status=400,
+            )
         except IntegrityError:
             return Response({"detail": "That demo slot was just booked. Choose another time."}, status=409)
-        return Response(serialize_booking(booking), status=201)
+        return Response(serialize_booking(booking), status=status.HTTP_201_CREATED)
 
 
-class DemoBookingActionView(DemoBearerMixin, APIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
-
+class DemoBookingActionView(DemoThrottleMixin, APIView):
     @transaction.atomic
     def patch(self, request, pk):
-        workspace = DemoWorkspace.objects.select_for_update().get(pk=get_workspace(request).pk)
+        workspace = DemoWorkspace.objects.select_for_update().get(pk=active_workspace().pk)
         booking = get_object_or_404(
             DemoBooking.objects.select_for_update().select_related("customer", "slot"),
             pk=pk,
@@ -310,31 +202,27 @@ class DemoBookingActionView(DemoBearerMixin, APIView):
         booking.status = transitions[action]
         booking.reviewed_at = timezone.now()
         booking.save(update_fields=["status", "reviewed_at", "updated_at"])
-        past_tense = {"approve": "approved", "reject": "rejected", "cancel": "cancelled"}[action]
+        past = {"approve": "approved", "reject": "rejected", "cancel": "cancelled"}[action]
         DemoActivity.objects.create(
             workspace=workspace,
             action=f"booking_{action}",
-            summary=f"{booking.reference} was {past_tense} in demo.",
+            summary=f"{booking.reference} was {past} in demo.",
         )
         return Response(serialize_booking(booking))
 
 
-class DemoSlotDetailView(DemoBearerMixin, APIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
-
+class DemoSlotDetailView(DemoThrottleMixin, APIView):
     @transaction.atomic
     def patch(self, request, pk):
-        workspace = DemoWorkspace.objects.select_for_update().get(pk=get_workspace(request).pk)
+        workspace = DemoWorkspace.objects.select_for_update().get(pk=active_workspace().pk)
         slot = get_object_or_404(DemoSlot, pk=pk, workspace=workspace)
         if "enabled" in request.data:
             slot.enabled = bool(request.data["enabled"])
         if "price" in request.data:
             try:
-                price = Decimal(str(request.data["price"]))
-                if price < 0 or price > Decimal("1000000"):
+                slot.price = Decimal(str(request.data["price"])).quantize(Decimal("0.01"))
+                if slot.price < 0 or slot.price > Decimal("1000000"):
                     raise ValueError
-                slot.price = price.quantize(Decimal("0.01"))
             except Exception:
                 return Response({"detail": "Enter a valid demo price."}, status=400)
         for field in ("start_time", "end_time"):
@@ -360,16 +248,15 @@ class DemoSlotDetailView(DemoBearerMixin, APIView):
         return Response(serialize_slot(slot))
 
 
-class DemoSlotsView(DemoBearerMixin, APIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
-
+class DemoSlotsView(DemoThrottleMixin, APIView):
     @transaction.atomic
     def post(self, request):
-        workspace = DemoWorkspace.objects.select_for_update().get(pk=get_workspace(request).pk)
+        workspace = DemoWorkspace.objects.select_for_update().get(pk=active_workspace().pk)
         try:
-            start = time.fromisoformat(str(request.data.get("start_time", "")))
-            end = time.fromisoformat(str(request.data.get("end_time", "")))
+            start, end = (
+                time.fromisoformat(str(request.data.get("start_time", ""))),
+                time.fromisoformat(str(request.data.get("end_time", ""))),
+            )
             price = Decimal(str(request.data.get("price", "0"))).quantize(Decimal("0.01"))
             category = str(request.data.get("category", DemoSlot.Category.EVENING))
             label = str(request.data.get("label", "Custom demo slot")).strip()[:80]
@@ -396,169 +283,73 @@ class DemoSlotsView(DemoBearerMixin, APIView):
         return Response(serialize_slot(slot), status=201)
 
 
+def serialize_admin_workspace(workspace):
+    return {
+        "id": str(workspace.pk),
+        "name": workspace.name,
+        "owner_name": workspace.owner_name,
+        "status": workspace.status,
+        "created_at": workspace.created_at,
+        "last_access_at": workspace.last_access_at,
+        "booking_count": workspace.bookings.count(),
+        "customer_count": workspace.customers.count(),
+        "slot_count": workspace.slots.count(),
+        "reset_count": workspace.reset_count,
+    }
+
+
 class AdminDemoWorkspacesView(APIView):
     permission_classes = [IsPlatformAdmin]
 
     def get(self, request):
-        qs = DemoWorkspace.objects.annotate(booking_count=models.Count("bookings")).order_by("-created_at")
-        search = request.query_params.get("search", "").strip()
-        if search:
-            qs = qs.filter(models.Q(name__icontains=search) | models.Q(owner_name__icontains=search))
-        return Response(
-            [
-                {
-                    "id": str(w.pk),
-                    "name": w.name,
-                    "owner_name": w.owner_name,
-                    "status": w.status,
-                    "created_at": w.created_at,
-                    "expires_at": w.expires_at,
-                    "last_access_at": w.last_access_at,
-                    "booking_count": w.booking_count,
-                }
-                for w in qs[:200]
-            ]
-        )
-
-    def post(self, request):
-        workspace, token = create_workspace(actor=request.user)
-        workspace.name = str(request.data.get("name", workspace.name)).strip()[:100] or workspace.name
-        workspace.owner_name = (
-            str(request.data.get("owner_name", workspace.owner_name)).strip()[:100] or workspace.owner_name
-        )
-        workspace.save(update_fields=["name", "owner_name", "updated_at"])
-        DemoActivity.objects.create(
-            workspace=workspace,
-            actor_type="admin",
-            action="workspace_created",
-            summary="Admin created a demo workspace.",
-        )
-        return Response(
-            {
-                "id": str(workspace.pk),
-                "name": workspace.name,
-                "access_url": f"/demo-account#access={token}",
-                "expires_at": workspace.expires_at,
-            },
-            status=201,
-        )
+        return Response([serialize_admin_workspace(get_public_workspace())])
 
 
 class AdminDemoWorkspaceDetailView(APIView):
     permission_classes = [IsPlatformAdmin]
 
     def patch(self, request, pk):
-        workspace = get_object_or_404(DemoWorkspace, pk=pk)
-        if "name" in request.data:
-            workspace.name = str(request.data["name"]).strip()[:100] or workspace.name
-        if "owner_name" in request.data:
-            workspace.owner_name = str(request.data["owner_name"]).strip()[:100] or workspace.owner_name
+        workspace = get_object_or_404(DemoWorkspace, pk=pk, public_key="public")
         if "status" in request.data:
             if request.data["status"] not in DemoWorkspace.Status.values:
                 return Response({"detail": "Invalid demo status."}, status=400)
             workspace.status = request.data["status"]
-        if "hours" in request.data:
-            try:
-                hours = int(request.data["hours"])
-                if not 1 <= hours <= 24 * 90:
-                    raise ValueError
-                workspace.expires_at = timezone.now() + timedelta(hours=hours)
-                if workspace.status == DemoWorkspace.Status.EXPIRED:
-                    workspace.status = DemoWorkspace.Status.ACTIVE
-            except ValueError:
-                return Response({"detail": "Expiry must be between 1 hour and 90 days."}, status=400)
-        if "expires_at" in request.data:
-            from django.utils.dateparse import parse_datetime
-
-            expiry = parse_datetime(str(request.data["expires_at"]))
-            if (
-                not expiry
-                or timezone.is_naive(expiry)
-                or not timezone.now() < expiry <= timezone.now() + timedelta(days=90)
-            ):
-                return Response(
-                    {"detail": "Choose a future expiry date within the next 90 days."}, status=400
-                )
-            workspace.expires_at = expiry
-            if workspace.status == DemoWorkspace.Status.EXPIRED:
-                workspace.status = DemoWorkspace.Status.ACTIVE
-        workspace.save()
+        if "name" in request.data:
+            workspace.name = str(request.data["name"]).strip()[:100] or workspace.name
+        if "owner_name" in request.data:
+            workspace.owner_name = str(request.data["owner_name"]).strip()[:100] or workspace.owner_name
+        workspace.save(update_fields=["status", "name", "owner_name", "updated_at"])
         DemoActivity.objects.create(
             workspace=workspace,
             actor_type="admin",
             action="workspace_updated",
-            summary="Admin updated demo access.",
+            summary=f"Admin updated shared demo status to {workspace.status}.",
         )
-        return Response(
-            {"id": str(workspace.pk), "status": workspace.status, "expires_at": workspace.expires_at}
-        )
-
-    def delete(self, request, pk):
-        workspace = get_object_or_404(DemoWorkspace, pk=pk)
-        workspace.status = DemoWorkspace.Status.DISABLED
-        workspace.save(update_fields=["status", "updated_at"])
-        DemoActivity.objects.create(
-            workspace=workspace,
-            actor_type="admin",
-            action="workspace_disabled",
-            summary="Admin disabled demo access.",
-        )
-        return Response(status=204)
+        return Response(serialize_admin_workspace(workspace))
 
 
 class AdminDemoWorkspaceResetView(APIView):
     permission_classes = [IsPlatformAdmin]
 
-    @transaction.atomic
     def post(self, request, pk):
-        workspace = get_object_or_404(DemoWorkspace.objects.select_for_update(), pk=pk)
-        workspace.bookings.all().delete()
-        workspace.customers.all().delete()
-        workspace.slots.all().delete()
-        workspace.reset_count += 1
-        workspace.save(update_fields=["reset_count", "updated_at"])
-        seed_workspace(workspace)
-        DemoActivity.objects.create(
-            workspace=workspace,
-            actor_type="admin",
-            action="workspace_reset",
-            summary="Admin reset demo bookings, customers, and slots.",
-        )
-        return Response({"reset": True, "reset_count": workspace.reset_count})
-
-
-class AdminDemoWorkspaceAccessView(APIView):
-    permission_classes = [IsPlatformAdmin]
-
-    def post(self, request, pk):
-        workspace = get_object_or_404(DemoWorkspace, pk=pk)
-        token = new_token()
-        workspace.access_token_hash = token_hash(token)
-        workspace.status = DemoWorkspace.Status.ACTIVE
-        workspace.expires_at = timezone.now() + timedelta(hours=DEMO_HOURS)
-        workspace.save(update_fields=["access_token_hash", "status", "expires_at", "updated_at"])
-        DemoActivity.objects.create(
-            workspace=workspace,
-            actor_type="admin",
-            action="access_rotated",
-            summary="Admin rotated demo access link.",
-        )
-        return Response({"access_url": f"/demo-account#access={token}", "expires_at": workspace.expires_at})
+        workspace = get_object_or_404(DemoWorkspace, pk=pk, public_key="public")
+        count = reset_public_workspace(workspace)
+        return Response({"reset_count": count, "workspace": serialize_admin_workspace(workspace)})
 
 
 class AdminDemoWorkspaceActivityView(APIView):
     permission_classes = [IsPlatformAdmin]
 
     def get(self, request, pk):
-        workspace = get_object_or_404(DemoWorkspace, pk=pk)
+        workspace = get_object_or_404(DemoWorkspace, pk=pk, public_key="public")
         return Response(
             [
                 {
-                    "actor_type": item.actor_type,
-                    "action": item.action,
-                    "summary": item.summary,
-                    "created_at": item.created_at,
+                    "actor_type": a.actor_type,
+                    "action": a.action,
+                    "summary": a.summary,
+                    "created_at": a.created_at,
                 }
-                for item in workspace.activity.all()[:100]
+                for a in workspace.activity.all()[:100]
             ]
         )

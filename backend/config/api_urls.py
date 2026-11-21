@@ -48,7 +48,6 @@ workspace_router.register("expenses", ExpenseViewSet, basename="ws-expenses")
 workspace_router.register("photos", setup.PhotoViewSet, basename="ws-photos")
 
 public_urls = [
-    path("demo/session/", demo.DemoSessionView.as_view()),
     path("demo/qr.svg", demo.DemoQRCodeView.as_view()),
     path("demo/workspace/", demo.DemoWorkspaceView.as_view()),
     path("demo/bookings/", demo.DemoBookingCreateView.as_view()),
@@ -108,7 +107,6 @@ admin_urls = [
     path("demo/workspaces/", demo.AdminDemoWorkspacesView.as_view()),
     path("demo/workspaces/<uuid:pk>/", demo.AdminDemoWorkspaceDetailView.as_view()),
     path("demo/workspaces/<uuid:pk>/reset/", demo.AdminDemoWorkspaceResetView.as_view()),
-    path("demo/workspaces/<uuid:pk>/access/", demo.AdminDemoWorkspaceAccessView.as_view()),
     path("demo/workspaces/<uuid:pk>/activity/", demo.AdminDemoWorkspaceActivityView.as_view()),
     path("homepage/faqs/", homepage.AdminFAQsView.as_view()),
     path("homepage/faqs/<uuid:pk>/", homepage.AdminFAQsView.as_view()),
